@@ -38,7 +38,7 @@ PHP cryptocurrency from scratch
 
 [Wallet Web](https://wallet.mataxetos.es)
 
-[JSON-RPC/HTTP API](https://github.com/mataxetos/MXC/blob/master/api/API_DOC.md)
+[JSON-RPC/HTTP API](https://github.com/mataxetos/MXC/wiki/API-JSON-RPC-HTTP)
 
 # IRC
 Server: irc.mataxetos.es
