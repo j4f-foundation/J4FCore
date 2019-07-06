@@ -23,6 +23,32 @@
 //
 
 class Tools {
+
+	public static function str2bytesHex($string) {
+		if (strlen($string) == 0)
+			return "0x";
+			
+		$bytesStringified = "";
+		$stringBytes = unpack("C*",$string);
+		foreach ($stringBytes as $byte)
+			$bytesStringified .= "0x".dechex($byte);
+		return $bytesStringified;
+	}
+
+	public static function bytesHex2str($bytesHex) {
+		if ($bytesHex == "0x")
+			return "0x";
+
+		$bytes = array();
+		$e_hex = explode('0x',$bytesHex);
+		foreach ($e_hex as $hex)
+			$bytes[] = intval(hexdec($hex));
+		$packed = "";
+		foreach ($bytes as $byte)
+			$packed .= pack("C",$byte);
+		return trim($packed);
+	}
+
     /**
      * Transform a decimal number to hexadecimal
      * Using the php-bcmath package

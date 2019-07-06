@@ -170,6 +170,9 @@ class Blockchain {
                 //Add Block to blockchain
                 if ($chaindata->addBlock($heightNewBlock,$blockMinedByPeer)) {
 
+					//Make SmartContracts on local blockchain
+					Blockchain::MakeSmartContracts($chaindata,$blockMinedByPeer);
+
                     if ($chaindata->GetConfig('isBootstrap') == 'on' && $chaindata->GetConfig('node_ip') == NODE_BOOTSTRAP)
                         Tools::SendMessageToDiscord($heightNewBlock,$blockMinedByPeer);
 
@@ -188,6 +191,77 @@ class Blockchain {
         }
     }
 
+/**
+     * Make Smart Contracts of this block
+     * All nodes create smart contracts on blockchain (local)
+     *
+     * @param DB $chaindata
+     * @param Block $lastBlock
+     * @param Block $blockMinedByPeer
+     * @return bool
+     */
+    public static function MakeSmartContracts(&$chaindata,$block) {
+
+		//Obteemos todas las transacciones del bloque
+		//Si alguna transaccion va dirigida a 00000
+
+		foreach ($block->transactions as $transaction) {
+
+			//Check if transaction is valid
+			if ($transaction->isValid()) {
+
+				//Check if transaction is for make new contract
+				if ($transaction->to == 'VTx00000000000000000000000000000000' && $transaction->data != "0x") {
+
+					$contract_code = $transaction->data;
+					$code = Tools::bytesHex2str($contract_code);
+
+					$code_parsed = MXVM::_init($code);
+
+					js::define("msg",
+						array(),
+						array(
+							"sender"=> $transaction->from,
+						)
+					);
+				
+					js::define("contract",
+						array(
+							"get" => "js_get", 
+							"set" => "js_set",
+							"table" => "js_table",
+							"table_set" => "js_table_set",
+							"table_get" => "js_table_get",
+							"table_get_sub" => "js_table_get_sub",
+						),
+						array()
+					);
+
+					//Get Contract Hash
+					$contractHash = PoW::hash($contract_code.$transaction->from.$transaction->timestamp.$transaction->signature);
+
+					#-- Run Conctract
+					$run_status = 0;
+					try {
+						js::run($code_parsed,$contractHash);
+						$run_status = 1;
+					} catch (Exception $e) {
+						$run_status = -1;
+					}
+
+					// If run contract its OK, save this contract
+					if ($run_status == 1) {
+
+						//Get data contract
+						$contractData = Tools::str2bytesHex(json_encode(MXVM::$data));
+
+						//Add SmartContract on blockchain (local)
+						$chaindata->addSmartContract($contractHash,$transaction->hash,$contract_code,$contractData);
+					}
+				}
+			}
+		}
+    }
 
     /**
      * Calc total fees of pending transactions to add on new block
@@ -261,17 +335,21 @@ class Blockchain {
                 if ($chaindata->RemoveBlock($lastBlock['height'])) {
 
                     //AddBlock to blockchain
-                    $chaindata->addBlock($lastBlock['height'],$blockMinedByPeer);
+					if ($chaindata->addBlock($lastBlock['height'],$blockMinedByPeer)) {
 
-                    //Add this block in pending block (DISPLAY)
-                    $chaindata->AddBlockToDisplay($blockMinedByPeer,"1x00000000");
+						//Make SmartContracts on local blockchain
+						Blockchain::MakeSmartContracts($chaindata,$blockMinedByPeer);
 
-                    Tools::writeLog('ADD NEW BLOCK in same height');
+						//Add this block in pending block (DISPLAY)
+						$chaindata->AddBlockToDisplay($blockMinedByPeer,"1x00000000");
 
-                    //Propagate mined block to network
-                    Tools::sendBlockMinedToNetworkWithSubprocess($chaindata,$blockMinedByPeer);
+						Tools::writeLog('ADD NEW BLOCK in same height');
 
-                    Tools::writeLog('Propagated new block in same height');
+						//Propagate mined block to network
+						Tools::sendBlockMinedToNetworkWithSubprocess($chaindata,$blockMinedByPeer);
+
+						Tools::writeLog('Propagated new block in same height');
+					}
 
                     return "0x00000000";
                 } else

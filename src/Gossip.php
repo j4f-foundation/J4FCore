@@ -902,7 +902,10 @@ class Gossip {
 						Tools::writeLog('MINER (MINED NEW BLOCK)');
 
 						//Add this block on local blockchain
-						$this->chaindata->addBlock($nextHeight,$blockMined);
+						if ($this->chaindata->addBlock($nextHeight,$blockMined)) {
+							//Make SmartContracts on local blockchain
+							Blockchain::MakeSmartContracts($this->chaindata,$blockMined);	
+						}
 					} else {
 						Display::_error("Block reward not valid");
 					}

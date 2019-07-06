@@ -100,7 +100,10 @@ class Peer {
                         if ($blockToImport->isValidReward($nextHeight,$gossip->isTestNet)) {
 
                             //We add block to blockchain
-                            $gossip->chaindata->addBlock($nextHeight,$blockToImport);
+                            if ($gossip->chaindata->addBlock($nextHeight,$blockToImport)) {
+								//Make SmartContracts on local blockchain
+								Blockchain::MakeSmartContracts($gossip->chaindata,$blockToImport);
+							}
 
                             //Save block pointer
                             $blockSynced = $blockToImport;

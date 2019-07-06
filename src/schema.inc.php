@@ -167,6 +167,27 @@ if ($dbversion == 1) {
     $dbversion++;
 }
 
+if ($dbversion == 2) {
+	
+    $db->db->query("
+	CREATE TABLE `smart_contracts` (
+		`contract_hash` varchar(128) NOT NULL,
+		`txn_hash` varchar(128) NOT NULL,
+		`code` longblob NOT NULL,
+		`data` longblob NOT NULL,
+		PRIMARY KEY (`contract_hash`),
+		UNIQUE KEY `contractHash` (`contract_hash`) USING BTREE,
+		UNIQUE KEY `txnHash` (`txn_hash`) USING BTREE
+	) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+	");
+
+    Display::_printer("Updating DB Schema #".$dbversion);
+
+    //Increment version to next stage
+    $dbversion++;
+}
+  
+
 // update dbversion
 if ($dbversion != $_CONFIG['dbversion']) {
     $db->SetConfig('dbversion',$dbversion);

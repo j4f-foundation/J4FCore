@@ -51,13 +51,16 @@ class Transaction {
         $this->from = $from;
         $this->to = $to;
 		$this->amount = $amount;
-		$this->data = $data;
 
         if ($signed) {
+			$this->data = $data;
             $this->hash = $hash;
             $this->signature = $signature;
             $this->timestamp = $timestamp;
         } else {
+
+			$this->data = Tools::str2bytesHex($data);
+			
             //Guardamos el tiempo en el que se crea la transaccion
             $this->timestamp = Tools::GetGlobalTime();
             if ($sign = Pki::encrypt($this->message(), $privKey,$password)) {

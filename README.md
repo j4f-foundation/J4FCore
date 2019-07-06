@@ -31,9 +31,9 @@ PHP cryptocurrency from scratch
 - ~~Multithread~~
 - ~~CLI Wallet~~
 - ~~GUI Wallet~~
+- Improve Smart Contract with MXDity
 - Improve peer system
 - Improve sanity system
-- Implement SmartContract
   
 # Links
 [Explorer TESTNET](https://testnet.mataxetos.es)
@@ -43,9 +43,11 @@ PHP cryptocurrency from scratch
 [JSON-RPC/HTTP API](https://github.com/mataxetos/MXC/wiki/API-JSON-RPC-HTTP)
 
 # IRC
-Server: irc.mataxetos.es
 
-Channel: #mxc
+If you want to talk about the development of currency or need support to run a node, connect to the IRC network!
+
+- Server: irc.mataxetos.es
+- Channel: #mxc
 
 [WebChat IRC](https://kiwiirc.com/nextclient/irc.mataxetos.es/mxc/)
 

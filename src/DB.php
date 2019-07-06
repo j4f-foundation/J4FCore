@@ -840,8 +840,20 @@ class DB {
         if (!empty($infoBlock)) {
 
             //Start Transactions
-            $this->db->begin_transaction();
+			$this->db->begin_transaction();
 
+			//Remove SmartContracts of this block
+			$sqlRemoveSmartContracts = "
+			DELETE FROM smart_contracts WHERE txn_hash IN (
+				SELECT txn_hash
+				FROM transactions
+				WHERE wallet_to = 'VTx00000000000000000000000000000000'
+				AND data <> '0x'
+				AND block_hash = '".$infoBlock['block_hash']."'
+			);
+			";
+			$this->db->query($sqlRemoveSmartContracts);
+			
             //Remove transactions of block from blockchain
             $sqlRemoveTransactions = "DELETE FROM transactions WHERE block_hash = '".$infoBlock['block_hash']."';";
             if ($this->db->query($sqlRemoveTransactions)) {
@@ -881,7 +893,19 @@ class DB {
             //Start Transactions
             $this->db->begin_transaction();
 
-            //Remove transactions of block from blockchain
+			//Remove SmartContracts of this block
+			$sqlRemoveSmartContracts = "
+			DELETE FROM smart_contracts WHERE txn_hash IN (
+				SELECT txn_hash
+				FROM transactions
+				WHERE wallet_to = 'VTx00000000000000000000000000000000'
+				AND data <> '0x'
+				AND block_hash = '".$infoBlock['block_hash']."'
+			);
+			";
+			$this->db->query($sqlRemoveSmartContracts);
+
+			//Remove transactions of block from blockchain
             $sqlRemoveTransactions = "DELETE FROM transactions WHERE block_hash = '".$infoBlock['block_hash']."';";
             if ($this->db->query($sqlRemoveTransactions)) {
 
@@ -910,11 +934,28 @@ class DB {
      * @param int $height
      */
     public function RemoveLastBlocksFrom($height) {
+		
+		//Remove SmartContracts of this block
+		$this->db->query("
+		DELETE FROM smart_contracts WHERE txn_hash IN (
+			SELECT txn_hash
+			FROM transactions
+			WHERE wallet_to = 'VTx00000000000000000000000000000000'
+			AND data <> '0x'
+			AND block_hash IN (
+				SELECT block_hash FROM blocks WHERE height > ".$height."
+			)
+		);
+		");
+
+		//Remove transactions
         $this->db->query("
         DELETE FROM transactions WHERE block_hash IN (
           SELECT block_hash FROM blocks WHERE height > ".$height."
-        )
-        ");
+		);
+		");
+
+		//Remove block
         $this->db->query("DELETE FROM blocks WHERE height > ".$height);
     }
 
@@ -1133,6 +1174,64 @@ class DB {
             }
         }
         return $blocksToSync;
+    }
+
+	/**
+     * Add a Smart Contract in the chaindata
+     *
+     * @param string $contractHash
+     * @param string $txn_hash
+	 * @param string $codeHexBytes
+	 * @param string $dataHexBytes
+     * @return bool
+     */
+    public function addSmartContract($contractHash,$txn_hash,$codeHexBytes,$dataHexBytes) {
+
+        $error = false;
+
+        $info_contract_chaindata = $this->db->query("SELECT contract_hash FROM smart_contracts WHERE contract_hash = '".$contractHash."';")->fetch_assoc();
+        if (empty($info_contract_chaindata)) {
+
+            //Start Transactions
+            $this->db->begin_transaction();
+
+            //SQL Insert Block
+            $sqlInsertContract = "INSERT INTO smart_contracts (contract_hash,txn_hash,code,data)
+            VALUES ('".$contractHash."','".$txn_hash."','".$codeHexBytes."','".$dataHexBytes."');";
+
+            //Add block into blockchain
+            if (!$this->db->query($sqlInsertContract)) {
+                $error = true;
+            }
+        }
+
+        //If have error, rollback action
+        if ($error) {
+            $this->db->rollback();
+            return false;
+        }
+
+        //No errors, contract added
+        else {
+            $this->db->commit();
+            return true;
+        }
+	}
+	
+    /**
+     * Returns a contract given a transaction hash
+     *
+     * @param $txn_hash
+     * @return mixed
+     */
+    public function GetContractByTxn($txn_hash) {
+
+        $sql = "SELECT * FROM smart_contracts WHERE txn_hash = '".$txn_hash."';";
+        $info_contract = $this->db->query($sql)->fetch_assoc();
+        if (!empty($info_contract)) {
+            return $info_contract;
+        }
+        return null;
     }
 
     /**

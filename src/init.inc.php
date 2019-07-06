@@ -41,6 +41,8 @@ include(__DIR__.'/Transaction.php');
 include(__DIR__.'/Miner.php');
 include(__DIR__.'/GenesisBlock.php');
 include(__DIR__.'/Peer.php');
+include(__DIR__.'/MXVM.php');
+include(__DIR__.'/../mxdity/js.php');
 
 //MXC Version
 define('VERSION','0.1.0');

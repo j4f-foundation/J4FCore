@@ -70,7 +70,7 @@ class Miner {
 		$total_amount_to_miner = bcadd($total_amount_to_miner,strval($currentReward),8);
 
         //We created the mining reward txn + fees txns
-        $tx = new Transaction(null,$gossip->coinbase, $total_amount_to_miner, $gossip->key->privKey,"","","Reward Miner");
+        $tx = new Transaction(null,$gossip->coinbase, $total_amount_to_miner, $gossip->key->privKey,"","");
 
         //We take all pending transactions
         $transactions = array($tx);
