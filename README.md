@@ -44,7 +44,10 @@ PHP cryptocurrency from scratch
 
 # IRC
 Server: irc.mataxetos.es
+
 Channel: #mxc
+
+[WebChat IRC](https://kiwiirc.com/nextclient/irc.mataxetos.es/mxc/)
 
 # How run
 - Clone repository on root website folder
