@@ -32,6 +32,8 @@ PHP cryptocurrency from scratch
 - ~~CLI Wallet~~
 - ~~GUI Wallet~~
 - Improve peer system
+- Improve sanity system
+- Implement SmartContract
   
 # Links
 [Explorer TESTNET](https://testnet.mataxetos.es)
