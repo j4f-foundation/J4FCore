@@ -199,7 +199,7 @@ class Blockchain {
 
         $totalFees = "0";
         foreach ($pendingTransactions as $txn) {
-            $new_txn = new Transaction($txn['wallet_from_key'],$txn['wallet_to'], $txn['amount'], null,null, $txn['tx_fee'],true, $txn['txn_hash'], $txn['signature'], $txn['timestamp']);
+            $new_txn = new Transaction($txn['wallet_from_key'],$txn['wallet_to'], $txn['amount'], null,null, $txn['tx_fee'],$txn['data'],true, $txn['txn_hash'], $txn['signature'], $txn['timestamp']);
             if ($new_txn->isValid()) {
                 if ($txn['tx_fee'] == 3)
                     $totalFees = bcadd($totalFees,"0.00001400",8);

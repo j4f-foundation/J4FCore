@@ -53,7 +53,8 @@ class Miner {
         $total_amount_to_miner = "0";
 
         //We calculate the commissions of the pending transactions
-        $totalFees = Blockchain::GetFeesOfTransactions($transactions_pending);
+		$totalFees = Blockchain::GetFeesOfTransactions($transactions_pending);
+		
         if ($totalFees == null) {
             Display::_error("Can't get total fees of transactions. Cancelling mining");
             return null;
@@ -66,17 +67,17 @@ class Miner {
         $currentReward = Blockchain::getRewardByHeight($lastBlock['height']+1);
 
         //we add the reward with transaction fees
-        $total_amount_to_miner = bcadd($total_amount_to_miner,strval($currentReward),8);
+		$total_amount_to_miner = bcadd($total_amount_to_miner,strval($currentReward),8);
 
         //We created the mining reward txn + fees txns
-        $tx = new Transaction(null,$gossip->coinbase, $total_amount_to_miner, $gossip->key->privKey,"","");
+        $tx = new Transaction(null,$gossip->coinbase, $total_amount_to_miner, $gossip->key->privKey,"","","Reward Miner");
 
         //We take all pending transactions
         $transactions = array($tx);
 
         //We add pending transactions
         foreach ($transactions_pending as $txn) {
-            $new_txn = new Transaction($txn['wallet_from_key'],$txn['wallet_to'], $txn['amount'], null,null, $txn['tx_fee'],true, $txn['txn_hash'], $txn['signature'], $txn['timestamp']);
+            $new_txn = new Transaction($txn['wallet_from_key'],$txn['wallet_to'], $txn['amount'], null,null, $txn['tx_fee'], $txn['data'], true, $txn['txn_hash'], $txn['signature'], $txn['timestamp']);
             if ($new_txn->isValid())
                 $transactions[] = $new_txn;
         }

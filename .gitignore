@@ -22,7 +22,6 @@ tmp/TX_INFO
 tmp/PROPAGATE_BLOCK
 tmp/NEW_BLOCK
 tmp/main_thread_time
-tmp/db.update
 CONFIG.php
 bin/GENESIS_TESTNET.bat
 index_explorer.php

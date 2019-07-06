@@ -110,11 +110,13 @@ class BootstrapNode {
             'action' => 'LASTBLOCKNUM'
         );
 
-        $infoPOST = Tools::postContent('https://' . $ip . '/gossip.php', $infoToSend);
-        if ($infoPOST->status == 1)
-            return $infoPOST->result;
-        else
-            return 0;
+		$infoPOST = Tools::postContent('https://' . $ip . '/gossip.php', $infoToSend);
+		if ($infoPOST != null) {
+			if ($infoPOST->status == 1)
+				return $infoPOST->result;
+			else
+				return 0;			
+		}
     }
 
     /**

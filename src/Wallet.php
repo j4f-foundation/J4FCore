@@ -485,14 +485,14 @@ class Wallet {
      * @param $cli
      * @return string
      */
-    public static function SendTransaction($wallet_from,$wallet_from_password,$wallet_to,$amount,$tx_fee,$isTestNet=false,$cli=true) {
+    public static function SendTransaction($wallet_from,$wallet_from_password,$wallet_to,$amount,$tx_fee,$data,$isTestNet=false,$cli=true) {
 
         //Instance the pointer to the chaindata
         $chaindata = new DB();
 
         //Comprobamos si estamos sincronizados o no
         $lastBlockNum = BootstrapNode::GetLastBlockNum($chaindata,$isTestNet);
-        $lastBlockNum_Local = $chaindata->GetNextBlockNum();
+		$lastBlockNum_Local = $chaindata->GetNextBlockNum();
 
         if ($lastBlockNum != $lastBlockNum_Local)
             return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." Blockchain it is not synchronized".PHP_EOL;
@@ -534,7 +534,7 @@ class Wallet {
                     $amount = bcsub($amount,"0.00000250",8);
 
                 //Make transaction and sign
-                $transaction = new Transaction($wallet_from_info["public"],$wallet_to,$amount,$wallet_from_info["private"],$wallet_from_password,$tx_fee);
+                $transaction = new Transaction($wallet_from_info["public"],$wallet_to,$amount,$wallet_from_info["private"],$wallet_from_password,$tx_fee,$data);
 
                 // Check if transaction is valid
                 if ($transaction->isValid()) {
@@ -568,7 +568,7 @@ class Wallet {
         }
     }
 
-    public static function API_SendTransaction($wallet_from,$wallet_from_password,$wallet_to,$amount,$tx_fee,$isTestNet=false,$cli=true) {
+    public static function API_SendTransaction($wallet_from,$wallet_from_password,$wallet_to,$amount,$tx_fee,$data,$isTestNet=false,$cli=true) {
 
         //Instance the pointer to the chaindata
         $chaindata = new DB();
@@ -617,7 +617,7 @@ class Wallet {
                     $amount = bcsub($amount,"0.00000250",8);
 
                 //Make transaction and sign
-                $transaction = new Transaction($wallet_from_info["public"],$wallet_to,$amount,$wallet_from_info["private"],$wallet_from_password,$tx_fee);
+                $transaction = new Transaction($wallet_from_info["public"],$wallet_to,$amount,$wallet_from_info["private"],$wallet_from_password,$tx_fee,$data);
 
                 // Check if transaction is valid
                 if ($transaction->isValid()) {

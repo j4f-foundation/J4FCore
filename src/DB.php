@@ -499,8 +499,8 @@ class DB {
                 //Start Transactions
                 $this->db->begin_transaction();
 
-                $sqlInsertTransaction = "INSERT INTO transactions_pending (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, timestamp) 
-                    VALUES ('','" . $transaction->txn_hash . "','" . $transaction->wallet_from_key . "','" . $transaction->wallet_from . "','" . $transaction->wallet_to . "','" . $transaction->amount . "','" . $transaction->signature . "','" . $transaction->tx_fee . "','" . $transaction->timestamp . "');";
+                $sqlInsertTransaction = "INSERT INTO transactions_pending (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp) 
+                    VALUES ('','" . $transaction->txn_hash . "','" . $transaction->wallet_from_key . "','" . $transaction->wallet_from . "','" . $transaction->wallet_to . "','" . $transaction->amount . "','" . $transaction->signature . "','" . $transaction->tx_fee . "','" . $transaction->data . "','" . $transaction->timestamp . "');";
 
                 //Commit transaction
                 if ($this->db->query($sqlInsertTransaction)) {
@@ -535,8 +535,8 @@ class DB {
                 //Start Transactions
                 $this->db->begin_transaction();
 
-                $sqlInsertTransaction = "INSERT INTO transactions_pending (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, timestamp) 
-                    VALUES ('','" . $transaction['txn_hash'] . "','" . $transaction['wallet_from_key'] . "','" . $transaction['wallet_from'] . "','" . $transaction['wallet_to'] . "','" . $transaction['amount'] . "','" . $transaction['signature'] . "','" . $transaction['tx_fee'] . "','" . $transaction['timestamp'] . "');";
+                $sqlInsertTransaction = "INSERT INTO transactions_pending (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp) 
+                    VALUES ('','" . $transaction['txn_hash'] . "','" . $transaction['wallet_from_key'] . "','" . $transaction['wallet_from'] . "','" . $transaction['wallet_to'] . "','" . $transaction['amount'] . "','" . $transaction['signature'] . "','" . $transaction['tx_fee'] . "','" . $transaction['data'] . "','" . $transaction['timestamp'] . "');";
 
                 //Commit transaction
                 if ($this->db->query($sqlInsertTransaction)) {
@@ -572,8 +572,8 @@ class DB {
                     //Start Transactions
                     $this->db->begin_transaction();
 
-                    $sqlInsertTransaction = "INSERT INTO transactions_pending (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, timestamp) 
-                    VALUES ('','".$transaction->txn_hash."','".$transaction->wallet_from_key."','".$transaction->wallet_from."','".$transaction->wallet_to."','".$transaction->amount."','".$transaction->signature."','".$transaction->tx_fee."','".$transaction->timestamp."');";
+                    $sqlInsertTransaction = "INSERT INTO transactions_pending (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp) 
+                    VALUES ('','".$transaction->txn_hash."','".$transaction->wallet_from_key."','".$transaction->wallet_from."','".$transaction->wallet_to."','".$transaction->amount."','".$transaction->signature."','".$transaction->tx_fee."','".$transaction->data."','".$transaction->timestamp."');";
 
                     //Commit transaction
                     if ($this->db->query($sqlInsertTransaction)) {
@@ -652,8 +652,8 @@ class DB {
             //Start Transactions
             $this->db->begin_transaction();
 
-            $sqlInsertPendingTransactionToSend = "INSERT INTO transactions_pending_to_send (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, timestamp) 
-                    VALUES ('','".$transaction->message()."','".$wallet_from_pubkey."','".$wallet_from."','".$transaction->to."','".$transaction->amount."','".$transaction->signature."','".$transaction->tx_fee."','".$transaction->timestamp."');";
+            $sqlInsertPendingTransactionToSend = "INSERT INTO transactions_pending_to_send (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp) 
+                    VALUES ('','".$transaction->message()."','".$wallet_from_pubkey."','".$wallet_from."','".$transaction->to."','".$transaction->amount."','".$transaction->signature."','".$transaction->tx_fee."','".$transaction->data."','".$transaction->timestamp."');";
 
             //Commit transaction
             if ($this->db->query($sqlInsertPendingTransactionToSend)) {
@@ -740,8 +740,8 @@ class DB {
                         $wallet_from = Wallet::GetWalletAddressFromPubKey($transaction->from);
                     }
 
-                    $sql_update_transactions = "INSERT INTO transactions (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, timestamp) 
-                    VALUES ('".$blockInfo->hash."','".$transaction->message()."','".$wallet_from_pubkey."','".$wallet_from."','".$transaction->to."','".$transaction->amount."','".$transaction->signature."','".$transaction->tx_fee."','".$transaction->timestamp."');";
+                    $sql_update_transactions = "INSERT INTO transactions (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp) 
+                    VALUES ('".$blockInfo->hash."','".$transaction->message()."','".$wallet_from_pubkey."','".$wallet_from."','".$transaction->to."','".$transaction->amount."','".$transaction->signature."','".$transaction->tx_fee."','".$transaction->data."','".$transaction->timestamp."');";
                     if (!$this->db->query($sql_update_transactions)) {
                         $error = true;
                         break;
@@ -795,8 +795,8 @@ class DB {
 
                 foreach ($blockInfo['transactions'] as $transaction) {
 
-                    $sqlInsertTransaction = "INSERT INTO transactions (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, timestamp) 
-                    VALUES ('".$blockInfo['block_hash']."','".$transaction['txn_hash']."','".$transaction['wallet_from_key']."','".$transaction['wallet_from']."','".$transaction['wallet_to']."','".$transaction['amount']."','".$transaction['signature']."','".$transaction['tx_fee']."','".$transaction['timestamp']."');";
+                    $sqlInsertTransaction = "INSERT INTO transactions (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp) 
+                    VALUES ('".$blockInfo['block_hash']."','".$transaction['txn_hash']."','".$transaction['wallet_from_key']."','".$transaction['wallet_from']."','".$transaction['wallet_to']."','".$transaction['amount']."','".$transaction['signature']."','".$transaction['tx_fee']."','".$transaction['data']."','".$transaction['timestamp']."');";
                     if (!$this->db->query($sqlInsertTransaction)) {
                         $error = true;
                         break;

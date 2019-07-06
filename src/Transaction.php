@@ -29,7 +29,8 @@ class Transaction {
     public $amount;
     public $signature;
     public $timestamp;
-    public $tx_fee;
+	public $tx_fee;
+	public $data;
 
     /**
      * Transaction constructor.
@@ -44,12 +45,13 @@ class Transaction {
      * @param null $signature
      * @param null $timestamp
      */
-    public function __construct($from,$to,$amount,$privKey,$password="",$tx_fee,$signed=false,$hash=null,$signature=null,$timestamp=null)
+    public function __construct($from,$to,$amount,$privKey,$password="",$tx_fee,$data='',$signed=false,$hash=null,$signature=null,$timestamp=null)
     {
         $this->tx_fee = ($tx_fee != null) ? $tx_fee:'';
         $this->from = $from;
         $this->to = $to;
-        $this->amount = $amount;
+		$this->amount = $amount;
+		$this->data = $data;
 
         if ($signed) {
             $this->hash = $hash;
@@ -73,7 +75,7 @@ class Transaction {
      * @return string
      */
     public function message() {
-        return PoW::hash($this->from.$this->to.$this->amount.$this->timestamp);
+        return PoW::hash($this->from.$this->to.$this->amount.$this->timestamp.$this->data);
     }
 
     /**

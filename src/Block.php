@@ -112,7 +112,7 @@ class Block {
      *
      */
     public static function createGenesis($coinbase, $privKey, $amount, $isTestNet=false) {
-        $transactions = array(new Transaction(null,$coinbase,$amount,$privKey,"",""));
+        $transactions = array(new Transaction(null,$coinbase,$amount,$privKey,"","","Genesis Txn"));
         //$genesisBlock = new Block("",1, $transactions);
 
         Display::_printer("Start minning GENESIS block with " . count($transactions) . " txns - SubProcess: " . MINER_MAX_SUBPROCESS);
@@ -237,18 +237,18 @@ class Block {
         //Get miner transaction
         $minerTransaction = $this->GetMinerTransaction();
         if ($minerTransaction == null)
-            return false;
+			return false;
 
         //Get total fees
         $totalFeesTransactionBlock = $this->GetFeesOfTransactions();
         if ($totalFeesTransactionBlock == null)
-            return false;
+			return false;
 
         //Subtract total transaction fees from total mining transaction, result = miner reward
-        $minerRewardBlock = $minerTransaction->amount - $totalFeesTransactionBlock;
+		$minerRewardBlock = $minerTransaction->amount - $totalFeesTransactionBlock;
 
         //Calc reward by height
-        $currentReward = Blockchain::getRewardByHeight($heightBlock,$isTestNet);
+		$currentReward = Blockchain::getRewardByHeight($heightBlock,$isTestNet);
 
         return ($minerRewardBlock == $currentReward);
     }

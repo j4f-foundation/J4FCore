@@ -84,7 +84,7 @@ if ($id != null) {
             );
             die(json_encode($response_jsonrpc));
         }
-    }
+	}
 
     //Check if have method
     if (strlen($method) > 0) {
@@ -94,8 +94,7 @@ if ($id != null) {
             //Instantiate database blockchain
             $chaindata = new DB();
 
-            $isTestnet = ($chaindata->GetConfig('network') == 'testnet') ? true:false;
-
+			$isTestnet = ($chaindata->GetConfig('network') == 'testnet') ? true:false;
 
             switch ($method) {
 
@@ -351,9 +350,11 @@ if ($id != null) {
                             }
                         }
 
-                        $password = ($params['password'] == 'null') ? '':$params['password'];
+						$password = ($params['password'] == 'null') ? '':$params['password'];
 
-                        $txnHash = Wallet::API_SendTransaction($params['from'],$password,$params['to'],$params['amount'],$fee,$isTestnet);
+						$data = (isset($params['data'])) ? $params['data']:null;
+
+                        $txnHash = Wallet::API_SendTransaction($params['from'],$password,$params['to'],$params['amount'],$fee,$data,$isTestnet);
 
                         //Check if transaction have error
                         if (strpos($txnHash,'Error') !== false) {

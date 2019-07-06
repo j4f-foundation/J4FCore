@@ -94,14 +94,15 @@ if (isset($argv)) {
 
     $wallet_from = $argv[1];
     $wallet_to = $argv[2];
-    $amount = $argv[3];
+	$amount = $argv[3];
+	$data = $argv[7];
 
     if ($argv[4] != "null")
         $wallet_from_password = $argv[4];
     else
         $wallet_from_password = "";
 
-    echo Wallet::SendTransaction($wallet_from,$wallet_from_password,$wallet_to,$amount,$tx_fee,$isTestNet);
+    echo Wallet::SendTransaction($wallet_from,$wallet_from_password,$wallet_to,$amount,$tx_fee,$data,$isTestNet);
 } else {
     Display::ClearScreen();
     echo "Example of use:".PHP_EOL;

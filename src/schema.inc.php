@@ -144,6 +144,29 @@ if ($dbversion == 0) {
     $dbversion++;
 }
 
+if ($dbversion == 1) {
+
+    $db->db->query("
+	ALTER TABLE `transactions`
+	ADD COLUMN `data`  longblob NOT NULL AFTER `tx_fee`;
+    ");
+
+    $db->db->query("
+	ALTER TABLE `transactions_pending`
+	ADD COLUMN `data`  longblob NOT NULL AFTER `tx_fee`;
+	");
+	
+    $db->db->query("
+	ALTER TABLE `transactions_pending_to_send`
+	ADD COLUMN `data`  longblob NOT NULL AFTER `tx_fee`;
+	");
+
+    Display::_printer("Updating DB Schema #".$dbversion);
+
+    //Increment version to next stage
+    $dbversion++;
+}
+
 // update dbversion
 if ($dbversion != $_CONFIG['dbversion']) {
     $db->SetConfig('dbversion',$dbversion);
