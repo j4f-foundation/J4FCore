@@ -221,7 +221,7 @@ class Blockchain {
 					js::define("msg",
 						array(),
 						array(
-							"sender"=> $transaction->from,
+							"sender"=> Wallet::GetWalletAddressFromPubKey($transaction->from),
 						)
 					);
 				

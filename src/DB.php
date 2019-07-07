@@ -1232,7 +1232,23 @@ class DB {
             return $info_contract;
         }
         return null;
-    }
+	}
+	
+    /**
+     * Returns a contract given a hash
+     *
+     * @param $txn_hash
+     * @return mixed
+     */
+    public function GetContractByHash($contract_hash) {
+
+        $sql = "SELECT * FROM smart_contracts WHERE contract_hash = '".$contract_hash."';";
+        $info_contract = $this->db->query($sql)->fetch_assoc();
+        if (!empty($info_contract)) {
+            return $info_contract;
+        }
+        return null;
+	}
 
     /**
      * Check that the basic tables exist for the blockchain to work

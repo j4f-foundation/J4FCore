@@ -48,11 +48,15 @@ class BootstrapNode {
             'action' => 'GETPEERS'
         );
 
-        $infoPOST = Tools::postContent('https://' . $ip . '/gossip.php', $infoToSend);
-        if ($infoPOST->status == 1)
-            return $infoPOST->result;
-        else
-            return 0;
+		$infoPOST = Tools::postContent('https://' . $ip . '/gossip.php', $infoToSend);
+		if ($infoPOST != null) {
+			if ($infoPOST->status == 1)
+				return $infoPOST->result;
+			else
+				return 0;
+		}
+		else
+			return 0;
     }
 
     /**
@@ -79,11 +83,15 @@ class BootstrapNode {
             'action' => 'GETPENDINGTRANSACTIONS'
         );
 
-        $infoPOST = Tools::postContent('https://' . $ip . '/gossip.php', $infoToSend);
-        if ($infoPOST->status == 1)
-            return $infoPOST->result;
-        else
-            return 0;
+		$infoPOST = Tools::postContent('https://' . $ip . '/gossip.php', $infoToSend);
+		if ($infoPOST != null) {
+			if ($infoPOST->status == 1)
+				return $infoPOST->result;
+			else
+				return 0;
+		}
+		else
+			return 0;
     }
 
     /**
@@ -117,6 +125,8 @@ class BootstrapNode {
 			else
 				return 0;			
 		}
+		else
+			return 0;
     }
 
     /**
@@ -142,10 +152,14 @@ class BootstrapNode {
         $infoToSend = array(
             'action' => 'GETGENESIS'
         );
-        $infoPOST = Tools::postContent('https://' . $ip . '/gossip.php', $infoToSend);
-        if ($infoPOST->status == 1)
-            return $infoPOST->result;
-        else
+		$infoPOST = Tools::postContent('https://' . $ip . '/gossip.php', $infoToSend);
+		if ($infoPOST != null) {
+			if ($infoPOST->status == 1)
+				return $infoPOST->result;
+			else
+				return 0;
+		}
+		else
             return 0;
     }
 
@@ -173,10 +187,14 @@ class BootstrapNode {
             'action' => 'SYNCBLOCKS',
             'from' => $lastBlockOnLocalBlockChain
         );
-        $infoPOST = Tools::postContent('https://' . $ip . '/gossip.php', $infoToSend);
-        if ($infoPOST->status == 1)
-            return $infoPOST->result;
-        else
+		$infoPOST = Tools::postContent('https://' . $ip . '/gossip.php', $infoToSend);
+		if ($infoPOST != null) {
+			if ($infoPOST->status == 1)
+				return $infoPOST->result;
+			else
+				return 0;
+		}
+		else
             return 0;
     }
 }

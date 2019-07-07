@@ -30,3 +30,5 @@ tmp/db.update
 mxdity/example_contract.php
 bin/SANITY_100.bat
 tmp/sync_with_peer
+.htaccess
+web_contract.php

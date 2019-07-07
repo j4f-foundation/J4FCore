@@ -2473,8 +2473,31 @@ class js_ref_null extends js_ref {
     	parent::__construct(NULL, $propName);
   	}
   	function getValue() {
-    	echo "\nMXVM_ERROR:: Trying to read ".$this->propName.", but that's not defined.<hr>";
-    	throw new js_exception(new js_referenceerror(dump_object($this)));
+
+		//Check if MXVM is on node (MainProcess)
+		try {
+			$method = new ReflectionMethod( 'Display::_error' );
+			if ($method->isStatic()) {
+				//Show error
+				Display::_error("MXVM_ERROR:: Trying to read ".$this->propName.", but that's not defined.");
+			}
+		}
+		catch ( ReflectionException $e ) {
+
+			//Check if MXVM is on node (SubProcess)
+			try {
+				$method = new ReflectionMethod( 'Blockchain::checkDifficulty' );
+				if ($method->isStatic()) {
+					Tools::writeLog("MXVM_ERROR:: Trying to read ".$this->propName.", but that's not defined.");
+				}
+			}
+			catch ( ReflectionException $e ) {
+
+				//We are not in a node process
+				echo "\nMXVM_ERROR:: Trying to read ".$this->propName.", but that's not defined.<hr>";
+			}
+		}
+    	throw new Exception();
   	}
   	function putValue($w, $ret=0) {
 		jsrt::$global->put($this->propName, $w);
