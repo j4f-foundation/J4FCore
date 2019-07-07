@@ -186,7 +186,45 @@ if ($dbversion == 2) {
     //Increment version to next stage
     $dbversion++;
 }
-  
+
+if ($dbversion == 3) {
+	
+    $db->db->query("
+	ALTER TABLE `transactions`
+	MODIFY COLUMN `wallet_to`  varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `wallet_from`;
+	");
+
+    $db->db->query("
+	ALTER TABLE `transactions_pending`
+	MODIFY COLUMN `wallet_to`  varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `wallet_from`;
+	");
+
+    $db->db->query("
+	ALTER TABLE `transactions_pending_to_send`
+	MODIFY COLUMN `wallet_to`  varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `wallet_from`;
+	");
+
+
+	$db->db->query("
+	ALTER TABLE `transactions`
+	MODIFY COLUMN `wallet_from`  varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL AFTER `wallet_from_key`;
+	");
+
+	$db->db->query("
+	ALTER TABLE `transactions_pending`
+	MODIFY COLUMN `wallet_from`  varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL AFTER `wallet_from_key`;
+	");
+
+	$db->db->query("
+	ALTER TABLE `transactions_pending_to_send`
+	MODIFY COLUMN `wallet_from`  varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL AFTER `wallet_from_key`;
+	");
+
+    Display::_printer("Updating DB Schema #".$dbversion);
+
+    //Increment version to next stage
+    $dbversion++;
+}
 
 // update dbversion
 if ($dbversion != $_CONFIG['dbversion']) {
