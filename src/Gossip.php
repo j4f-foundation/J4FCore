@@ -303,7 +303,7 @@ class Gossip {
      *
      * @return  bool
      */
-    private function _addBootstrapNode() {
+    public function _addBootstrapNode() {
 
         if ($this->isTestNet) {
             $ip = NODE_BOOTSTRAP_TESTNET;
@@ -385,7 +385,7 @@ class Gossip {
     /**
      * Check the connection with the peers, if they do not respond remove them
      */
-    private function CheckConnectionWithPeers() {
+    public function CheckConnectionWithPeers() {
 
         //Run subprocess peerAlive per peer
         $peers = $this->chaindata->GetAllPeers();
@@ -406,7 +406,7 @@ class Gossip {
     /**
      * Set the title of the process with useful information
      */
-    private function SetTitleProcess() {
+    public function SetTitleProcess() {
         $title = "PhpMX client";
         $title .= " | PeerID: " . substr(PoW::hash($this->ip . $this->port), 0, 18);
         if ($this->connected_to_bootstrap || $this->bootstrap_node)
@@ -434,7 +434,7 @@ class Gossip {
     /**
      * This loop only run this loop only runs 1 time of 5 main loop
      */
-    private function loop_x5() {
+    public function loop_x5() {
         $this->loop_x5++;
         if ($this->loop_x5 == 5) {
             $this->loop_x5 = 0;
@@ -471,7 +471,7 @@ class Gossip {
     /**
      * This loop only run this loop only runs 1 time of 5 main loop
      */
-    private function loop_x10() {
+    public function loop_x10() {
         $this->loop_x10++;
         if ($this->loop_x10 == 10) {
             $this->loop_x10 = 0;
@@ -811,7 +811,7 @@ class Gossip {
 	/**
 	 * Mine process
 	 */
-	private function mineProcess() {
+	public function mineProcess() {
 		//Enable Miners if not enabled
 		if (@!file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MINERS_STARTED)) {
 
@@ -904,7 +904,10 @@ class Gossip {
 						//Add this block on local blockchain
 						if ($this->chaindata->addBlock($nextHeight,$blockMined)) {
 							//Make SmartContracts on local blockchain
-							Blockchain::MakeSmartContracts($this->chaindata,$blockMined);	
+							Blockchain::MakeSmartContracts($this->chaindata,$blockMined);
+
+							//Call Functions of SmartContracts on local blockchain
+							Blockchain::CallFunctionSmartContract($this->chaindata,$blockMined);
 						}
 					} else {
 						Display::_error("Block reward not valid");

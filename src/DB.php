@@ -1217,6 +1217,38 @@ class DB {
             return true;
         }
 	}
+
+	/**
+     * Update storedData of Contract in the chaindata
+     *
+     * @param string $contractHash
+	 * @param string $dataHexBytes
+     * @return bool
+     */
+    public function updateStoredDataContract($contractHash,$dataHexBytes) {
+
+        $error = false;
+
+		//Start Transactions
+		$this->db->begin_transaction();
+
+		//SQL Update storedData of Contract
+		if (!$this->db->query("UPDATE smart_contracts SET data = '".$dataHexBytes."' WHERE contract_hash = '".$contractHash."';")) {
+			$error = true;
+		}
+
+        //If have error, rollback action
+        if ($error) {
+            $this->db->rollback();
+            return false;
+        }
+
+        //No errors, contract added
+        else {
+            $this->db->commit();
+            return true;
+        }
+	}
 	
     /**
      * Returns a contract given a transaction hash

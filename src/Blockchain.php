@@ -173,6 +173,9 @@ class Blockchain {
 					//Make SmartContracts on local blockchain
 					Blockchain::MakeSmartContracts($chaindata,$blockMinedByPeer);
 
+					//Call Functions of SmartContracts on local blockchain
+					Blockchain::CallFunctionSmartContract($chaindata,$blockMinedByPeer);
+
                     if ($chaindata->GetConfig('isBootstrap') == 'on' && $chaindata->GetConfig('node_ip') == NODE_BOOTSTRAP)
                         Tools::SendMessageToDiscord($heightNewBlock,$blockMinedByPeer);
 
@@ -191,7 +194,7 @@ class Blockchain {
         }
     }
 
-/**
+	/**
      * Make Smart Contracts of this block
      * All nodes create smart contracts on blockchain (local)
      *
@@ -213,11 +216,14 @@ class Blockchain {
 				//Check if transaction is for make new contract
 				if ($transaction->to == 'VTx00000000000000000000000000000000' && $transaction->data != "0x") {
 
+					//Parse txn::data (contract code) to string
 					$contract_code = $transaction->data;
 					$code = Tools::bytesHex2str($contract_code);
 
+					//Merge code into MXDity::MakeContract
 					$code_parsed = MXVM::_init($code);
 
+					//Define sender Object
 					js::define("msg",
 						array(),
 						array(
@@ -225,6 +231,7 @@ class Blockchain {
 						)
 					);
 				
+					//Define contract Object
 					js::define("contract",
 						array(
 							"get" => "js_get", 
@@ -240,16 +247,24 @@ class Blockchain {
 					//Get Contract Hash
 					$contractHash = PoW::hash($contract_code.$transaction->from.$transaction->timestamp.$transaction->signature);
 
-					#-- Run Conctract
+					#Contract status - Default not created
 					$run_status = 0;
+
 					try {
+
+						//Run code
 						js::run($code_parsed,$contractHash);
+
+						//Contract status - OK
 						$run_status = 1;
+
 					} catch (Exception $e) {
+
+						//Contract status - Error
 						$run_status = -1;
 					}
 
-					// If run contract its OK, save this contract
+					// If status contract its OK, save this contract
 					if ($run_status == 1) {
 
 						//Get data contract
@@ -257,6 +272,104 @@ class Blockchain {
 
 						//Add SmartContract on blockchain (local)
 						$chaindata->addSmartContract($contractHash,$transaction->hash,$contract_code,$contractData);
+					}
+				}
+			}
+		}
+	}
+	
+	/**
+     * Call a function of Contracts
+     *
+     * @param DB $chaindata
+     * @param Block $lastBlock
+     * @param Block $blockMinedByPeer
+     * @return bool
+     */
+    public static function CallFunctionSmartContract(&$chaindata,$block) {
+
+		//Obteemos todas las transacciones del bloque
+		//Si alguna transaccion va dirigida a 00000
+
+		foreach ($block->transactions as $transaction) {
+
+			//Check if transaction is valid
+			if ($transaction->isValid()) {
+
+				//Txn to Contract
+				if ((strlen($transaction->to) > 64) && $transaction->data != "0x") {
+					$contract = $chaindata->GetContractByHash($transaction->to);
+					if ($contract != null) {
+						//Display::_printer('CONTRACT HASH: ' . $contract->contract_hash);
+
+						//Parse txn::data (call code) to string
+						$call_code_hex = $transaction->data;
+						$call_code = Tools::bytesHex2str($call_code_hex);
+
+						//Parse CALL Code
+						$code_call_info = MXVM::_parseCall($call_code);
+
+						//Parse contract code to string
+						$code_contract = Tools::bytesHex2str($contract['code']);
+
+						//Parse storageData of contract
+						$data_contract = @json_decode(Tools::bytesHex2str($contract['data']),true);
+
+						//Parse code MXDity::Call_Contract
+						$code_parsed = MXVM::call($code_contract,$code_call_info['func'],$code_call_info['func_params']);
+
+						//Define sender Object
+						js::define("msg",
+							array(),
+							array(
+								"sender"=> Wallet::GetWalletAddressFromPubKey($transaction->from),
+							)
+						);
+					
+						//Define contract Object
+						js::define("contract",
+							array(
+								"get" => "js_get", 
+								"set" => "js_set",
+								"table" => "js_table",
+								"table_set" => "js_table_set",
+								"table_get" => "js_table_get",
+								"table_get_sub" => "js_table_get_sub",
+							),
+							array()
+						);
+	
+						//Contract status - Default not created
+						$run_status = 0;
+
+						try {
+							//Set data of contract
+							MXVM::$data = @json_decode(Tools::bytesHex2str($contract['data']),true);
+
+							//Display::_printer($code_parsed);
+
+							//Run code
+							js::run($code_parsed);
+
+							//Contract status - OK
+							$run_status = 1;
+
+						} catch (Exception $e) {
+
+							//Contract status - Error
+							$run_status = -1;
+						}
+	
+						// If status contract its OK, save this contract
+						if ($run_status == 1) {
+	
+							//Get data contract
+							$contractData = Tools::str2bytesHex(json_encode(MXVM::$data));
+	
+							//Update StoredData of Smart Contract on blockchain (local)
+							$chaindata->updateStoredDataContract($contract['contract_hash'],$contractData);
+						}
+						
 					}
 				}
 			}
@@ -339,6 +452,9 @@ class Blockchain {
 
 						//Make SmartContracts on local blockchain
 						Blockchain::MakeSmartContracts($chaindata,$blockMinedByPeer);
+
+						//Call Functions of SmartContracts on local blockchain
+						Blockchain::CallFunctionSmartContract($chaindata,$blockMinedByPeer);
 
 						//Add this block in pending block (DISPLAY)
 						$chaindata->AddBlockToDisplay($blockMinedByPeer,"1x00000000");

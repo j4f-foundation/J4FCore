@@ -101,8 +101,12 @@ class Peer {
 
                             //We add block to blockchain
                             if ($gossip->chaindata->addBlock($nextHeight,$blockToImport)) {
+
 								//Make SmartContracts on local blockchain
 								Blockchain::MakeSmartContracts($gossip->chaindata,$blockToImport);
+
+								//Call Functions of SmartContracts on local blockchain
+								Blockchain::CallFunctionSmartContract($gossip->chaindata,$blockToImport);
 							}
 
                             //Save block pointer

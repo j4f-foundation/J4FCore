@@ -11,9 +11,9 @@ class MXVM {
 		$matches = array();
 		preg_match_all("/print\((.*)\);/",$code,$matches);
 		foreach ($matches as $match) {
-
-			if (strpos($match[0],'print') !== false)
-				$code_parsed = str_replace($match,'',$code_parsed);
+			if (count($match) > 0)
+				if (strpos($match[0],'print') !== false)
+					$code_parsed = str_replace($match,'',$code_parsed);
 		}
 
 		//Comment MXDity vars
@@ -24,6 +24,27 @@ class MXVM {
 		$code_parsed = str_replace('#define Precision',		'//define Precision',	$code_parsed);
 
 		return $code_parsed;
+
+	}
+
+	// Parse CALL Contract
+	public static function _parseCall($callCode) {
+
+		$call_parsed = array(
+			'func' => '',
+			'func_params' => array()
+		);
+		$e_callCode = explode(' ',$callCode);
+
+		//Save function to call
+		$call_parsed['func'] = $e_callCode[0];
+
+		//Save parameters
+		for ($i=1;$i<count($e_callCode);$i++) {
+			$call_parsed['func_params'][] = $e_callCode[$i];
+		}
+
+		return $call_parsed;
 
 	}
 
@@ -48,9 +69,7 @@ class MXVM {
 		return str_replace($matches[0],str_replace('Contract','var',$matches[0]),$code_parsed);
 	}
 
-	public static function call($code,$function,$params=array(),$storedData=array()) {
-
-		MXVM::$data = $storedData;
+	public static function call($code,$function,$params=array()) {
 
 		//Parse code
 		$code_parsed = MXVM::_parse($code);
@@ -73,10 +92,7 @@ class MXVM {
 		}
 
 		//Add run function of contract
-		$code_parsed = $code . $matches[1].'.'.$function.'('.$param.');';
-
-		//Comment pragma line
-		$code_parsed = str_replace('pragma mxdity','//pragma mxdity',$code_parsed);
+		$code_parsed = $code_parsed . $matches[1].'.'.$function.'('.$param.');';
 
 		//Replace Contract Keyword to var (Javascript dont accept Contract type var)
 		return str_replace($matches[0],str_replace('Contract','var',$matches[0]),$code_parsed);
