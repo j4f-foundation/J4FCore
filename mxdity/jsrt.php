@@ -2479,7 +2479,8 @@ class js_ref_null extends js_ref {
 			$method = new ReflectionMethod( 'Display::_error' );
 			if ($method->isStatic()) {
 				//Show error
-				Display::_error("MXVM_ERROR:: Trying to read ".$this->propName.", but that's not defined.");
+				//Display::_error("MXVM_ERROR::MakeContract -> Trying to read ".$this->propName.", but that's not defined.");
+				Tools::writeLog("MXVM_ERROR:: Trying to read ".$this->propName.", but that's not defined.");
 			}
 		}
 		catch ( ReflectionException $e ) {

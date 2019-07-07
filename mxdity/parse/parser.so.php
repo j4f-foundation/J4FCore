@@ -764,25 +764,7 @@ function send_parse_error_css_styles() {
 }
 class default_parser_strategy extends parser_strategy {
 	function stuck($token, $lex, $stack) {
-		send_parse_error_css_styles();
-		?>
-		<hr/>MXVC parse error. Source and grammar do not agree.<br/>
-		Looking at token:
-		<?php
-		span('term', $token->text, $token->type);
-		echo ' ['.$token->type.']';
-		echo "<br/>\n";
-		$lex->report_error();
-		echo "<br/>\n";
-
-		//echo "<hr/>\n";
-		//echo "Backtrace Follows:<br/>\n";
-		# pr($stack);
-		//while (count($stack)) {
-		//	$tos = array_pop($stack);
-		//	echo $tos->trace()."<br/>\n";
-		//}
-		throw new parse_error("Can't tell what to do with ".$token->type.".");
+		throw new Exception("Can't tell what to do with ".$token->type.".");
 	}
 	function assert_done($token, $lex) {
 		if ($token->type) $this->stuck($token, $lex, array());

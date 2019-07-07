@@ -137,9 +137,16 @@ class Peer {
                 } else if ($lastBlock['block_previous'] == $object->block_previous && $lastBlock['block_hash'] == $object->block_hash) {
                     continue;
                 } else {
-                    //Sanity last block and resync
-					$gossip->chaindata->RemoveBlock($lastBlock['height']);
-					Display::_warning("Sanity last block and re-sync       %G%height%W%=".$lastBlock['height']);
+
+					$numBlocksSanity = 50;
+					if ($lastBlock['height'] <= 50) {
+						$numBlocksSanity = 20;
+					}
+					$heightBlockFromRemove = $lastBlock['height'] - $numBlocksSanity;
+
+                    //Micro-Sanity last block and resync
+					$gossip->chaindata->RemoveLastBlocksFrom($heightBlockFromRemove);
+					Display::_warning("Started Micr-Sanity And re-sync       %G%height%W%=".$lastBlock['height']."	%G%newHeight%W%=".$heightBlockFromRemove);
 
 					Tools::clearTmpFolder();
 
