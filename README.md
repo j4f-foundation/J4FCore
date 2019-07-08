@@ -36,11 +36,11 @@ PHP cryptocurrency from scratch
 - Improve sanity system
   
 # Links
-[Explorer TESTNET](https://testnet.mataxetos.es)
+[Explorer TESTNET](https://testnet.j4f.dev)
 
-[Wallet Web](https://wallet.mataxetos.es)
+[Wallet Web](https://wallet.j4f.dev)
 
-[JSON-RPC/HTTP API](https://github.com/mataxetos/J4FCore/wiki/API-JSON-RPC-HTTP)
+[JSON-RPC/HTTP API](https://github.com/j4f-foundation/J4FCore/wiki/API-JSON-RPC-HTTP)
 
 # Discord
 
