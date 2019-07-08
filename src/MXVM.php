@@ -8,12 +8,53 @@ class MXVM {
 
 		$code_parsed = $code;
 
+		//Parse prints
 		$matches = array();
 		preg_match_all("/print\((.*)\);/",$code,$matches);
 		foreach ($matches as $match) {
 			if (count($match) > 0)
 				if (strpos($match[0],'print') !== false)
 					$code_parsed = str_replace($match,'',$code_parsed);
+		}
+
+
+		//mapping(address => doublePrecision) balances,
+		$matches = array();
+		preg_match_all("/mapping\(address => doublePrecision\) (.*),/",$code,$matches);
+		if (!empty($matches[0])) {
+			$code_parsed = str_replace($matches[0][0],$matches[1][0].': contract.table("'.$matches[1][0].'"),',$code_parsed);
+		}
+
+		//Special unmapping::balances(address => doublePrecision)
+		$matches = array();
+		preg_match_all("/unmapping::(.*)\(address => doublePrecision\);/",$code,$matches);
+		if (!empty($matches[0])) {
+			$code_parsed = str_replace($matches[0][0],'contract.table_set("'.$matches[1][0].'",this.'.$matches[1][0].');',$code_parsed);
+		}
+
+		//Special set::$var
+		$matches = array();
+		preg_match_all("/set::(.*) (.*);/",$code,$matches);
+		if (!empty($matches[0])) {
+			$code_parsed = str_replace($matches[0][0],'contract.set("'.$matches[1][0].'",'.$matches[2][0].');',$code_parsed);
+		}
+
+		//Special get::$var
+		$matches = array();
+		preg_match_all("/get::([a-zA-Z]{0,})/",$code,$matches);
+		if (!empty($matches[0])) {
+			$code_parsed = str_replace($matches[0][0],'contract.get("'.$matches[1][0].'")',$code_parsed);
+		}
+
+		//Special wrapping(address => doublePrecision) balances {receiver};
+		$matches = array();
+		preg_match_all("/wrapping\(address => doublePrecision\) (.*) {(.*)}/",$code,$matches);
+		if (!empty($matches[0])) {
+			$i = 0;
+			foreach ($matches[0] as $match) {
+				$code_parsed = str_replace($matches[0][$i],'this.'.$matches[1][$i].'['.$matches[2][$i].'] = (this.'.$matches[1][$i].'['.$matches[2][$i].'] > 0) ? parseFloat(this.'.$matches[1][$i].'['.$matches[2][$i].']):0',$code_parsed);
+				$i++;
+			}
 		}
 
 		//Comment MXDity vars
@@ -63,7 +104,8 @@ class MXVM {
 		}
 
 		//Add init function to start Contract
-		$code_parsed = $code_parsed . $matches[1].'.'.$matches[1].'();';
+		$code_parsed = $code_parsed . '
+'.$matches[1].'.'.$matches[1].'();';
 
 		//Replace Contract Keyword to var (Javascript dont accept Contract type var)
 		return str_replace($matches[0],str_replace('Contract','var',$matches[0]),$code_parsed);
@@ -92,7 +134,8 @@ class MXVM {
 		}
 
 		//Add run function of contract
-		$code_parsed = $code_parsed . $matches[1].'.'.$function.'('.$param.');';
+		$code_parsed = $code_parsed . '
+'.$matches[1].'.'.$function.'('.$param.');';
 
 		//Replace Contract Keyword to var (Javascript dont accept Contract type var)
 		return str_replace($matches[0],str_replace('Contract','var',$matches[0]),$code_parsed);
@@ -106,6 +149,64 @@ class MXVM {
 
 	public static function _set($key,$value) {
 		MXVM::$data[$key] = $value;
+	}
+
+	public static function getTokenDefine($code) {
+
+		$token = null;
+
+		if (strpos($code,'define Token') !== false || strpos($code,'define Name') !== false) {
+
+			$token = array(
+				'Token'=>'',
+				'Name'=>'',
+				'MaxSupply'=>100,
+				'Precision'=>8
+			);
+
+			//Check if have define Token
+			$matches = array();
+			preg_match("/[Dd]efine Token (.*)/",$code,$matches);
+			if (count($matches) < 2) {
+				return 'Error parsing Contract struct name';
+			}
+			$token['Token'] = $matches[1];
+
+			//Check if have define Name
+			$matches = array();
+			preg_match("/[Dd]efine Name (.*)/",$code,$matches);
+			if (count($matches) < 2) {
+				return 'Error parsing Contract struct name';
+			}
+			$token['Name'] = $matches[1];
+
+			//Check if have define MaxSupply
+			$matches = array();
+			preg_match("/[Dd]efine MaxSupply (.*)/",$code,$matches);
+			if (count($matches) >= 2) {
+				$token['MaxSupply'] = $matches[1];
+				if ($token['MaxSupply'] > 1000000000000000) {
+					return '<strong class="text-danger">MXVM_DEFINE_ERROR</strong> parsing <strong>MaxSupply</strong> max value: <strong>1000000000000000</strong>';
+				}
+				else if ($token['MaxSupply'] < 1) {
+					return '<strong class="text-danger">MXVM_DEFINE_ERROR</strong> parsing <strong>MaxSupply</strong> min value: <strong>1</strong>';
+				}
+			}
+
+			//Check if have define Precision
+			$matches = array();
+			preg_match("/[Dd]efine Precision (.*)/",$code,$matches);
+			if (count($matches) >= 2) {
+				$token['Precision'] = $matches[1];
+				if ($token['Precision'] > 18) {
+					die('<strong class="text-danger">MXVM_DEFINE_ERROR</strong> parsing <strong>Precision</strong> max value: <strong>18</strong>');
+				}
+				if ($token['Precision'] < 0) {
+					die('<strong class="text-danger">MXVM_DEFINE_ERROR</strong> parsing <strong>Precision</strong> min value: <strong>0</strong>');
+				}
+			}
+		}
+		return $token;
 	}
 }
 
