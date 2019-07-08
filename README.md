@@ -1,10 +1,10 @@
-# MXCoin
+# J4FCore
 > just for fun
 
 PHP cryptocurrency from scratch
 
 - PoW sha256d + sha512
-- Total coins: 56,240,067 MXC
+- Total coins: 56,240,067 J4F
 - Blocks every: Mainnet 8 min (average) | Testnet: 20 sec (average)
 - Halving: every 250000 blocks decrease reward by half
 
@@ -40,7 +40,7 @@ PHP cryptocurrency from scratch
 
 [Wallet Web](https://wallet.mataxetos.es)
 
-[JSON-RPC/HTTP API](https://github.com/mataxetos/MXC/wiki/API-JSON-RPC-HTTP)
+[JSON-RPC/HTTP API](https://github.com/mataxetos/J4FCore/wiki/API-JSON-RPC-HTTP)
 
 # IRC/Discord
 
@@ -97,7 +97,7 @@ php client.php -u USER1 -ip 0.0.0.0 -port 8080 -testnet -sanity 100
 ```
 
 # Contribute
-Anyone is welcome to contribute to MXCoin! 
+Anyone is welcome to contribute to J4FCore! 
 If you have a fix or code change, feel free to submit it as a pull request directly to the "master" branch.
 
 # Cryptocurrency under construction
