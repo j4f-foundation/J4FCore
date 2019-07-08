@@ -57,6 +57,26 @@ class MXVM {
 			}
 		}
 
+		//Special define::var
+		$matches = array();
+		preg_match_all("/define::([a-zA-Z]{0,})([;\)])/",$code_parsed,$matches);
+		if (!empty($matches[0])) {
+
+			//Get token Info
+			$token = MXVM::getTokenDefine($code);
+
+			$i = 0;
+			foreach ($matches[0] as $match) {
+				if (isset($token[$matches[1][$i]])) {
+					$code_parsed = str_replace($matches[0][$i],$token[$matches[1][$i]].$matches[2][$i],$code_parsed);
+				}
+				else {
+					$code_parsed = str_replace($matches[0][$i],'0'.$matches[2][$i],$code_parsed);
+				}
+				$i++;
+			}
+		}
+
 		//Comment MXDity vars
 		$code_parsed = str_replace('#pragma mxdity',		'//pragma mxdity',		$code_parsed);
 		$code_parsed = str_replace('#define Token',			'//define Token',		$code_parsed);
