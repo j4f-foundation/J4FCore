@@ -42,14 +42,16 @@ PHP cryptocurrency from scratch
 
 [JSON-RPC/HTTP API](https://github.com/mataxetos/MXC/wiki/API-JSON-RPC-HTTP)
 
-# IRC
+# IRC/Discord
 
-If you want to talk about the development of currency or need support to run a node, connect to the IRC network!
+If you want to talk about the development of currency or need support to run a node, connect to the IRC network or Discord Server!
 
 - Server: irc.mataxetos.es
 - Channel: #mxc
 
 [WebChat IRC](https://kiwiirc.com/nextclient/irc.mataxetos.es/mxc/)
+
+[Discord](https://discord.gg/kcSGSaa)
 
 # How run
 - Clone repository on root website folder
