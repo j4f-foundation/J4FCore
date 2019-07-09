@@ -1,4 +1,4 @@
-![Just4Fun](https://j4f.dev/images/just4fun_96.png) Just4Fun
+![Just4Fun](https://j4f.dev/images/just4fun_96_new.png) Just4Fun
 
 PHP cryptocurrency from scratch
 
@@ -24,18 +24,17 @@ Halving: every 250000 blocks decrease reward by half
   - php_curl
   
 # TODO
-- ~~Migrate form SQLite to MySQL~~
-- ~~Add Merkle Tree~~
-- ~~Improve Explorer~~
-- ~~API JSON-RPC / HTTP~~
-- ~~Make testnet~~
-- ~~Multithread~~
-- ~~CLI Wallet~~
-- ~~GUI Wallet~~
-- Improve Smart Contract with Funity
-- Improve peer system
-- Improve sanity system
-  
+- [x] Migrate form SQLite to MySQL/MariaDB
+- [x] Blockchain Explorer
+- [x] API JSON-RPC / HTTP
+- [x] Multithread miner
+- [x] Testnet
+- [x] CLI Wallet
+- [x] GUI Wallet
+- [ ] Improve Smart Contract and Funity Language
+- [ ] Improve peer system
+- [ ] Improve sanity system
+
 # Links
 [Explorer TESTNET](https://testnet.j4f.dev)
 
@@ -98,6 +97,10 @@ If you have a fix or code change, feel free to submit it as a pull request direc
 
 # Cryptocurrency under construction
 Currency is still in early development phase, it may not be stable 100%
+```
+The mainnet has not yet been released.
+The forecast for its launch is 4-6 months
+```
 
 # Donations
 `ETH` 0x33c6cea9136d30071c1b015cc9a2b4d1ad17848d
