@@ -1,5 +1,28 @@
 <?php
-class MXVM {
+// MIT License
+//
+// Copyright (c) 2019 Just4Fun
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
+
+class J4FVM {
 
 	public static $data = array();
 
@@ -16,7 +39,6 @@ class MXVM {
 				if (strpos($match[0],'print') !== false)
 					$code_parsed = str_replace($match,'',$code_parsed);
 		}
-
 
 		//mapping(address => doublePrecision) balances,
 		$matches = array();
@@ -63,7 +85,7 @@ class MXVM {
 		if (!empty($matches[0])) {
 
 			//Get token Info
-			$token = MXVM::getTokenDefine($code);
+			$token = J4FVM::getTokenDefine($code);
 
 			$i = 0;
 			foreach ($matches[0] as $match) {
@@ -77,15 +99,14 @@ class MXVM {
 			}
 		}
 
-		//Comment MXDity vars
-		$code_parsed = str_replace('#pragma mxdity',		'//pragma mxdity',		$code_parsed);
+		//Parse Funity & Token vars
+		$code_parsed = str_replace('#pragma funity',		'//pragma funity',		$code_parsed);
 		$code_parsed = str_replace('#define Token',			'//define Token',		$code_parsed);
 		$code_parsed = str_replace('#define Name',			'//define Name',		$code_parsed);
 		$code_parsed = str_replace('#define MaxSupply',		'//define MaxSupply',	$code_parsed);
 		$code_parsed = str_replace('#define Precision',		'//define Precision',	$code_parsed);
 
 		return $code_parsed;
-
 	}
 
 	// Parse CALL Contract
@@ -111,10 +132,10 @@ class MXVM {
 
 	public static function _init($code) {
 
-		MXVM::$data = array();
+		J4FVM::$data = array();
 
 		//Parse code
-		$code_parsed = MXVM::_parse($code);
+		$code_parsed = J4FVM::_parse($code);
 
 		//Check if have Contract define struct
 		$matches = array();
@@ -134,7 +155,7 @@ class MXVM {
 	public static function call($code,$function,$params=array()) {
 
 		//Parse code
-		$code_parsed = MXVM::_parse($code);
+		$code_parsed = J4FVM::_parse($code);
 
 		//Check if have Contract define struct
 		$matches = array();
@@ -162,13 +183,13 @@ class MXVM {
 	}
 
 	public static function _get($key) {
-		if (isset(MXVM::$data[$key]))
-			return MXVM::$data[$key];
+		if (isset(J4FVM::$data[$key]))
+			return J4FVM::$data[$key];
 		return 'null';
 	}
 
 	public static function _set($key,$value) {
-		MXVM::$data[$key] = $value;
+		J4FVM::$data[$key] = $value;
 	}
 
 	public static function getTokenDefine($code) {
@@ -206,10 +227,10 @@ class MXVM {
 			if (count($matches) >= 2) {
 				$token['MaxSupply'] = $matches[1];
 				if ($token['MaxSupply'] > 1000000000000000) {
-					return '<strong class="text-danger">MXVM_DEFINE_ERROR</strong> parsing <strong>MaxSupply</strong> max value: <strong>1000000000000000</strong>';
+					return '<strong class="text-danger">J4FVM_DEFINE_ERROR</strong> parsing <strong>MaxSupply</strong> max value: <strong>1000000000000000</strong>';
 				}
 				else if ($token['MaxSupply'] < 1) {
-					return '<strong class="text-danger">MXVM_DEFINE_ERROR</strong> parsing <strong>MaxSupply</strong> min value: <strong>1</strong>';
+					return '<strong class="text-danger">J4FVM_DEFINE_ERROR</strong> parsing <strong>MaxSupply</strong> min value: <strong>1</strong>';
 				}
 			}
 
@@ -219,10 +240,10 @@ class MXVM {
 			if (count($matches) >= 2) {
 				$token['Precision'] = $matches[1];
 				if ($token['Precision'] > 18) {
-					die('<strong class="text-danger">MXVM_DEFINE_ERROR</strong> parsing <strong>Precision</strong> max value: <strong>18</strong>');
+					die('<strong class="text-danger">J4FVM_DEFINE_ERROR</strong> parsing <strong>Precision</strong> max value: <strong>18</strong>');
 				}
 				if ($token['Precision'] < 0) {
-					die('<strong class="text-danger">MXVM_DEFINE_ERROR</strong> parsing <strong>Precision</strong> min value: <strong>0</strong>');
+					die('<strong class="text-danger">J4FVM_DEFINE_ERROR</strong> parsing <strong>Precision</strong> min value: <strong>0</strong>');
 				}
 			}
 		}
@@ -231,11 +252,11 @@ class MXVM {
 }
 
 function js_get($str) {
-	return js_str(MXVM::_get(php_str($str)));
+	return js_str(J4FVM::_get(php_str($str)));
 }
 
 function js_set($str,$value) {
-	return js_str(MXVM::_set(php_str($str),php_str($value)));
+	return js_str(J4FVM::_set(php_str($str),php_str($value)));
 }
 
 function js_table_set($index,$value) {
@@ -243,7 +264,7 @@ function js_table_set($index,$value) {
 	$index = php_str($index);
 	$array_value =  php_array($value);
 
-	MXVM::$data[$index] = $array_value;
+	J4FVM::$data[$index] = $array_value;
 }
 
 function js_table_set_sub($index,$value,$subindex) {
@@ -252,14 +273,14 @@ function js_table_set_sub($index,$value,$subindex) {
 	$subindex = php_str($subindex);
 	$array_value =  php_array($value);
 
-	MXVM::$data[$index][$subindex] = $array_value;
+	J4FVM::$data[$index][$subindex] = $array_value;
 }
 
 function js_table($table) {
 	$table = php_str($table);
 
-	if (isset(MXVM::$data[$table]))
-		$object = js_object(MXVM::$data[$table]);
+	if (isset(J4FVM::$data[$table]))
+		$object = js_object(J4FVM::$data[$table]);
 	else
 		$object = js_object(null);
 
@@ -271,7 +292,7 @@ function js_table_get($table,$index) {
 	$table = php_str($table);
 	$index = php_str($index);
 
-	return js_str(MXVM::$data[$table][$index]);
+	return js_str(J4FVM::$data[$table][$index]);
 }
 
 function js_table_get_sub($table,$index,$subindex) {
@@ -280,6 +301,6 @@ function js_table_get_sub($table,$index,$subindex) {
 	$index = php_str($index);
 	$subindex = php_str($subindex);
 
-	return js_str(MXVM::$data[$table][$index][$subindex]);
+	return js_str(J4FVM::$data[$table][$index][$subindex]);
 }
 ?>

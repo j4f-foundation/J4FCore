@@ -1,7 +1,7 @@
 <?php
 // MIT License
 //
-// Copyright (c) 2018 MXCCoin
+// Copyright (c) 2019 Just4Fun
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +41,7 @@ include(__DIR__.'/Transaction.php');
 include(__DIR__.'/Miner.php');
 include(__DIR__.'/GenesisBlock.php');
 include(__DIR__.'/Peer.php');
-include(__DIR__.'/MXVM.php');
+include(__DIR__.'/J4FVM.php');
 include(__DIR__.'/../mxdity/js.php');
 
 //MXC Version
