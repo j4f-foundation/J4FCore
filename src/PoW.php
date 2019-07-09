@@ -28,10 +28,7 @@ class PoW {
      * @return string
      */
     public static function hash($message) {
-		$hash = hash('sha256', $message);
-		$hash = hash('sha256', $hash);
-		$hash = hash('sha512', $hash);
-        return $hash;
+		return hash('sha3-512', hash('sha3-256',hash('sha3-256', $message)));
     }
 
     /**
@@ -149,9 +146,7 @@ class PoW {
      * @return bool
      */
     public static function isValidNonce($message,$nonce,$difficulty,$maxDifficulty) {
-		$hash = hash('sha256', $message.$nonce);
-		$hash = hash('sha256', $hash);
-		$hash = hash('sha512', $hash);
+		$hash = PoW::hash($message.$nonce);
         $targetHash = bcdiv(Tools::hex2dec($maxDifficulty),$difficulty);
 		$hashValue = Tools::hex2dec(strtoupper($hash));
 

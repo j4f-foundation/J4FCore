@@ -344,8 +344,7 @@ class Wallet {
     public static function GetWalletAddressFromPubKey($pubKey) {
         $pubKey = self::ParsePubKey($pubKey);
         if (strlen($pubKey) == 451) {
-			return "VTx".md5($pubKey);
-			//return "wMx".hash('sha256', md5(hash('sha256', $pubKey)));
+			return "J4F".hash('sha3-224',$pubKey);
         } else {
             return null;
         }
@@ -467,8 +466,8 @@ class Wallet {
      * @return string
      */
     public static function GetWalletAddressFromAddress($address) {
-        if (strpos("VTx",$address) === false)
-            return "VTx".$address;
+        if (strpos("J4F",$address) === false)
+            return "J4F".$address;
         else
             return $address;
     }

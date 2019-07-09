@@ -176,7 +176,7 @@ class Blockchain {
 					//Call Functions of SmartContracts on local blockchain
 					Blockchain::CallFunctionSmartContract($chaindata,$blockMinedByPeer);
 
-                    if ($chaindata->GetConfig('isBootstrap') == 'on' && $chaindata->GetConfig('node_ip') == NODE_BOOTSTRAP)
+                    if ($chaindata->GetConfig('isBootstrap') == 'on')
                         Tools::SendMessageToDiscord($heightNewBlock,$blockMinedByPeer);
 
                     return "0x00000000";
@@ -214,7 +214,7 @@ class Blockchain {
 			if ($transaction->isValid()) {
 
 				//Check if transaction is for make new contract
-				if ($transaction->to == 'VTx00000000000000000000000000000000' && $transaction->data != "0x") {
+				if ($transaction->to == 'J4F00000000000000000000000000000000000000000000000000000000' && $transaction->data != "0x") {
 
 					//Parse txn::data (contract code) to string
 					$contract_code = $transaction->data;

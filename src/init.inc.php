@@ -94,8 +94,8 @@ if (!extension_loaded("bcmath")) {
 }
 
 // check php version
-if (floatval(phpversion()) < 7.0) {
-    Display::_error("The minimum php version required is %LG%7.0");
+if (floatval(phpversion()) < 7.1) {
+    Display::_error("The minimum php version required is %LG%7.1");
     if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN')
         readline("Press any Enter to close close window");
     exit();

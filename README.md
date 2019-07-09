@@ -1,12 +1,13 @@
-# J4FCore
-> just for fun
+![Just4Fun](https://j4f.dev/images/just4fun_96.png) Just4Fun
 
 PHP cryptocurrency from scratch
 
-- PoW sha256d + sha512
-- Total coins: 56,240,067 J4F
-- Blocks every: Mainnet 8 min (average) | Testnet: 20 sec (average)
-- Halving: every 250000 blocks decrease reward by half
+```
+PoW sha3-256d + sha3-512 
+Total coins: 56,240,067 J4F
+Blocks every: Mainnet 8 min (average) | Testnet: 20 sec (average)
+Halving: every 250000 blocks decrease reward by half
+```
 
 # Requisites
 
@@ -16,7 +17,7 @@ PHP cryptocurrency from scratch
 - Apache web server
 - OpenSSL
 - MySQL Server
-- PHP 7.0 or higher
+- PHP 7.1 or higher
 - PHP Extensions:
   - php_mysqli
   - php_bcmath
@@ -31,7 +32,7 @@ PHP cryptocurrency from scratch
 - ~~Multithread~~
 - ~~CLI Wallet~~
 - ~~GUI Wallet~~
-- Improve Smart Contract with MXDity
+- Improve Smart Contract with Funity
 - Improve peer system
 - Improve sanity system
   
@@ -99,4 +100,4 @@ If you have a fix or code change, feel free to submit it as a pull request direc
 Currency is still in early development phase, it may not be stable 100%
 
 # Donations
-ETH: 0x33c6cea9136d30071c1b015cc9a2b4d1ad17848d
+`ETH` 0x33c6cea9136d30071c1b015cc9a2b4d1ad17848d

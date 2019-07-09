@@ -847,7 +847,7 @@ class DB {
 			DELETE FROM smart_contracts WHERE txn_hash IN (
 				SELECT txn_hash
 				FROM transactions
-				WHERE wallet_to = 'VTx00000000000000000000000000000000'
+				WHERE wallet_to = 'J4F00000000000000000000000000000000000000000000000000000000'
 				AND data <> '0x'
 				AND block_hash = '".$infoBlock['block_hash']."'
 			);
@@ -898,7 +898,7 @@ class DB {
 			DELETE FROM smart_contracts WHERE txn_hash IN (
 				SELECT txn_hash
 				FROM transactions
-				WHERE wallet_to = 'VTx00000000000000000000000000000000'
+				WHERE wallet_to = 'J4F00000000000000000000000000000000000000000000000000000000'
 				AND data <> '0x'
 				AND block_hash = '".$infoBlock['block_hash']."'
 			);
@@ -940,7 +940,7 @@ class DB {
 		DELETE FROM smart_contracts WHERE txn_hash IN (
 			SELECT txn_hash
 			FROM transactions
-			WHERE wallet_to = 'VTx00000000000000000000000000000000'
+			WHERE wallet_to = 'J4F00000000000000000000000000000000000000000000000000000000'
 			AND data <> '0x'
 			AND block_hash IN (
 				SELECT block_hash FROM blocks WHERE height > ".$height."
