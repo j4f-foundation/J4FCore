@@ -231,15 +231,23 @@ class Blockchain {
 						)
 					);
 				
+					//Define blockchain Object
+					js::define("blockchain",
+						array(
+							"Transfer" => "J4FVM::blockchain_transfer_compiler",
+						),
+						array()
+					);
+
 					//Define contract Object
 					js::define("contract",
 						array(
-							"get" => "js_get", 
-							"set" => "js_set",
-							"table" => "js_table",
-							"table_set" => "js_table_set",
-							"table_get" => "js_table_get",
-							"table_get_sub" => "js_table_get_sub",
+							"get" => "J4FVM::js_get", 
+							"set" => "J4FVM::js_set",
+							"table" => "J4FVM::js_table",
+							"table_set" => "J4FVM::js_table_set",
+							"table_get" => "J4FVM::js_table_get",
+							"table_get_sub" => "J4FVM::js_table_get_sub",
 						),
 						array()
 					);
@@ -251,6 +259,9 @@ class Blockchain {
 					$run_status = 0;
 
 					try {
+
+						//Set TXN that created contract
+						J4FVM::$txn_hash = $transaction->hash;
 
 						//Run code
 						js::run($code_parsed,$contractHash);
@@ -326,15 +337,23 @@ class Blockchain {
 							)
 						);
 					
+						//Define blockchain Object
+						js::define("blockchain",
+							array(
+								"Transfer" => "J4FVM::blockchain_transfer",
+							),
+							array()
+						);
+
 						//Define contract Object
 						js::define("contract",
 							array(
-								"get" => "js_get", 
-								"set" => "js_set",
-								"table" => "js_table",
-								"table_set" => "js_table_set",
-								"table_get" => "js_table_get",
-								"table_get_sub" => "js_table_get_sub",
+								"get" => "J4FVM::js_get", 
+								"set" => "J4FVM::js_set",
+								"table" => "J4FVM::js_table",
+								"table_set" => "J4FVM::js_table_set",
+								"table_get" => "J4FVM::js_table_get",
+								"table_get_sub" => "J4FVM::js_table_get_sub",
 							),
 							array()
 						);
@@ -343,10 +362,12 @@ class Blockchain {
 						$run_status = 0;
 
 						try {
+
+							//Set TXN that call contract
+							J4FVM::$txn_hash = $transaction->hash;
+
 							//Set data of contract
 							J4FVM::$data = @json_decode(Tools::bytesHex2str($contract['data']),true);
-
-							//Display::_printer($code_parsed);
 
 							//Run code
 							js::run($code_parsed);
@@ -359,8 +380,8 @@ class Blockchain {
 							//Contract status - Error
 							$run_status = -1;
 						}
-	
-						// If status contract its OK, save this contract
+
+						// If status contract its OK, update contract storedata
 						if ($run_status == 1) {
 	
 							//Get data contract

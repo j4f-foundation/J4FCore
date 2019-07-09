@@ -25,6 +25,7 @@
 class J4FVM {
 
 	public static $data = array();
+	public static $txn_hash = '';
 
 	// Clear input code
 	public static function _parse($code) {
@@ -249,58 +250,111 @@ class J4FVM {
 		}
 		return $token;
 	}
-}
 
-function js_get($str) {
-	return js_str(J4FVM::_get(php_str($str)));
-}
 
-function js_set($str,$value) {
-	return js_str(J4FVM::_set(php_str($str),php_str($value)));
-}
+	public static function js_get($str) {
+		return js_str(J4FVM::_get(php_str($str)));
+	}
+	
+	public static function js_set($str,$value) {
+		return js_str(J4FVM::_set(php_str($str),php_str($value)));
+	}
+	
+	public static function js_table_set($index,$value) {
+	
+		$index = php_str($index);
+		$array_value =  php_array($value);
+	
+		J4FVM::$data[$index] = $array_value;
+	}
+	
+	public static function js_table_set_sub($index,$value,$subindex) {
+	
+		$index = php_str($index);
+		$subindex = php_str($subindex);
+		$array_value =  php_array($value);
+	
+		J4FVM::$data[$index][$subindex] = $array_value;
+	}
+	
+	public static function js_table($table) {
+		$table = php_str($table);
+	
+		if (isset(J4FVM::$data[$table]))
+			$object = js_object(J4FVM::$data[$table]);
+		else
+			$object = js_object(null);
+	
+		return $object;
+	}
+	
+	public static function js_table_get($table,$index) {
+	
+		$table = php_str($table);
+		$index = php_str($index);
+	
+		return js_str(J4FVM::$data[$table][$index]);
+	}
+	
+	public static function js_table_get_sub($table,$index,$subindex) {
+	
+		$table = php_str($table);
+		$index = php_str($index);
+		$subindex = php_str($subindex);
+	
+		return js_str(J4FVM::$data[$table][$index][$subindex]);
+	}
+	
+	
+	/**
+	 * Blockchain Function
+     * Write Internal Transaction of contract
+     *
+     * @param string $sender
+     * @param string $receiver
+     * @param float $amount
+     * @return bool
+     */
+	public static function blockchain_transfer($sender,$receiver,$amount) {
+	
+		//Parsing jsvars to phpvars
+		$sender = php_str($sender);
+		$receiver = php_str($receiver);
+		$amount = php_str($amount);
 
-function js_table_set($index,$value) {
+		//Check if have txn_hash for this J4VM
+		if (J4FVM::$txn_hash != '') {
 
-	$index = php_str($index);
-	$array_value =  php_array($value);
+			//Instance DB
+			$db = new DB();
 
-	J4FVM::$data[$index] = $array_value;
-}
+			if ($db != null) {
 
-function js_table_set_sub($index,$value,$subindex) {
+				//Check param formats
+				$REGEX_Address = '/J4F[a-fA-F0-9]{56}/';
+				if (preg_match($REGEX_Address,$sender) && preg_match($REGEX_Address,$receiver) && preg_match('/\.{0,}\d/',$receiver)) {
 
-	$index = php_str($index);
-	$subindex = php_str($subindex);
-	$array_value =  php_array($value);
+					//write Internal Transaction on blockchain (local)
+					$db->addInternalTransaction(J4FVM::$txn_hash,$sender,$receiver,$amount);
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 
-	J4FVM::$data[$index][$subindex] = $array_value;
-}
+	/**
+	 * Null Function
+     * Need this function for make contracts and dont crash
+     *
+     * @param string $sender
+     * @param string $receiver
+     * @param float $amount
+     * @return bool
+     */
+	public static function blockchain_transfer_compiler($sender,$receiver,$amount) {
+		return '';
+	}
 
-function js_table($table) {
-	$table = php_str($table);
-
-	if (isset(J4FVM::$data[$table]))
-		$object = js_object(J4FVM::$data[$table]);
-	else
-		$object = js_object(null);
-
-	return $object;
-}
-
-function js_table_get($table,$index) {
-
-	$table = php_str($table);
-	$index = php_str($index);
-
-	return js_str(J4FVM::$data[$table][$index]);
-}
-
-function js_table_get_sub($table,$index,$subindex) {
-
-	$table = php_str($table);
-	$index = php_str($index);
-	$subindex = php_str($subindex);
-
-	return js_str(J4FVM::$data[$table][$index][$subindex]);
 }
 ?>

@@ -1283,6 +1283,38 @@ class DB {
 	}
 
     /**
+     * Save Internal TXN of SmartContract in Blockchain
+     *
+     * @param string $txn_hash
+	 * @param string $wallet_from
+	 * @param string $wallet_to
+	 * @param int $amount
+     * @return bool
+     */
+	public function addInternalTransaction($txn_hash,$wallet_from,$wallet_to,$amount) {
+
+		//Start Internal Transaction
+		$this->db->begin_transaction();
+
+		$timestamp = Tools::GetGlobalTime();
+		$sqlInternalTxn = "INSERT INTO smart_contracts_txn (txn_hash, wallet_from, wallet_to, amount, timestamp) 
+			VALUES ('" . $txn_hash . "','" . $wallet_from . "','" . $wallet_to . "','".$amount."','".$timestamp."');";
+
+		//Commit Internal Transaction
+		if ($this->db->query($sqlInternalTxn)) {
+			$this->db->commit();
+			return true;
+		}
+
+		//Rollback Internal Transaction
+		else
+			$this->db->rollback();
+
+        return false;
+	}
+
+
+    /**
      * Check that the basic tables exist for the blockchain to work
      */
     private function CheckIfExistTables() {

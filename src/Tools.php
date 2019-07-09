@@ -31,19 +31,36 @@ class Tools {
 		$bytesStringified = "";
 		$stringBytes = unpack("C*",$string);
 		foreach ($stringBytes as $byte)
-			$bytesStringified .= "0x".dechex($byte);
-		return $bytesStringified;
+			$bytesStringified .= dechex($byte);
+		return '0x'.$bytesStringified;
 	}
 
 	public static function bytesHex2str($bytesHex) {
 		if ($bytesHex == "0x")
-			return "0x";
+			return "";
 
+		//Clear all 0x from string
+		$hexbytes = str_replace('0x','',$bytesHex);
+
+		//Parse hexBytes in correct format
+		$e_hex = array();
+		$chars = 0;
+		for ($i=0; $i<strlen($hexbytes); $i++) {
+			if ($chars == 0) {
+				if (!is_numeric($hexbytes[$i])) { $e_hex[] = $hexbytes[$i]; $chars = 0; }
+				elseif (is_numeric($hexbytes[$i]) && $hexbytes[$i] > 8) { $e_hex[] = $hexbytes[$i]; $chars = 0; }
+				else { $chars++; continue; }
+			}
+			else { $e_hex[] = $hexbytes[$i-1].$hexbytes[$i]; $chars = 0; }
+		}
+
+		//Parse Hexbytes to decimal
 		$bytes = array();
-		$e_hex = explode('0x',$bytesHex);
 		foreach ($e_hex as $hex)
 			$bytes[] = intval(hexdec($hex));
 		$packed = "";
+
+		//Pack bytes
 		foreach ($bytes as $byte)
 			$packed .= pack("C",$byte);
 		return trim($packed);

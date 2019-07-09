@@ -41,7 +41,7 @@ include('../src/Transaction.php');
 include('../src/GenesisBlock.php');
 include('../src/Peer.php');
 include('../src/Miner.php');
-include('../src/MXVM.php');
+include('../src/J4FVM.php');
 include('../mxdity/js.php');
 
 date_default_timezone_set("UTC");
@@ -205,7 +205,7 @@ if ($id != null) {
                     } else {
 
                         //Check if wallet is a pubKey
-                        if (strlen($params['wallet']) > 40) {
+                        if (strlen($params['wallet']) > 59) {
                             //Get wallet from Public key
                             $wallet = Wallet::GetWalletAddressFromPubKey($params['wallet']);
                         } else {
@@ -213,7 +213,7 @@ if ($id != null) {
                         }
 
                         //Check if have wallet
-                        if (strlen($wallet) < 35) {
+                        if (strlen($wallet) < 59) {
                             $response_jsonrpc['error'] = array(
                                 'code'    => -32602,
                                 'message' => 'Invalid params'
@@ -239,7 +239,7 @@ if ($id != null) {
                     } else {
 
                         //Check if wallet is a pubKey
-                        if (strlen($params['wallet']) > 40) {
+                        if (strlen($params['wallet']) > 59) {
                             //Get wallet from Public key
                             $wallet = Wallet::GetWalletAddressFromPubKey($params['wallet']);
                         } else {
@@ -247,7 +247,7 @@ if ($id != null) {
                         }
 
                         //Check if have wallet
-                        if (strlen($wallet) < 35) {
+                        if (strlen($wallet) < 59) {
                             $response_jsonrpc['error'] = array(
                                 'code'    => -32602,
                                 'message' => 'Invalid params'
@@ -273,7 +273,7 @@ if ($id != null) {
                     } else {
 
                         //Check if wallet is a pubKey
-                        if (strlen($params['wallet']) > 40) {
+                        if (strlen($params['wallet']) > 59) {
                             //Get wallet from Public key
                             $wallet = Wallet::GetWalletAddressFromPubKey($params['wallet']);
                         } else {
@@ -484,14 +484,16 @@ if ($id != null) {
                             'message' => 'Invalid params'
                         );
                     } else {
-                        //Check if have wallet
-                        if (strlen($params['wallet']) < 35) {
+						//Check if have wallet
+
+                        if (strlen($params['wallet']) < 59) {
                             $response_jsonrpc['error'] = array(
                                 'code'    => -32602,
                                 'message' => 'Invalid params'
                             );
                         } else {
-                            $infoWallet = Wallet::Load($params['wallet']);
+
+							$infoWallet = Wallet::Load($params['wallet']);
 
                             if (!is_array($infoWallet) || empty($infoWallet)) {
                                 $response_jsonrpc['error'] = array(
