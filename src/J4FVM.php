@@ -510,8 +510,8 @@ class J4FVM {
 	public static function js_table_uint256($table) {
 		$table = php_str($table);
 
-		if (isset(MXVM::$data[$table])) {
-			$object = js_object(MXVM::$data[$table]);
+		if (isset(J4FVM::$data[$table])) {
+			$object = js_object(J4FVM::$data[$table]);
 		}
 		else
 			$object = js_object(null);
