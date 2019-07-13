@@ -27,7 +27,7 @@ class Tools {
 	public static function str2bytesHex($string) {
 		if (strlen($string) == 0)
 			return "0x";
-			
+
 		$bytesStringified = "";
 		$stringBytes = unpack("C*",$string);
 		foreach ($stringBytes as $byte)
@@ -412,39 +412,38 @@ class Tools {
         return $dtd;
     }
 
-    /**
-     * Get age date
-     *
-     * @param $ageObject
-     * @return string
-     */
-    public static function getAge($ageObject) {
-        $ageBlockMessage = "";
-        if ($ageObject->day == 1) {
-            $ageBlockMessage .= $ageObject->day." day ".$ageObject->hour." hrs";
-        } else if ($ageObject->day > 1) {
-            $ageBlockMessage .= $ageObject->day." days";
-        } else if ($ageObject->day == 0) {
+	/**
+	 * Get age date
+	 *
+	 * @param $ageObject
+	 * @return string
+	 */
+	public static function getAge($ageObject) {
+		$ageBlockMessage = "";
 
-            if ($ageObject->hour > 0)
-                $ageBlockMessage .= $ageObject->hour." hrs";
+		if ($ageObject->day > 1)
+			$ageBlockMessage .= $ageObject->day." days ";
+		elseif ($ageObject->day > 0)
+				$ageBlockMessage .= $ageObject->day." day ";
 
-            if ($ageObject->min > 0) {
-                if (strlen($ageBlockMessage) > 0)
-                    $ageBlockMessage .= " ";
+		if ($ageObject->hour > 0)
+			$ageBlockMessage .= $ageObject->hour." hrs ";
 
-                $ageBlockMessage .= $ageObject->min." mins";
-            }
+		if ($ageObject->min > 0) {
+			if (strlen($ageBlockMessage) > 0)
+				$ageBlockMessage .= " ";
 
-            if ($ageObject->sec > 0) {
-                if (strlen($ageBlockMessage) > 0)
-                    $ageBlockMessage .= " ";
+			$ageBlockMessage .= $ageObject->min." mins ";
+		}
 
-                $ageBlockMessage .= $ageObject->sec." secs";
-            }
-        }
-        return $ageBlockMessage;
-    }
+		if ($ageObject->sec > 0) {
+			if (strlen($ageBlockMessage) > 0)
+				$ageBlockMessage .= " ";
+
+			$ageBlockMessage .= $ageObject->sec." secs";
+		}
+		return $ageBlockMessage;
+	}
 
     /**
      * Get global time using HTTP Api

@@ -34,10 +34,10 @@ class Blockchain {
      */
     public static function checkDifficulty(&$chaindata,$height = null,$isTestNet=false) {
 
-        //Get last block or by height
+        // Get last block or by height
         $currentBlock = ($height == null) ? $chaindata->GetLastBlock(false):$chaindata->GetBlockByHeight($height,false);
 
-        //Initial difficulty
+        // Initial difficulty
         if ($currentBlock['height'] == 0)
             return [1,1];
 
@@ -50,21 +50,21 @@ class Blockchain {
         if ($currentBlock['height'] < 20)
             $limit = $currentBlock['height'] - 1;
 
-        //Get limit check block
+        // Get limit check block
         $limitBlock = $chaindata->GetBlockByHeight($currentBlock['height']-$limit);
 
-        //Get diff time (timestamps are in seconds already)
+        // Get diff time (timestamps are in seconds already)
         $diffTime = $currentBlock['timestamp_end_miner'] - $limitBlock['timestamp_end_miner'];
         $avgTime = ceil($diffTime / $limit);
 
-        //Default same difficulty
+        // Default same difficulty
         $difficulty = $currentBlock['difficulty'];
 
-        //Max 9 - Min 7
+        // Max 9min - Min 7min
         $minAvg = 420;
         $maxAvg = 540;
 
-		//If testnet Max 3 - Min 1
+		// If testnet Max 30s - Min 15s
         if ($isTestNet) {
             $minAvg = 15;
             $maxAvg = 30;
@@ -78,9 +78,9 @@ class Blockchain {
         elseif ($avgTime > $maxAvg)
             $difficulty = bcmul(strval($currentBlock['difficulty']), "0.95",2);
 
-        //MIn difficulty is 1
-        if ($difficulty < 1)
-            $difficulty = 1;
+		// Min difficulty is 1
+       if ($difficulty < 1)
+           $difficulty = 1;
 
         return [$difficulty,$avgTime];
     }
@@ -199,8 +199,8 @@ class Blockchain {
      * All nodes create smart contracts on blockchain (local)
      *
      * @param DB $chaindata
-     * @param Block $lastBlock
-     * @param Block $blockMinedByPeer
+     * @param Block $block
+	 *
      * @return bool
      */
     public static function MakeSmartContracts(&$chaindata,$block) {
@@ -228,9 +228,10 @@ class Blockchain {
 						array(),
 						array(
 							"sender"=> Wallet::GetWalletAddressFromPubKey($transaction->from),
+							"amount"=> $transaction->amount,
 						)
 					);
-				
+
 					//Define blockchain Object
 					js::define("blockchain",
 						array(
@@ -239,15 +240,35 @@ class Blockchain {
 						array()
 					);
 
+					js::define("math",
+						//Funciones de php ejecutadas desde JS
+						array(
+							"parse" => "J4FVM::math_parse",
+							"toDec" => "J4FVM::math_toDec",
+							"add" => "J4FVM::math_add",
+							"sub" => "J4FVM::math_sub",
+							"mul" => "J4FVM::math_mul",
+							"div" => "J4FVM::math_div",
+							"pow" => "J4FVM::math_pow",
+							"mod" => "J4FVM::math_mod",
+							"sqrt" => "J4FVM::math_sqrt",
+							"powmod" => "J4FVM::math_powmod",
+							"comp" => "J4FVM::math_compare",
+						),
+						//Propiedades
+						array()
+					);
+
 					//Define contract Object
 					js::define("contract",
 						array(
-							"get" => "J4FVM::js_get", 
+							"get" => "J4FVM::js_get",
 							"set" => "J4FVM::js_set",
 							"table" => "J4FVM::js_table",
 							"table_set" => "J4FVM::js_table_set",
 							"table_get" => "J4FVM::js_table_get",
 							"table_get_sub" => "J4FVM::js_table_get_sub",
+							"table_uint256" => "J4FVM::js_table_uint256",
 						),
 						array()
 					);
@@ -271,6 +292,8 @@ class Blockchain {
 
 					} catch (Exception $e) {
 
+						var_dump($e->getMessage());
+
 						//Contract status - Error
 						$run_status = -1;
 					}
@@ -288,7 +311,7 @@ class Blockchain {
 			}
 		}
 	}
-	
+
 	/**
      * Call a function of Contracts
      *
@@ -334,9 +357,10 @@ class Blockchain {
 							array(),
 							array(
 								"sender"=> Wallet::GetWalletAddressFromPubKey($transaction->from),
+								"amount"=> $transaction->amount,
 							)
 						);
-					
+
 						//Define blockchain Object
 						js::define("blockchain",
 							array(
@@ -345,19 +369,39 @@ class Blockchain {
 							array()
 						);
 
+						js::define("math",
+							//Funciones de php ejecutadas desde JS
+							array(
+								"parse" => "J4FVM::math_parse",
+								"toDec" => "J4FVM::math_toDec",
+								"add" => "J4FVM::math_add",
+								"sub" => "J4FVM::math_sub",
+								"mul" => "J4FVM::math_mul",
+								"div" => "J4FVM::math_div",
+								"pow" => "J4FVM::math_pow",
+								"mod" => "J4FVM::math_mod",
+								"sqrt" => "J4FVM::math_sqrt",
+								"powmod" => "J4FVM::math_powmod",
+								"comp" => "J4FVM::math_compare",
+							),
+							//Propiedades
+							array()
+						);
+
 						//Define contract Object
 						js::define("contract",
 							array(
-								"get" => "J4FVM::js_get", 
+								"get" => "J4FVM::js_get",
 								"set" => "J4FVM::js_set",
 								"table" => "J4FVM::js_table",
 								"table_set" => "J4FVM::js_table_set",
 								"table_get" => "J4FVM::js_table_get",
 								"table_get_sub" => "J4FVM::js_table_get_sub",
+								"table_uint256" => "J4FVM::js_table_uint256",
 							),
 							array()
 						);
-	
+
 						//Contract status - Default not created
 						$run_status = 0;
 
@@ -383,14 +427,14 @@ class Blockchain {
 
 						// If status contract its OK, update contract storedata
 						if ($run_status == 1) {
-	
+
 							//Get data contract
 							$contractData = Tools::str2bytesHex(json_encode(J4FVM::$data));
-	
+
 							//Update StoredData of Smart Contract on blockchain (local)
 							$chaindata->updateStoredDataContract($contract['contract_hash'],$contractData);
 						}
-						
+
 					}
 				}
 			}
@@ -497,7 +541,7 @@ class Blockchain {
             return "0x00000001";
         }
 	}
-	
+
     /**
      * Check if block received by peer is valid
      * if it is valid, add the block to the temporary table so that the main process adds it to the blockchain

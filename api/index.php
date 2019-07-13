@@ -42,7 +42,8 @@ include('../src/GenesisBlock.php');
 include('../src/Peer.php');
 include('../src/Miner.php');
 include('../src/J4FVM.php');
-include('../mxdity/js.php');
+include('../src/uint256.php');
+include('../funity/js.php');
 
 date_default_timezone_set("UTC");
 

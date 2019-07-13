@@ -42,7 +42,7 @@ include('src/GenesisBlock.php');
 include('src/Peer.php');
 include('src/Miner.php');
 include('src/J4FVM.php');
-include('mxdity/js.php');
+include('funity/js.php');
 
 $return = array(
     'status'    => false,
@@ -173,11 +173,15 @@ if (isset($_REQUEST)) {
                     $returnCode = Blockchain::isValidBlockMinedByPeer($chaindata,$lastBlock,$blockMinedByPeer);
                     if ($returnCode == "0x00000000") {
 
-						//Propagate mined block to network and skip peer sender
-						Tools::sendBlockMinedToNetworkWithSubprocess($chaindata,$blockMinedByPeer,array(
-							'ip' => $_REQUEST['node_ip'],
-							'port' => $_REQUEST['node_port']
-						));
+						if ( isset( $_REQUEST['node_ip'] ) && isset($_REQUEST['node_port']) ) {
+							Tools::sendBlockMinedToNetworkWithSubprocess($chaindata,$blockMinedByPeer,array(
+								'ip' => $_REQUEST['node_ip'],
+								'port' => $_REQUEST['node_port']
+							));
+						}
+						else {
+							Tools::sendBlockMinedToNetworkWithSubprocess($chaindata,$blockMinedByPeer,array());
+						}
 
                         $return['status'] = true;
                         $return['error'] = $returnCode;
@@ -215,7 +219,7 @@ if (isset($_REQUEST)) {
                     if ($returnCode == "0x00000000") {
                         $return['status'] = true;
 						$return['error'] = $returnCode;
-						
+
 						//If have miner enabled, stop all miners
 						if (@file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MINERS_STARTED)) {
 							Tools::clearTmpFolder();

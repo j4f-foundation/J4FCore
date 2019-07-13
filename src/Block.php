@@ -58,17 +58,17 @@ class Block {
      * @param null|array $info
      * @param null|int $height
      */
-    public function __construct($height=-1,$previous,$difficulty,$transactions = array(),$lastBlock=null,$genesisBlock=null,$startNonce=0,$incrementNonce=1,$mined=false,$hash=null,$nonce=0,$timestamp=null,$timestamp_end=null,$merkle=null,$info = null) {
+    public function __construct($height=-1,$previous,$difficulty,$transactions = array(), $lastBlock=null, $genesisBlock=null, $startNonce=0, $incrementNonce=1, $mined=false, $hash=null, $nonce=0, $timestamp=null, $timestamp_end=null, $merkle=null, $info = null) {
 
         $this->height = $height;
         $this->transactions = $transactions;
-        $this->difficulty = $difficulty;
         $this->startNonce = $startNonce;
         $this->incrementNonce = $incrementNonce;
 
         //If block is mined
         if ($mined) {
-            $this->previous = (strlen($previous) > 0) ? $previous : null;
+			$this->difficulty = $difficulty;
+            $this->previous = $previous;
             $this->hash = $hash;
             $this->nonce = $nonce;
             $this->timestamp = $timestamp;
@@ -77,14 +77,15 @@ class Block {
             $this->info = $info;
         }
         else {
-            $this->previous = (strlen($previous) > 0) ? $previous : null;
+			$this->difficulty = $difficulty;
+            $this->previous = (strlen($previous) > 0) ? $previous : '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000';
 
             $lastBlockInfo = @unserialize($lastBlock['info']);
             $genesisBlockInfo = @unserialize($genesisBlock['info']);
 
             $currentBlocksDifficulty = $lastBlockInfo['current_blocks_difficulty']+1;
             if ($currentBlocksDifficulty > $genesisBlockInfo['num_blocks_to_change_difficulty'])
-                $currentBlocksDifficulty = 1;
+                $currentBlocksDifficulty = uint256::parse(1);
 
             $currentBlocksHalving = $lastBlockInfo['current_blocks_halving']+1;
             if ($currentBlocksDifficulty > $genesisBlockInfo['num_blocks_to_halving'])
@@ -112,7 +113,7 @@ class Block {
      *
      */
     public static function createGenesis($coinbase, $privKey, $amount, $isTestNet=false) {
-        $transactions = array(new Transaction(null,$coinbase,$amount,$privKey,"","","Genesis Txn"));
+        $transactions = array(new Transaction(null,$coinbase,$amount,$privKey,"","","If you want different results, do not do the same things"));
         //$genesisBlock = new Block("",1, $transactions);
 
         Display::_printer("Start minning GENESIS block with " . count($transactions) . " txns - SubProcess: " . MINER_MAX_SUBPROCESS);
@@ -154,8 +155,9 @@ class Block {
      * @param int $idMiner
      * @param int $height
      * @param bool $isTestnet
+	 * @param bool $isMultiThread
      */
-    public function mine($idMiner,$isTestnet) {
+    public function mine($idMiner,$isTestnet,$isMultiThread=true) {
 
         $this->timestamp = Tools::GetGlobalTime();
 
@@ -172,7 +174,7 @@ class Block {
 		$data .= $this->previous;
 
         //We started mining
-        $this->nonce = PoW::findNonce($idMiner,$data,$this->difficulty,$this->startNonce,$this->incrementNonce);
+        $this->nonce = PoW::findNonce($idMiner,$data,$this->difficulty,$this->startNonce,$this->incrementNonce,$isMultiThread);
         if ($this->nonce !== false) {
             //Make hash and merkle for this block
             $this->hash = PoW::hash($data.$this->nonce);

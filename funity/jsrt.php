@@ -58,7 +58,7 @@ static function start() {
   jsrt::$global = new js_object();
   #-- create the first execution context
   jsrt::$contexts = array(new js_context(jsrt::$global, array(jsrt::$global), jsrt::$global));
-  #-- set a few things  
+  #-- set a few things
   jsrt::$functions = array();
   jsrt::$nan = js_int(acos(1.01));
   jsrt::$infinity = js_int(-log(0));
@@ -70,11 +70,11 @@ static function start() {
   jsrt::$one = js_int(1);
   jsrt::$exception = NULL;
   jsrt::$sortfn = NULL;
-  
+
   $internal = array("dontenum","dontdelete","readonly");
   #-- common prototypes
   jsrt::$proto_object = jsrt::$proto_function = jsrt::$proto_array = jsrt::$proto_string = jsrt::$proto_boolean = jsrt::$proto_number = jsrt::$proto_date = jsrt::$proto_regexp = jsrt::$proto_error = jsrt::$proto_evalerror = jsrt::$proto_rangeerror = jsrt::$proto_referenceerror = jsrt::$proto_syntaxerror = jsrt::$proto_typeerror = jsrt::$proto_urierror = null;
-  
+
   jsrt::$proto_object = new js_object();
   jsrt::push_context(jsrt::$proto_object);
   jsrt::define_function(array("js_object","toString"),'toString');
@@ -255,7 +255,7 @@ static function start() {
   jsrt::define_function(array("js_date","parse"), "parse", array("string"));
   jsrt::define_function(array("js_date","UTC"), "UTC", array("year","month","date","hours","minutes","seconds","ms"));
   jsrt::pop_context();
-  jsrt::$proto_date->put("constructor", $o);  
+  jsrt::$proto_date->put("constructor", $o);
   $o = jsrt::define_function(array("js_regexp","object"), "RegExp", array("pattern","flags"), jsrt::$proto_regexp);
   jsrt::$proto_regexp->put("constructor", $o);
   $o = jsrt::define_function(array("js_error","object"), "Error", array("message"), jsrt::$proto_error);
@@ -302,10 +302,14 @@ static function start() {
   jsrt::define_function(array("js_math","sqrt"),"sqrt",array("x"));
   jsrt::define_function(array("js_math","tan"),"tan",array("x"));
   jsrt::pop_context();
-  // extensions to the spec. 
+  // extensions to the spec.
   jsrt::define_variable("global", jsrt::$global);
   jsrt::define_function(array("jsrt","write"), "write");
   jsrt::define_function(array("jsrt","write"), "print");
+  jsrt::define_function(array("jsrt","die_ref_null"), "die_ref_null");
+  jsrt::define_function(array("jsrt","die_ref_null"), "die_null");
+  jsrt::define_function(array("jsrt","write"), "j4f_return");
+  jsrt::define_function(array("jsrt","j4f_error"), "j4f_error");
 }
 
 static function push_context($obj) {
@@ -358,7 +362,7 @@ static function trycatch($expr, $catch, $finally, $id=0) {
       jsrt::$exception = NULL;
       jsrt::push_scope($obj);
       $ret = $catch();
-      jsrt::pop_scope();      
+      jsrt::pop_scope();
       if ($ret != NULL) $expr = $ret;
     }
   }
@@ -424,7 +428,7 @@ static function id($id) {
 */
         jsrt::$idcache[$id] = new js_ref($scope, $id);
         return jsrt::$idcache[$id];
-        
+
       }
     }
     return new js_ref_null($id);
@@ -455,7 +459,7 @@ static function dot($base, $prop) {
 static function debug($obj) {
   if (is_object($obj))
     echo $obj->toDebug();
-  else 
+  else
     echo "[NOTANOBJECT=".$obj."]";
 }
 
@@ -560,7 +564,7 @@ static function expr_typeof($a) {
     case js_val::BOOLEAN: return js_str("boolean");
     case js_val::NUMBER: return js_str("number");
     case js_val::STRING: return js_str("string");
-    case js_val::OBJECT: 
+    case js_val::OBJECT:
       if ($a instanceof js_function) {
         return js_str("function");
       } else {
@@ -712,12 +716,12 @@ static function strict_equal($a, $b) {
   if ($a->type != $b->type) return jsrt::$false;
   if ($a->type == js_val::UNDEFINED or $a->type == js_val::NULL) return jsrt::$true;
   if ($a->type == js_val::NUMBER) {
-      if (is_nan($a->value) or is_nan($b->value)) return jsrt::$false;  
+      if (is_nan($a->value) or is_nan($b->value)) return jsrt::$false;
   }
   if ($a->type == js_val::OBJECT) {
     return ($a === $b)?jsrt::$true:jsrt::$false;
   }
-  return ($a->value == $b->value)?jsrt::$true:jsrt::$false;  
+  return ($a->value == $b->value)?jsrt::$true:jsrt::$false;
 }
 static function expr_bit_and($a, $b) {
   return js_int($a->toInt32()->value & $b->toInt32()->value);
@@ -732,11 +736,38 @@ static function write() {
   $args = func_get_args();
   foreach ($args as $arg) {
     $s = $arg->toStr();
-    echo $s->value;
+    echo $s->value.PHP_EOL;
   }
   //ob_flush();
   flush();
 }
+
+static function j4f_error() {
+	echo 'CONTRACT_ERROR: ';
+
+	$args = func_get_args();
+	foreach ($args as $arg) {
+	  $s = $arg->toStr();
+	  echo $s->value.PHP_EOL;
+	}
+	//ob_flush();
+	flush();
+}
+
+static function die_ref_null() {
+
+	echo 'J4FVM_REF_NULL: ';
+
+	$args = func_get_args();
+	foreach ($args as $arg) {
+	  $s = $arg->toStr();
+	  echo $s->value.PHP_EOL;
+	}
+	//ob_flush();
+	flush();
+	die();
+	exit();
+  }
 
 } /* jsrt */
 
@@ -745,7 +776,7 @@ class js_context {
   public $js_this;
   public $scope_chain;
   public $var;
-  
+
   function __construct($that, $scope_chain, $var) {
     $this->js_this = $that;
     $this->scope_chain = $scope_chain;
@@ -842,20 +873,20 @@ class js_val {
   }
   function toStr() {
     switch ($this->type) {
-      case js_val::UNDEFINED: 
+      case js_val::UNDEFINED:
         return js_str("undefined");
-      case js_val::NULL: 
+      case js_val::NULL:
         return js_str("null");
-      case js_val::BOOLEAN: 
+      case js_val::BOOLEAN:
         return js_str($this->value?"true":"false");
-      case js_val::STRING: 
+      case js_val::STRING:
         return $this;
-      case js_val::OBJECT: 
+      case js_val::OBJECT:
         return $this->toPrimitive(js_val::STRING)->toStr();
       case js_val::NUMBER:
         if (is_nan($this->value)) return js_str("NaN");
         if ($this->value == 0) return js_str("0");
-        if ($this->value < 0) { 
+        if ($this->value < 0) {
           $v = js_int(-$this->value)->toStr();
           return js_str("-".$v->value);
         }
@@ -918,7 +949,7 @@ class js_object extends js_val implements Iterator {
     if (isset($this->slots[$name])) {
       return $this->slots[$name]->value;
     } else {
-      if ($this->prototype == NULL) return jsrt::$undefined;      
+      if ($this->prototype == NULL) return jsrt::$undefined;
       return $this->prototype->get($name);
     }
   }
@@ -1187,8 +1218,8 @@ class js_function extends js_object {
       if ($obj == $value) return jsrt::$true;
     } while (true);
   }
-  static function isConstructor() { 
-    return self::$constructor; 
+  static function isConstructor() {
+    return self::$constructor;
   }
 
   ////////////////////////
@@ -1453,7 +1484,7 @@ class js_array extends js_object {
   static public function sort($comparefn) {
     $obj = jsrt::this();
     $arr = js_array::toNativeArray($obj);
-    
+
     jsrt::$sortfn = $comparefn;
     usort($arr, array("js_array","sort_helper"));
     jsrt::$sortfn = NULL;
@@ -1573,7 +1604,7 @@ class js_string extends js_object {
       $this->value = js_str("");
     } else {
       $this->value = $value->toStr();
-    }    
+    }
     $len = strlen($this->value->value);
     if (jsrt::$proto_string != NULL) {
       $this->put("length", js_int($len), array("dontenum","dontdelete","readonly"));
@@ -1657,7 +1688,7 @@ class js_string extends js_object {
       return jsrt::$proto_regexp->get("exec")->_call($regexp, $obj);
     } else {
       $regexp->put("lastIndex", jsrt::$zero);
-      // XXX finish once the RegExp stuff is written # 15.5.4.10 
+      // XXX finish once the RegExp stuff is written # 15.5.4.10
       throw new js_exception(new js_error("string::match not implemented"));
     }
   }
@@ -1785,12 +1816,12 @@ class js_number extends js_object {
     $obj = jsrt::this();
     if (get_class($obj)!="js_number") throw new js_exception(new js_typeerror());
     $x = $obj->toNumber()->value;
-    
+
     if (is_nan($x)) return js_str("NaN");
     if ($x == 0) return js_str("0");
     if ($x < 0 and is_infinite($x)) return js_str("-Infinity");
     if (is_infinite($x)) return js_str("Infinity");
-  
+
     $radix = ($radix == jsrt::$undefined)?10:$radix->toNumber()->value;
     if ($radix<2 || $radix>36) $radix=10;
     $v = base_convert($x, 10, $radix);
@@ -1800,7 +1831,7 @@ class js_number extends js_object {
   static public function valueOf() {
     $obj = jsrt::this();
     if (get_class($obj)!="js_number") throw new js_exception(new js_typeerror());
-    return $obj->toNumber()->value;  
+    return $obj->toNumber()->value;
   }
   static public function toFixed($digits) {
     $obj = jsrt::this();
@@ -2186,7 +2217,7 @@ class js_date extends js_object {
     $min = ($min==jsrt::$undefined)?js_date::getMinutes():$min->toNumber()->value;
     $sec = ($sec==jsrt::$undefined)?js_date::getSeconds():$sec->toNumber()->value;
     $ms = ($ms == jsrt::$undefined)?($t%1000):$ms->toNumber()->value;
-    $v = mktime($hour, $min, $sec, js_date::getMonth(), 
+    $v = mktime($hour, $min, $sec, js_date::getMonth(),
                 js_date::getDate(), js_date::getYear())*1000 + $ms;
     $obj->value = $v;
     return $v;
@@ -2199,7 +2230,7 @@ class js_date extends js_object {
     $min = ($min==jsrt::$undefined)?js_date::getUTCMinutes():$min->toNumber()->value;
     $sec = ($sec==jsrt::$undefined)?js_date::getUTCSeconds():$sec->toNumber()->value;
     $ms = ($ms == jsrt::$undefined)?($t%1000):$ms->toNumber()->value;
-    $v = gmmktime($hour, $min, $sec, js_date::getUTCMonth(), 
+    $v = gmmktime($hour, $min, $sec, js_date::getUTCMonth(),
                 js_date::getUTCDate(), js_date::getUTCYear())*1000 + $ms;
     $obj->value = $v;
     return $v;
@@ -2460,7 +2491,7 @@ class js_ref {
   }
   function putValue($w, $ret=0) {
     $v = null;
-    if ($ret==2) { 
+    if ($ret==2) {
       $v = $this->base->get($this->propName);
     }
     $this->base->put($this->propName, $w);
@@ -2592,7 +2623,7 @@ function php_array($o,&$array=array()) {
 }
 
 ///////////////////////////////////////////
-//  
+//
 ///////////////////////////////////////////
 
 function dump_object($o) {
@@ -2618,10 +2649,10 @@ function jsi_eval() {
 function jsi_parseInt($str, $radix) {
   $radix = $radix->toNumber()->value;
   if ($radix==0) $radix=10;
-  return js_int(intval($str->toStr()->value, $radix));
+  return js_int($str->toStr()->value);
 }
 function jsi_parseFloat($str) {
-  return js_int(floatval($str->toStr()->value));
+  return js_int($str->toStr()->value);
 }
 function jsi_isNaN($val) {
   return is_nan($val->toNumber()->$value)?jsrt::$true:jsrt::$false;
@@ -2641,4 +2672,3 @@ function jsi_encodeURI($uri) {
 function jsi_encodeURIComponent($uri) {
   throw new js_error("encodeURIComponent not implemented");
 }
-

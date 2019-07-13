@@ -39,19 +39,20 @@ class PoW {
      * @param $difficulty
      * @param $startNonce
      * @param $incrementNonce
+	 * @param $isMultiThread
      * @return mixed
      */
-    public static function findNonce($idMiner,$message,$difficulty,$startNonce,$incrementNonce) {
+    public static function findNonce($idMiner,$message,$difficulty,$startNonce,$incrementNonce,$isMultiThread=true) {
         $max_difficulty = "000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
 
-        $nonce = "0";
+		$nonce = "0";
         $nonce = bcadd($nonce,strval($startNonce));
 
         //Save current time
         $lastLogTime = time();
 
-        //Can't start subprocess with mainthread
-        if (!file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MAIN_THREAD_CLOCK))
+        //Can't start subprocess without mainthread
+        if ($isMultiThread && !file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MAIN_THREAD_CLOCK))
             die('MAINTHREAD NOT FOUND');
 
         $countIdle = 0;
@@ -87,12 +88,13 @@ class PoW {
                 //Save current time
                 $lastLogTime = time();
 
-                Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MINERS_THREAD_CLOCK."_".$idMiner."_hashrate",$hashRateMiner);
+				if ($isMultiThread)
+                	Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MINERS_THREAD_CLOCK."_".$idMiner."_hashrate",$hashRateMiner);
                 //Subprocess::writeLog("Miners has checked ".$nonce." - Current hash rate: " . $hashRateMiner);
 
             }
 
-			if ($countIdle % 100 == 0) {
+			if ($countIdle % 100 == 0 && $isMultiThread) {
                 //Quit-Files
                 if (@file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING)) {
                     //Delete "pid" file
@@ -112,7 +114,7 @@ class PoW {
 			}
 
             //Check alive status every 1000 hashes
-            if ($countIdle % 1000 == 0) {
+            if ($countIdle % 1000 == 0 && $isMultiThread) {
                 $countIdle = 0;
 
 				//Update "pid" file every 1000 hashes
@@ -133,8 +135,8 @@ class PoW {
 
             //We increased the nonce to continue in the search to solve the problem
             $nonce = bcadd($nonce,strval($incrementNonce));
-
         }
+
         return $nonce;
     }
 
@@ -146,6 +148,7 @@ class PoW {
      * @return bool
      */
     public static function isValidNonce($message,$nonce,$difficulty,$maxDifficulty) {
+
 		$hash = PoW::hash($message.$nonce);
         $targetHash = bcdiv(Tools::hex2dec($maxDifficulty),$difficulty);
 		$hashValue = Tools::hex2dec(strtoupper($hash));

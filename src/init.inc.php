@@ -42,7 +42,8 @@ include(__DIR__.'/Miner.php');
 include(__DIR__.'/GenesisBlock.php');
 include(__DIR__.'/Peer.php');
 include(__DIR__.'/J4FVM.php');
-include(__DIR__.'/../mxdity/js.php');
+include(__DIR__.'/uint256.php');
+include(__DIR__.'/../funity/js.php');
 
 //MXC Version
 define('VERSION','0.1.0');

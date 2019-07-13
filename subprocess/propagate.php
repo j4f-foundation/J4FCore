@@ -40,6 +40,7 @@ include(__DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'src'.DIRECTORY_SEP
 include(__DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'src'.DIRECTORY_SEPARATOR.'Transaction.php');
 include(__DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'src'.DIRECTORY_SEPARATOR.'GenesisBlock.php');
 include(__DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'src'.DIRECTORY_SEPARATOR.'Peer.php');
+include(__DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'src'.DIRECTORY_SEPARATOR.'uint256.php');
 
 //Setting timezone to UTC
 date_default_timezone_set("UTC");
@@ -68,7 +69,7 @@ if ($blockMined != null && is_object($blockMined)) {
     Tools::writeLog('SUBPROCESS::Start new propagation to '.$peerIP.':'.$peerPORT);
 
 	$chaindata = new DB();
-	
+
 	// Get My Node info
 	$myNodeIp = $chaindata->GetConfig('node_ip');
 	$myNodePort = $chaindata->GetConfig('node_port');

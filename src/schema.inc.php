@@ -49,7 +49,7 @@ if ($dbversion == 0) {
 			`block_hash` varchar(128) NOT NULL,
 			PRIMARY KEY (`id`),
 			UNIQUE KEY `bHash` (`block_hash`)
-	  	) ENGINE=MyISAM AUTO_INCREMENT=323 DEFAULT CHARSET=utf8;	  
+	  	) ENGINE=MyISAM AUTO_INCREMENT=323 DEFAULT CHARSET=utf8;
     ");
     $db->db->query("
 		CREATE TABLE `blocks_pending_to_display` (
@@ -83,7 +83,7 @@ if ($dbversion == 0) {
 			`blacklist` varchar(12) DEFAULT NULL,
 			PRIMARY KEY (`id`),
 			KEY `ip` (`ip`)
-		) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;	  
+		) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
     ");
     $db->db->query("
 		CREATE TABLE `transactions` (
@@ -99,7 +99,7 @@ if ($dbversion == 0) {
 			PRIMARY KEY (`txn_hash`),
 			UNIQUE KEY `txn` (`txn_hash`) USING BTREE,
 			KEY `wallet_from_to` (`wallet_from`,`wallet_to`) USING BTREE
-		) ENGINE=MyISAM DEFAULT CHARSET=utf8;	  
+		) ENGINE=MyISAM DEFAULT CHARSET=utf8;
     ");
 
     $db->db->query("
@@ -116,9 +116,9 @@ if ($dbversion == 0) {
 			PRIMARY KEY (`txn_hash`),
 			UNIQUE KEY `txn` (`txn_hash`) USING BTREE,
 			KEY `wallet_from_to` (`wallet_from`,`wallet_to`) USING BTREE
-		) ENGINE=MyISAM DEFAULT CHARSET=utf8;  
+		) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 	");
-	
+
     $db->db->query("
 		CREATE TABLE `transactions_pending_to_send` (
 			`txn_hash` varchar(128) NOT NULL,
@@ -149,14 +149,10 @@ if ($dbversion == 1) {
     $db->db->query("
 	ALTER TABLE `transactions`
 	ADD COLUMN `data`  longblob NOT NULL AFTER `tx_fee`;
-    ");
 
-    $db->db->query("
 	ALTER TABLE `transactions_pending`
 	ADD COLUMN `data`  longblob NOT NULL AFTER `tx_fee`;
-	");
-	
-    $db->db->query("
+
 	ALTER TABLE `transactions_pending_to_send`
 	ADD COLUMN `data`  longblob NOT NULL AFTER `tx_fee`;
 	");
@@ -168,7 +164,7 @@ if ($dbversion == 1) {
 }
 
 if ($dbversion == 2) {
-	
+
     $db->db->query("
 	CREATE TABLE `smart_contracts` (
 		`contract_hash` varchar(128) NOT NULL,
@@ -188,18 +184,14 @@ if ($dbversion == 2) {
 }
 
 if ($dbversion == 3) {
-	
+
     $db->db->query("
 	ALTER TABLE `transactions`
 	MODIFY COLUMN `wallet_to`  varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `wallet_from`;
-	");
 
-    $db->db->query("
 	ALTER TABLE `transactions_pending`
 	MODIFY COLUMN `wallet_to`  varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `wallet_from`;
-	");
 
-    $db->db->query("
 	ALTER TABLE `transactions_pending_to_send`
 	MODIFY COLUMN `wallet_to`  varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `wallet_from`;
 	");
@@ -208,14 +200,10 @@ if ($dbversion == 3) {
 	$db->db->query("
 	ALTER TABLE `transactions`
 	MODIFY COLUMN `wallet_from`  varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL AFTER `wallet_from_key`;
-	");
 
-	$db->db->query("
 	ALTER TABLE `transactions_pending`
 	MODIFY COLUMN `wallet_from`  varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL AFTER `wallet_from_key`;
-	");
 
-	$db->db->query("
 	ALTER TABLE `transactions_pending_to_send`
 	MODIFY COLUMN `wallet_from`  varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL AFTER `wallet_from_key`;
 	");
@@ -225,6 +213,51 @@ if ($dbversion == 3) {
     //Increment version to next stage
     $dbversion++;
 }
+
+if ($dbversion == 4) {
+
+    $db->db->query("
+	ALTER TABLE `transactions`
+	MODIFY COLUMN `amount` varchar(78) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `wallet_to`;
+
+	ALTER TABLE `transactions_pending`
+	MODIFY COLUMN `amount` varchar(78) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `wallet_to`;
+
+	ALTER TABLE `transactions_pending_to_send`
+	MODIFY COLUMN `amount` varchar(78) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `wallet_to`;
+	");
+
+	$db->db->query("
+	ALTER TABLE `blocks`
+	MODIFY COLUMN `difficulty`  varchar(78) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `timestamp_end_miner`;
+
+	ALTER TABLE `blocks_pending_to_display`
+	MODIFY COLUMN `difficulty`  varchar(78) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `timestamp_end_miner`;
+	");
+
+	$db->db->query("
+	ALTER TABLE `blocks`
+	MODIFY COLUMN `nonce`  varchar(78) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `root_merkle`;
+
+	ALTER TABLE `blocks_pending_to_display`
+	MODIFY COLUMN `nonce`  varchar(78) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `root_merkle`;
+	");
+
+	$db->db->query("
+	ALTER TABLE `blocks`
+	MODIFY COLUMN `block_previous`  varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `height`;
+
+	ALTER TABLE `blocks`
+	MODIFY COLUMN `blocks_pending_to_display`  varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `height`;
+	");
+
+    Display::_printer("Updating DB Schema #".$dbversion);
+
+    //Increment version to next stage
+    $dbversion++;
+}
+
+
 
 // update dbversion
 if ($dbversion != $_CONFIG['dbversion']) {
