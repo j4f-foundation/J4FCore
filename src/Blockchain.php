@@ -346,10 +346,7 @@ class Blockchain {
 						//Parse contract code to string
 						$code_contract = Tools::bytesHex2str($contract['code']);
 
-						//Parse storageData of contract
-						$data_contract = @json_decode(Tools::bytesHex2str($contract['data']),true);
-
-						//Parse code MXDity::Call_Contract
+						//Parse code Funity::Call_Contract
 						$code_parsed = J4FVM::call($code_contract,$code_call_info['func'],$code_call_info['func_params']);
 
 						//Define sender Object

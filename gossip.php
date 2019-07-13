@@ -41,6 +41,7 @@ include('src/Transaction.php');
 include('src/GenesisBlock.php');
 include('src/Peer.php');
 include('src/Miner.php');
+include('src/J4FVMBase.php');
 include('src/J4FVM.php');
 include('funity/js.php');
 

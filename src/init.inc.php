@@ -41,11 +41,12 @@ include(__DIR__.'/Transaction.php');
 include(__DIR__.'/Miner.php');
 include(__DIR__.'/GenesisBlock.php');
 include(__DIR__.'/Peer.php');
+include(__DIR__.'/J4FVMBase.php');
 include(__DIR__.'/J4FVM.php');
 include(__DIR__.'/uint256.php');
 include(__DIR__.'/../funity/js.php');
 
-//MXC Version
+//J4F Version
 define('VERSION','0.1.0');
 
 //Start capturing flush
@@ -55,7 +56,7 @@ ob_start();
 Display::ClearScreen();
 
 //Init Display message
-Display::_printer("Welcome to the %G%MXC node - Version: " . VERSION);
+Display::_printer("Welcome to the %G%J4F node - Version: " . VERSION);
 
 //Setting timezone to UTC
 date_default_timezone_set("UTC");
