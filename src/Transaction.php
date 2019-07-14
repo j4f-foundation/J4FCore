@@ -56,9 +56,9 @@ class Transaction {
 		$data = trim($data);
 		$isDataParsed = strpos($data, '0x');
 		if ($isDataParsed === false)
-			$data = Tools::str2bytesHex($data);
+			$data = Tools::str2hex($data);
 		else if ($isDataParsed > 0)
-			$data = Tools::str2bytesHex($data);
+			$data = Tools::str2hex($data);
 
 		$this->data = $data;
 
