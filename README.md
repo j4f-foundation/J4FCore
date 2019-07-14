@@ -1,11 +1,11 @@
 ![Just4Fun](https://j4f.dev/images/just4fun_96_new.png) Just4Fun
 
-PHP cryptocurrency from scratch
+PHP cryptocurrency from scratch with Smart Contracts
 
 ```
 PoW sha3-256d + sha3-512
 Total coins: 56,240,067 J4F
-Blocks every: Mainnet 8 min (average) | Testnet: 20 sec (average)
+Blocks every: Mainnet ?? (average) | Testnet: 20 sec (average)
 Halving: every 250000 blocks decrease reward by half
 ```
 

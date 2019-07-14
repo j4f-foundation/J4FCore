@@ -66,6 +66,7 @@ class js {
     	}
 		//echo highlight_linenum($path);
 		include_once $path;
+		set_time_limit(0);
   	}
 
   #-- normally called by generated code. Your code doesn't need to call it.

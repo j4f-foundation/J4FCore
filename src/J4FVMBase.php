@@ -107,7 +107,8 @@ class J4FVMBase {
 		//Check if have Contract define struct
 		$matches = [];
 		preg_match("/[Cc]ontract\s{0,}([a-zA-Z0-9]*)\s{0,}=\s{0,}\{/",$code_parsed,$matches);
-		$code_parsed = str_replace($matches[0],str_replace('Contract','var',$matches[0]),$code_parsed);
+		if (!empty($matches[0]))
+			$code_parsed = @str_replace($matches[0],@str_replace('Contract','var',$matches[0]),$code_parsed);
 
 		//Parse prints
 		if (!$debug) {
@@ -117,7 +118,7 @@ class J4FVMBase {
 				if (count($match) > 0)
 					if (strpos($match[0],'print') !== false)
 						$code_parsed = str_replace($match,'',$code_parsed);
-			}	
+			}
 		}
 
 		//mapping(address => uint256) balances,

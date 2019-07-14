@@ -205,9 +205,6 @@ class Blockchain {
      */
     public static function MakeSmartContracts(&$chaindata,$block) {
 
-		//Obteemos todas las transacciones del bloque
-		//Si alguna transaccion va dirigida a 00000
-
 		foreach ($block->transactions as $transaction) {
 
 			//Check if transaction is valid
@@ -218,7 +215,9 @@ class Blockchain {
 
 					//Parse txn::data (contract code) to string
 					$contract_code = $transaction->data;
-					$code = Tools::bytesHex2str($contract_code);
+					$code = Tools::hex2str($contract_code);
+					if (strlen($code) == 0)
+						return;
 
 					//Merge code into MXDity::MakeContract
 					$code_parsed = J4FVM::_init($code);
@@ -302,7 +301,7 @@ class Blockchain {
 					if ($run_status == 1) {
 
 						//Get data contract
-						$contractData = Tools::str2bytesHex(json_encode(J4FVM::$data));
+						$contractData = Tools::str2hex(@json_encode(J4FVM::$data));
 
 						//Add SmartContract on blockchain (local)
 						$chaindata->addSmartContract($contractHash,$transaction->hash,$contract_code,$contractData);
@@ -338,13 +337,17 @@ class Blockchain {
 
 						//Parse txn::data (call code) to string
 						$call_code_hex = $transaction->data;
-						$call_code = Tools::bytesHex2str($call_code_hex);
+						$call_code = Tools::hex2str($call_code_hex);
+						if (strlen($call_code) == 0)
+							return;
 
 						//Parse CALL Code
 						$code_call_info = J4FVM::_parseCall($call_code);
 
 						//Parse contract code to string
-						$code_contract = Tools::bytesHex2str($contract['code']);
+						$code_contract = Tools::hex2str($contract['code']);
+						if (strlen($code_contract) == 0)
+							return;
 
 						//Parse code Funity::Call_Contract
 						$code_parsed = J4FVM::call($code_contract,$code_call_info['func'],$code_call_info['func_params']);
@@ -408,7 +411,7 @@ class Blockchain {
 							J4FVM::$txn_hash = $transaction->hash;
 
 							//Set data of contract
-							J4FVM::$data = @json_decode(Tools::bytesHex2str($contract['data']),true);
+							J4FVM::$data = @json_decode(Tools::hex2str($contract['data']),true);
 
 							//Run code
 							js::run($code_parsed);
@@ -426,7 +429,7 @@ class Blockchain {
 						if ($run_status == 1) {
 
 							//Get data contract
-							$contractData = Tools::str2bytesHex(json_encode(J4FVM::$data));
+							$contractData = Tools::str2hex(@json_encode(J4FVM::$data));
 
 							//Update StoredData of Smart Contract on blockchain (local)
 							$chaindata->updateStoredDataContract($contract['contract_hash'],$contractData);
