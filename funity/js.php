@@ -1,28 +1,28 @@
 <?php
-/* 
+/*
   J4P5: EcmaScript interpreter for php
   =======================================================
   (also known as JavaScript over PHP5)
-  
+
   This is a true EcmaScript/JavaScript interpreter, as defined by Ecma-262 3d edition.
   You get:
   - functions, objects, closures, exceptions, regular expressions, that kind of stuff.
   You don't get:
   - a browser DOM. However, you can plug whatever objects you want for your scripts to use.
-  
+
   Speed?
   - parsing is faster than it used to be, but still sluggish.
-  - execution is done by running generated php code. It is strongly recommended to use a PHP 
+  - execution is done by running generated php code. It is strongly recommended to use a PHP
     opcode cache when available.
-    
+
   Safety?
-  - Yes. That was the idea. scripts are sand-boxed and won't have access to anything 
+  - Yes. That was the idea. scripts are sand-boxed and won't have access to anything
     you don't expose them to explicitely.
-    
+
   Fully compliant Ecma-262 3d edition?
   - No. We're missing unicode support, magic semi-colons, and regexp literals.
     You might bump into other minor quirks that may get fixed eventually.
-    
+
   Any Weird Extensions?
   - Yes. We support <? | <?= | <?js ... ?>.
 */
@@ -55,30 +55,30 @@ class js {
       		$t1 = microtime(1);
       		$php = jsc::compile($src);
 			  $t2 = microtime(2);
-			  
+
 			for ($i = 1; $i <= 50; $i++) {
-				$php = str_replace('jsrt_uf'.$i,'jsrt_uf'.$i.'_'.$id,$php);	
+				$php = str_replace('jsrt_uf'.$i,'jsrt_uf'.$i.'_'.$id,$php);
 			}
-	  
+
       		#echo "Compilation done in ".($t2-$t1). " seconds<hr>";
-			@file_put_contents($path, "<?php\n".$php."\n?>");
+			@file_put_contents($path, "<?php\n set_time_limit(5);\n".$php."\n?>");
       		#-- then we run it.
     	}
 		//echo highlight_linenum($path);
 		include_once $path;
   	}
-  
+
   #-- normally called by generated code. Your code doesn't need to call it.
   static function init() {
     require_once(dirname(__FILE__)."/jsrt.php");
     jsrt::start_once();
   }
 
-  #-- easy-to-use crud to define functions, variables and all that good stuff  
+  #-- easy-to-use crud to define functions, variables and all that good stuff
   /**
    * sample use:
    *
-   *  define("external", 
+   *  define("external",
    *         array("include"=>"my_js_include", "require"=>"my_js_require"),
    *         array("PI"=>3.1415926535, "ZERO"=>0) );
    *
@@ -129,13 +129,13 @@ function highlight_linenum($path)
     $end   = '</span>';
     $i = 1;
     $text = '';
- 
+
     // Loop
     foreach ($data as $line) {
         $text .= $start . $i . ' ' . $end .
             str_replace("\n", '', $line) . "\n";
         ++$i;
     }
- 
+
     return "<pre style='border:1px dotted #aaa;'>".$text."</pre>";
 }

@@ -508,6 +508,16 @@ class Wallet {
         if ($tx_fee == 1 && bccomp($amount ,"0.00000250",8) == -1)
             return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." There is not enough balance in the account".PHP_EOL;
 
+		if ($data != null) {
+			$isDataParsed = strpos($data,'0x');
+			if ($isDataParsed === false) {
+				return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." Input data malformed".PHP_EOL;
+			}
+			else if ($isDataParsed > 0) {
+				return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." Input data malformed".PHP_EOL;
+			}
+		}
+
         if ($wallet_from == "coinbase") {
             $wallet_from_info = self::GetCoinbase();
             $wallet_from = self::GetWalletAddressFromPubKey($wallet_from_info['public']);
@@ -590,6 +600,16 @@ class Wallet {
 
         if ($tx_fee == 1 && bccomp($amount ,"0.00000250",8) == -1)
             return "Error, There is not enough balance in the account";
+
+		if ($data != null) {
+			$isDataParsed = strpos($data,'0x');
+			if ($isDataParsed === false) {
+				return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." Input data malformed".PHP_EOL;
+			}
+			else if ($isDataParsed > 0) {
+				return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." Input data malformed".PHP_EOL;
+			}
+		}
 
         //Check if wallet from its coinbase
         if ($wallet_from == "coinbase")

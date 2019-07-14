@@ -98,7 +98,7 @@ class J4FVMBase {
      *
      * @return string
      */
-	public static function _parse($code) {
+	public static function _parse($code,$debug=false) {
 
 		$code_parsed = self::_checkSyntaxError($code);
 
@@ -110,12 +110,14 @@ class J4FVMBase {
 		$code_parsed = str_replace($matches[0],str_replace('Contract','var',$matches[0]),$code_parsed);
 
 		//Parse prints
-		$matches = [];
-		preg_match_all("/print\((.*)\);/",$code_parsed,$matches);
-		foreach ($matches as $match) {
-			if (count($match) > 0)
-				if (strpos($match[0],'print') !== false)
-					$code_parsed = str_replace($match,'',$code_parsed);
+		if (!$debug) {
+			$matches = [];
+			preg_match_all("/print\((.*)\);/",$code_parsed,$matches);
+			foreach ($matches as $match) {
+				if (count($match) > 0)
+					if (strpos($match[0],'print') !== false)
+						$code_parsed = str_replace($match,'',$code_parsed);
+			}	
 		}
 
 		//mapping(address => uint256) balances,

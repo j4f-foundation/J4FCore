@@ -31,12 +31,12 @@ class J4FVM extends J4FVMBase {
      *
      * @return string
      */
-	public static function _init($code) {
+	public static function _init($code,$debug=false) {
 
 		self::$data = [];
 
 		//Parse code
-		$code_parsed = self::_parse($code);
+		$code_parsed = self::_parse($code,$debug);
 
 		//Check if have Contract define struct
 		$contractName = self::GetContractName($code);
@@ -113,19 +113,14 @@ class J4FVM extends J4FVMBase {
      * @return string
      */
 	public static function canCallThisFunction($code,$functionToCall) {
-
-		$matches = [];
-		preg_match_all('/(\w*)\s*:\s*function\s*\((.*)\)\s*(?:(public|private)|\s)/',$code,$matches);
-		if (!empty($matches[0])) {
-			for ($i = 0; $i < count($matches[1]); $i++) {
-				if ($matches[1][$i] == $functionToCall) {
-					if ($matches[3][$i] == "public" || $matches[3][$i] == "") {
-						return true;
-					}
+		$functions = self::getFunctions($code);
+		if (!empty($functions['public'])) {
+			foreach ($functions['public'] as $function=>$params) {
+				if ($function == $functionToCall) {
+					return true;
 				}
 			}
 		}
-
 		return false;
 	}
 
@@ -193,5 +188,53 @@ class J4FVM extends J4FVMBase {
 		}
 		return $token;
 	}
+
+	/**
+     * Function that get functions of contract
+     *
+     * @param string $code
+	 *
+	 * @return array
+     */
+	public static function getFunctions($code) {
+
+		$functions = array(
+			'public' => array(),
+			'private' => array(),
+		);
+
+		//Parse normal functions
+		$matches = array();
+		preg_match_all('/(\w*)\s*:\s*function\s*\((.*)\)\s*(?:(public|private)|\s)/',$code,$matches);
+		if (!empty($matches[1])) {
+			$i = 0;
+			foreach ($matches[1] as $match) {
+				$funcName = $matches[1][$i];
+				$funcType = 'private';
+				if (trim($matches[3][$i]) == 'public')
+					$funcType = 'public';
+
+				//Strip params if have
+				$parameters = array();
+				$e_params = array($matches[2][$i]);
+				if (strpos($matches[2][$i],',') !== false)
+					$e_params = explode(',',$matches[2][$i]);
+
+				foreach ($e_params as $param) {
+					$strip_param = explode(' ',trim($param));
+					if (count($strip_param) == 2) {
+						$parameters[$strip_param[1]] = $strip_param[0];
+					}
+				}
+
+				$functions[$funcType][$funcName] = $parameters;
+
+				$i++;
+			}
+		}
+
+		return $functions;
+	}
+
 }
 ?>
