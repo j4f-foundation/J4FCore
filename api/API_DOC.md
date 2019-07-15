@@ -12,19 +12,19 @@
       - [node_syncing](#node_syncing)
       - [node_mining](#node_mining)
       - [node_hashrate](#node_hashrate)
-      - [mxc_coinbase](#mxc_coinbase)
-      - [mxc_accounts](#mxc_accounts)
-      - [mxc_addAccount](#mxc_addAccount)
-      - [mxc_blockNumber](#mxc_blocknumber)
-      - [mxc_getBalance](#mxc_getbalance)
-      - [mxc_getTransactionCount](#mxc_gettransactioncount)
-      - [mxc_getBlockTransactionCountByHash](#mxc_getblocktransactioncountbyhash)
-      - [mxc_getBlockTransactionCountByNumber](#mxc_getblocktransactioncountbynumber)
-      - [mxc_sendTransaction](#mxc_sendtransaction)
-      - [mxc_getBlockByHash](#mxc_getblockbyhash)
-      - [mxc_getBlockByNumber](#mxc_getblockbynumber)
-      - [mxc_getTransactionByHash](#mxc_gettransactionbyhash)
-      - [mxc_sign](#mxc_sign)
+      - [j4f_coinbase](#j4f_coinbase)
+      - [j4f_accounts](#j4f_accounts)
+      - [j4f_addAccount](#j4f_addAccount)
+      - [j4f_blockNumber](#j4f_blocknumber)
+      - [j4f_getBalance](#j4f_getbalance)
+      - [j4f_getTransactionCount](#j4f_gettransactioncount)
+      - [j4f_getBlockTransactionCountByHash](#j4f_getblocktransactioncountbyhash)
+      - [j4f_getBlockTransactionCountByNumber](#j4f_getblocktransactioncountbynumber)
+      - [j4f_sendTransaction](#j4f_sendtransaction)
+      - [j4f_getBlockByHash](#j4f_getblockbyhash)
+      - [j4f_getBlockByNumber](#j4f_getblockbynumber)
+      - [j4f_getTransactionByHash](#j4f_gettransactionbyhash)
+      - [j4f_sign](#j4f_sign)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -52,7 +52,7 @@ http://NODE_IP:NODE_PORT/api/?method=getBalance&wallet=VTx0000000000000000000000
 
 ## url Info
 
-The examples also do not include the DOMAIN/IP & port combination which must be the last argument given to curl e.x. 
+The examples also do not include the DOMAIN/IP & port combination which must be the last argument given to curl e.x.
 127.0.0.1:6969
 domain:6969
 
@@ -63,22 +63,22 @@ domain:6969
 * [node_listening](#node_listening)
 * [node_peerCount](#node_peercount)
 * [node_syncing](#node_syncing)
-* [node_mining](#mxc_mining)
-* [node_hashrate](#mxc_hashrate)
-* [mxc_coinbase](#mxc_coinbase)
-* [mxc_accounts](#mxc_accounts)
-* [mxc_addAccount](#mxc_addAccount)
-* [mxc_blockNumber](#mxc_blocknumber)
-* [mxc_getBalance](#mxc_getbalance)
-* [mxc_getTransactionCount](#mxc_gettransactioncount)
-* [mxc_getBlockTransactionCountByHash](#mxc_getblocktransactioncountbyhash)
-* [mxc_getBlockTransactionCountByNumber](#mxc_getblocktransactioncountbynumber)
-* [mxc_sign](#mxc_sign)
-* [mxc_sendTransaction](#mxc_sendtransaction)
-* [mxc_getBlockByHash](#mxc_getblockbyhash)
-* [mxc_getBlockByNumber](#mxc_getblockbynumber)
-* [mxc_getTransactionByHash](#mxc_gettransactionbyhash)
-* [mxc_sign](#mxc_sign)
+* [node_mining](#j4f_mining)
+* [node_hashrate](#j4f_hashrate)
+* [j4f_coinbase](#j4f_coinbase)
+* [j4f_accounts](#j4f_accounts)
+* [j4f_addAccount](#j4f_addAccount)
+* [j4f_blockNumber](#j4f_blocknumber)
+* [j4f_getBalance](#j4f_getbalance)
+* [j4f_getTransactionCount](#j4f_gettransactioncount)
+* [j4f_getBlockTransactionCountByHash](#j4f_getblocktransactioncountbyhash)
+* [j4f_getBlockTransactionCountByNumber](#j4f_getblocktransactioncountbynumber)
+* [j4f_sign](#j4f_sign)
+* [j4f_sendTransaction](#j4f_sendtransaction)
+* [j4f_getBlockByHash](#j4f_getblockbyhash)
+* [j4f_getBlockByNumber](#j4f_getblockbynumber)
+* [j4f_getTransactionByHash](#j4f_gettransactionbyhash)
+* [j4f_sign](#j4f_sign)
 
 ## JSON RPC API Reference
 
@@ -208,7 +208,7 @@ none
 ##### Returns
 
 `Object|Boolean`, An object with sync status data or `FALSE`, when not syncing:
-  - `currentBlock`: `INTEGER` - The current block, same as mxc_blockNumber
+  - `currentBlock`: `INTEGER` - The current block, same as j4f_blockNumber
   - `highestBlock`: `INTEGER` - The estimated highest block
 
 ##### Example
@@ -302,7 +302,7 @@ http://NODE_IP:NODE_PORT/api/?id=7&method=node_hashrate
 
 ***
 
-#### mxc_coinbase
+#### j4f_coinbase
 
 Returns the client coinbase address.
 
@@ -317,10 +317,10 @@ none
 ##### Example
 ```js
 // JSON-RPC Request
-curl -X POST --data '{"jsonrpc":"2.0","method":"mxc_coinbase","params":[],"id":8}'
+curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_coinbase","params":[],"id":8}'
 
 //HTTP Request
-http://NODE_IP:NODE_PORT/api/?id=8&method=mxc_coinbase
+http://NODE_IP:NODE_PORT/api/?id=8&method=j4f_coinbase
 
 // Result
 {
@@ -332,7 +332,7 @@ http://NODE_IP:NODE_PORT/api/?id=8&method=mxc_coinbase
 
 ***
 
-#### mxc_accounts
+#### j4f_accounts
 
 Returns a list of addresses owned by client.
 
@@ -346,10 +346,10 @@ none
 ##### Example
 ```js
 // JSON-RPC Request
-curl -X POST --data '{"jsonrpc":"2.0","method":"mxc_accounts","params":[],"id":9}'
+curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_accounts","params":[],"id":9}'
 
 //HTTP Request
-http://NODE_IP:NODE_PORT/api/?id=9&method=mxc_accounts
+http://NODE_IP:NODE_PORT/api/?id=9&method=j4f_accounts
 
 // Result
 {
@@ -361,7 +361,7 @@ http://NODE_IP:NODE_PORT/api/?id=9&method=mxc_accounts
 
 ***
 
-#### mxc_addAccount
+#### j4f_addAccount
 
 Create new wallet
 
@@ -384,10 +384,10 @@ params: [
 ##### Example
 ```js
 // JSON-RPC Request
-curl -X POST --data '{"jsonrpc":"2.0","method":"mxc_addAccount","params":["password":"example_password"],"id":10}'
+curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_addAccount","params":["password":"example_password"],"id":10}'
 
 //HTTP Request
-http://NODE_IP:NODE_PORT/api/?id=10&method=mxc_addAccount&password=example_password
+http://NODE_IP:NODE_PORT/api/?id=10&method=j4f_addAccount&password=example_password
 
 // Result
 {
@@ -403,7 +403,7 @@ http://NODE_IP:NODE_PORT/api/?id=10&method=mxc_addAccount&password=example_passw
 
 ***
 
-#### mxc_blockNumber
+#### j4f_blockNumber
 
 Returns the number of most recent block.
 
@@ -417,10 +417,10 @@ none
 ##### Example
 ```js
 // JSON-RPC Request
-curl -X POST --data '{"jsonrpc":"2.0","method":"mxc_blockNumber","params":[],"id":11}'
+curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_blockNumber","params":[],"id":11}'
 
 //HTTP Request
-http://NODE_IP:NODE_PORT/api/?id=11&method=mxc_blockNumber
+http://NODE_IP:NODE_PORT/api/?id=11&method=j4f_blockNumber
 
 // Result
 {
@@ -432,7 +432,7 @@ http://NODE_IP:NODE_PORT/api/?id=11&method=mxc_blockNumber
 
 ***
 
-#### mxc_getBalance
+#### j4f_getBalance
 
 Returns the balance of the account of given address.
 
@@ -454,10 +454,10 @@ params: [
 ##### Example
 ```js
 // JSON-RPC Request
-curl -X POST --data '{"jsonrpc":"2.0","method":"mxc_getBalance","params":["wallet":"VTx00000000000000000000000000000000"],"id":12}'
+curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_getBalance","params":["wallet":"VTx00000000000000000000000000000000"],"id":12}'
 
 //HTTP Request
-http://NODE_IP:NODE_PORT/api/?id=12&method=mxc_getBalance&wallet=VTx00000000000000000000000000000000
+http://NODE_IP:NODE_PORT/api/?id=12&method=j4f_getBalance&wallet=VTx00000000000000000000000000000000
 
 // Result
 {
@@ -469,7 +469,7 @@ http://NODE_IP:NODE_PORT/api/?id=12&method=mxc_getBalance&wallet=VTx000000000000
 
 ***
 
-#### mxc_getPendingBalance
+#### j4f_getPendingBalance
 
 Returns the pending balance of the account of given address.
 
@@ -491,10 +491,10 @@ params: [
 ##### Example
 ```js
 // JSON-RPC Request
-curl -X POST --data '{"jsonrpc":"2.0","method":"mxc_getPendingBalance","params":["wallet":"VTx00000000000000000000000000000000"],"id":13}'
+curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_getPendingBalance","params":["wallet":"VTx00000000000000000000000000000000"],"id":13}'
 
 //HTTP Request
-http://NODE_IP:NODE_PORT/api/?id=13&method=mxc_getPendingBalance&wallet=VTx00000000000000000000000000000000
+http://NODE_IP:NODE_PORT/api/?id=13&method=j4f_getPendingBalance&wallet=VTx00000000000000000000000000000000
 
 // Result
 {
@@ -506,7 +506,7 @@ http://NODE_IP:NODE_PORT/api/?id=13&method=mxc_getPendingBalance&wallet=VTx00000
 
 ***
 
-#### mxc_getTransactionCount
+#### j4f_getTransactionCount
 
 Returns the number of transactions *sent* from an address.
 
@@ -529,10 +529,10 @@ params: [
 ##### Example
 ```js
 // JSON-RPC Request
-curl -X POST --data '{"jsonrpc":"2.0","method":"mxc_getTransactionCount","params":["wallet":"VTx00000000000000000000000000000000"],"id":14}'
+curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_getTransactionCount","params":["wallet":"VTx00000000000000000000000000000000"],"id":14}'
 
 //HTTP Request
-http://NODE_IP:NODE_PORT/api/?id=14&method=mxc_getTransactionCount&wallet=VTx00000000000000000000000000000000
+http://NODE_IP:NODE_PORT/api/?id=14&method=j4f_getTransactionCount&wallet=VTx00000000000000000000000000000000
 
 // Result
 {
@@ -544,7 +544,7 @@ http://NODE_IP:NODE_PORT/api/?id=14&method=mxc_getTransactionCount&wallet=VTx000
 
 ***
 
-#### mxc_getBlockTransactionCountByHash
+#### j4f_getBlockTransactionCountByHash
 
 Returns the number of transactions in a block from a block matching the given block hash.
 
@@ -566,10 +566,10 @@ params: [
 ##### Example
 ```js
 // Request
-curl -X POST --data '{"jsonrpc":"2.0","method":"mxc_getBlockTransactionCountByHash","params":["hash":"00005cd741f6691aaece42e0ede9ec66bd68098a47d7d1f72f4f953e3fe02773"],"id":15}'
+curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_getBlockTransactionCountByHash","params":["hash":"00005cd741f6691aaece42e0ede9ec66bd68098a47d7d1f72f4f953e3fe02773"],"id":15}'
 
 //HTTP Request
-http://NODE_IP:NODE_PORT/api/?id=15&method=mxc_getBlockTransactionCountByHash&hash=00005cd741f6691aaece42e0ede9ec66bd68098a47d7d1f72f4f953e3fe02773
+http://NODE_IP:NODE_PORT/api/?id=15&method=j4f_getBlockTransactionCountByHash&hash=00005cd741f6691aaece42e0ede9ec66bd68098a47d7d1f72f4f953e3fe02773
 
 // Result
 {
@@ -581,7 +581,7 @@ http://NODE_IP:NODE_PORT/api/?id=15&method=mxc_getBlockTransactionCountByHash&ha
 
 ***
 
-#### mxc_getBlockTransactionCountByNumber
+#### j4f_getBlockTransactionCountByNumber
 
 Returns the number of transactions in a block matching the given block number.
 
@@ -603,10 +603,10 @@ params: [
 ##### Example
 ```js
 // JSON-RPC Request
-curl -X POST --data '{"jsonrpc":"2.0","method":"mxc_getBlockTransactionCountByNumber","params":["height":"542"],"id":16}'
+curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_getBlockTransactionCountByNumber","params":["height":"542"],"id":16}'
 
 //HTTP Request
-http://NODE_IP:NODE_PORT/api/?id=16&method=mxc_getBlockTransactionCountByNumber&height=542
+http://NODE_IP:NODE_PORT/api/?id=16&method=j4f_getBlockTransactionCountByNumber&height=542
 
 // Result
 {
@@ -618,7 +618,7 @@ http://NODE_IP:NODE_PORT/api/?id=16&method=mxc_getBlockTransactionCountByNumber&
 
 ***
 
-#### mxc_sendTransaction
+#### j4f_sendTransaction
 
 Creates new message call transaction
 
@@ -648,10 +648,10 @@ params: [{
 ##### Example
 ```js
 // JSON-RPC Request
-curl -X POST --data '{"jsonrpc":"2.0","method":"mxc_sendTransaction","params":[{see above}],"id":17}'
+curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_sendTransaction","params":[{see above}],"id":17}'
 
 //HTTP Request
-http://NODE_IP:NODE_PORT/api/?id=17&method=mxc_sendTransaction&params...[{see above}]
+http://NODE_IP:NODE_PORT/api/?id=17&method=j4f_sendTransaction&params...[{see above}]
 
 // Result
 {
@@ -663,7 +663,7 @@ http://NODE_IP:NODE_PORT/api/?id=17&method=mxc_sendTransaction&params...[{see ab
 
 ***
 
-#### mxc_getBlockByHash
+#### j4f_getBlockByHash
 
 Returns information about a block by hash.
 
@@ -698,10 +698,10 @@ params: [
 ##### Example
 ```js
 // JSON-RPC Request
-curl -X POST --data '{"jsonrpc":"2.0","method":"mxc_getBlockByHash","params":["0000cdd334c36ebc602462664b52c3d5df61f5e12b761695b164267bc789e0c5", "transactions":false],"id":18}'
+curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_getBlockByHash","params":["0000cdd334c36ebc602462664b52c3d5df61f5e12b761695b164267bc789e0c5", "transactions":false],"id":18}'
 
 //HTTP Request
-http://NODE_IP:NODE_PORT/api/?id=18&method=mxc_getBlockByHash&hash=0000cdd334c36ebc602462664b52c3d5df61f5e12b761695b164267bc789e0c5&transactions=0
+http://NODE_IP:NODE_PORT/api/?id=18&method=j4f_getBlockByHash&hash=0000cdd334c36ebc602462664b52c3d5df61f5e12b761695b164267bc789e0c5&transactions=0
 
 // Result
 {
@@ -724,7 +724,7 @@ http://NODE_IP:NODE_PORT/api/?id=18&method=mxc_getBlockByHash&hash=0000cdd334c36
 
 ***
 
-#### mxc_getBlockByNumber
+#### j4f_getBlockByNumber
 
 Returns information about a block by block number.
 
@@ -742,22 +742,22 @@ params: [
 
 ##### Returns
 
-See [mxc_getBlockByHash](#mxc_getblockbyhash)
+See [j4f_getBlockByHash](#j4f_getblockbyhash)
 
 ##### Example
 ```js
 // JSON-RPC Request
-curl -X POST --data '{"jsonrpc":"2.0","method":"mxc_getBlockByNumber","params":["height":"100", "transactions":false],"id":19}'
+curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_getBlockByNumber","params":["height":"100", "transactions":false],"id":19}'
 
 //HTTP Request
-http://NODE_IP:NODE_PORT/api/?id=19&method=mxc_getBlockByNumber&height=100&transactions=1
+http://NODE_IP:NODE_PORT/api/?id=19&method=j4f_getBlockByNumber&height=100&transactions=1
 ```
 
-Result see [mxc_getBlockByHash](#mxc_getblockbyhash)
+Result see [j4f_getBlockByHash](#j4f_getblockbyhash)
 
 ***
 
-#### mxc_getTransactionByHash
+#### j4f_getTransactionByHash
 
 Returns the information about a transaction requested by transaction hash.
 
@@ -788,10 +788,10 @@ params: [
 ##### Example
 ```js
 // Request
-curl -X POST --data '{"jsonrpc":"2.0","method":"mxc_getTransactionByHash","params":["hash":"7378fe81f12248f7759a0535601ef2b5c9398a9956f9b254b06d3810e456687f"],"id":20}'
+curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_getTransactionByHash","params":["hash":"7378fe81f12248f7759a0535601ef2b5c9398a9956f9b254b06d3810e456687f"],"id":20}'
 
 //HTTP Request
-http://NODE_IP:NODE_PORT/api/?id=20&method=mxc_getTransactionByHash&hash=7378fe81f12248f7759a0535601ef2b5c9398a9956f9b254b06d3810e456687f
+http://NODE_IP:NODE_PORT/api/?id=20&method=j4f_getTransactionByHash&hash=7378fe81f12248f7759a0535601ef2b5c9398a9956f9b254b06d3810e456687f
 
 // Result
 {
@@ -810,7 +810,7 @@ http://NODE_IP:NODE_PORT/api/?id=20&method=mxc_getTransactionByHash&hash=7378fe8
 }
 ```
 
-#### mxc_sign
+#### j4f_sign
 
 Check if cant sign this wallet with this password
 
@@ -834,10 +834,10 @@ params: [
 ##### Example
 ```js
 // Request
-curl -X POST --data '{"jsonrpc":"2.0","method":"mxc_sign","params":["wallet":"VTx00000000000000000000000000000000","password":"EXAMPLE_PASSWORD"],"id":20}'
+curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_sign","params":["wallet":"VTx00000000000000000000000000000000","password":"EXAMPLE_PASSWORD"],"id":20}'
 
 //HTTP Request
-http://NODE_IP:NODE_PORT/api/?id=20&method=mxc_sign&wallet=VTx00000000000000000000000000000000&password=EXAMPLE_PASSWORD
+http://NODE_IP:NODE_PORT/api/?id=20&method=j4f_sign&wallet=VTx00000000000000000000000000000000&password=EXAMPLE_PASSWORD
 
 // Result
 {

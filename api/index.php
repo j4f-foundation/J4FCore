@@ -161,7 +161,7 @@ if ($id != null) {
                     $response_jsonrpc['result'] = $hashrate;
                 break;
 
-                case 'mxc_coinbase':
+                case 'j4f_coinbase':
                     $wallet = "";
 
                     $walletCoinBase = Wallet::GetCoinbase();
@@ -174,11 +174,11 @@ if ($id != null) {
                     $response_jsonrpc['result'] = $wallet;
                 break;
 
-                case 'mxc_accounts':
+                case 'j4f_accounts':
                     $response_jsonrpc['result'] = Wallet::GetAccounts();
                 break;
 
-                case 'mxc_addAccount':
+                case 'j4f_addAccount':
                     if (!isset($params['password']) || strlen($params['password']) == 0) {
                         $response_jsonrpc['error'] = array(
                             'code'    => -32602,
@@ -195,11 +195,11 @@ if ($id != null) {
                     }
                 break;
 
-                case 'mxc_blockNumber':
+                case 'j4f_blockNumber':
                     $response_jsonrpc['result'] = $chaindata->GetLastBlock(false)['height'];
                 break;
 
-                case 'mxc_getBalance':
+                case 'j4f_getBalance':
                     if (!isset($params['wallet']) || strlen($params['wallet']) == 0) {
                         $response_jsonrpc['error'] = array(
                             'code'    => -32602,
@@ -233,7 +233,7 @@ if ($id != null) {
                     }
                 break;
 
-                case 'mxc_getPendingBalance':
+                case 'j4f_getPendingBalance':
                     if (!isset($params['wallet']) || strlen($params['wallet']) == 0) {
                         $response_jsonrpc['error'] = array(
                             'code'    => -32602,
@@ -267,7 +267,7 @@ if ($id != null) {
                     }
                 break;
 
-                case 'mxc_getTransactionCount':
+                case 'j4f_getTransactionCount':
                     if (!isset($params['wallet']) || strlen($params['wallet']) == 0) {
                         $response_jsonrpc['error'] = array(
                             'code'    => -32602,
@@ -296,7 +296,7 @@ if ($id != null) {
                     }
                 break;
 
-                case 'mxc_getBlockTransactionCountByHash':
+                case 'j4f_getBlockTransactionCountByHash':
                     if (!isset($params['hash']) || strlen($params['hash']) == 0) {
                         $response_jsonrpc['error'] = array(
                             'code'    => -32602,
@@ -307,7 +307,7 @@ if ($id != null) {
                     }
                 break;
 
-                case 'mxc_getBlockTransactionCountByNumber':
+                case 'j4f_getBlockTransactionCountByNumber':
                     if (!isset($params['height']) || strlen($params['height']) == 0) {
                         $response_jsonrpc['error'] = array(
                             'code'    => -32602,
@@ -318,7 +318,7 @@ if ($id != null) {
                     }
                 break;
 
-                case 'mxc_sendTransaction':
+                case 'j4f_sendTransaction':
 
                     if (
                         (!isset($params['from']) || strlen($params['from']) == 0) ||
@@ -373,7 +373,7 @@ if ($id != null) {
                     }
                 break;
 
-                case 'mxc_getBlockByHash':
+                case 'j4f_getBlockByHash':
                     if (!isset($params['hash']) || strlen($params['hash']) == 0) {
                         $response_jsonrpc['error'] = array(
                             'code'    => -32602,
@@ -409,7 +409,7 @@ if ($id != null) {
                     }
                 break;
 
-                case 'mxc_getBlockByNumber':
+                case 'j4f_getBlockByNumber':
                     if (!isset($params['height']) || strlen($params['height']) == 0) {
                         $response_jsonrpc['error'] = array(
                             'code'    => -32602,
@@ -445,7 +445,7 @@ if ($id != null) {
                     }
                 break;
 
-                case 'mxc_getTransactionByHash':
+                case 'j4f_getTransactionByHash':
                     if (!isset($params['hash']) || strlen($params['hash']) == 0) {
                         $response_jsonrpc['error'] = array(
                             'code'    => -32602,
@@ -477,7 +477,7 @@ if ($id != null) {
                     }
                 break;
 
-                case 'mxc_sign':
+                case 'j4f_sign':
                     if (
                         (!isset($params['wallet']) || strlen($params['wallet']) == 0) ||
                         (!isset($params['password']) || strlen($params['password']) == 0)
