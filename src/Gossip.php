@@ -738,7 +738,7 @@ class Gossip {
                     if ($lastBlock_LocalNode < $lastBlock_PeerNode) {
                         $nextBlocksToSyncFromPeer = Peer::SyncNextBlocksFrom($ipAndPort,$lastBlock_LocalNode);
                         $resultSync = Peer::SyncBlocks($this,$nextBlocksToSyncFromPeer,$lastBlock_LocalNode,$lastBlock_PeerNode,$ipAndPort);
-                        
+
                         //If dont have result of sync, stop sync with this peer
                         if ($resultSync == null) {
                             //Delete sync file
@@ -880,7 +880,7 @@ class Gossip {
 		if (@file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_NEW_BLOCK)) {
 
 			/** @var Block $blockMined */
-			$blockMined = Tools::objectToObject(@unserialize(@file_get_contents(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_NEW_BLOCK)),'Block');
+			$blockMined = Tools::objectToObject(@unserialize(Tools::hex2str(file_get_contents(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_NEW_BLOCK))),'Block');
 
 			//Get next block height
 			$nextHeight = $this->chaindata->GetNextBlockNum();
@@ -904,10 +904,10 @@ class Gossip {
 						//Add this block on local blockchain
 						if ($this->chaindata->addBlock($nextHeight,$blockMined)) {
 							//Make SmartContracts on local blockchain
-							Blockchain::MakeSmartContracts($this->chaindata,$blockMined);
+							SmartContract::Make($this->chaindata,$blockMined);
 
 							//Call Functions of SmartContracts on local blockchain
-							Blockchain::CallFunctionSmartContract($this->chaindata,$blockMined);
+							SmartContract::CallFunction($this->chaindata,$blockMined);
 						}
 					} else {
 						Display::_error("Block reward not valid");

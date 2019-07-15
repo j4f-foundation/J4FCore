@@ -41,8 +41,10 @@ include('src/Transaction.php');
 include('src/GenesisBlock.php');
 include('src/Peer.php');
 include('src/Miner.php');
+include('src/SmartContract.php');
 include('src/J4FVMBase.php');
 include('src/J4FVM.php');
+include('src/uint256.php');
 include('funity/js.php');
 
 $return = array(
@@ -97,9 +99,13 @@ if (isset($_REQUEST)) {
             break;
             case 'MINEDBLOCK':
 
+                Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') -> New connection from peer '.$_SERVER['REMOTE_ADDR'].' to gossip.php?action=MINEDBLOCK');
+
                 //Check if have previous block hash and new block info
                 if (!isset($_REQUEST['hash_previous']) || !isset($_REQUEST['block'])) {
                     Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') -> Error 0x10000002');
+					Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') -> PREVIOUS_HASH: ' . $_REQUEST['hash_previous']);
+					Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') -> BLOCK: ' . $_REQUEST['block']);
                     $return['status'] = true;
                     $return['error'] = "0x10000002";
                     $return['message'] = "Need hashPrevious & blockInfo";
@@ -107,18 +113,18 @@ if (isset($_REQUEST)) {
                 }
 
                 /** @var Block $blockMinedByPeer */
-                $blockMinedByPeer = Tools::objectToObject(@unserialize($_REQUEST['block']),"Block");
+                $blockMinedByPeer = Tools::objectToObject(@unserialize(Tools::hex2str($_REQUEST['block'])),"Block");
 
                 //Check if block received its OK
                 if (!is_object($blockMinedByPeer) || ( is_object($blockMinedByPeer) && !isset($blockMinedByPeer->hash) )) {
                     Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') -> Error 5x00000000');
+					Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') -> PREVIOUS_HASH: ' . $_REQUEST['hash_previous']);
+					Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') -> BLOCK: ' . $_REQUEST['block']);
                     $return['status'] = true;
                     $return['error'] = "5x00000000";
                     $return['message'] = "Block received malformed";
                     break;
                 }
-
-                Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') -> New connection from peer '.$_SERVER['REMOTE_ADDR'].' to gossip.php?action=MINEDBLOCK');
 
                 //Get current network
                 $isTestNet = ($chaindata->GetConfig('network') == 'testnet') ? true:false;

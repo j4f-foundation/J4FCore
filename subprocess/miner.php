@@ -109,7 +109,7 @@ if (!file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE
     die('STOP MINNING');
 }
 
-$transactions = @unserialize(@file_get_contents(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_TX_INFO));
+$transactions = @unserialize(Tools::hex2str(@file_get_contents(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_TX_INFO)));
 
 //We create the new block with info
 $blockMined = new Block($height,$previous_hash,$difficulty,$transactions,$lastBlock,$genesisBlock,$startNonce,$incrementNonce);
@@ -118,7 +118,7 @@ $blockMined = new Block($height,$previous_hash,$difficulty,$transactions,$lastBl
 $blockMined->mine($id,$isTestnet);
 
 //Write block
-Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_NEW_BLOCK,@serialize($blockMined));
+Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_NEW_BLOCK,Tools::str2hex(@serialize($blockMined)));
 
 //Delete "pid" file
 @unlink(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MINERS_THREAD_CLOCK."_".$startNonce);

@@ -54,7 +54,7 @@ class Miner {
 
         //We calculate the commissions of the pending transactions
 		$totalFees = Blockchain::GetFeesOfTransactions($transactions_pending);
-		
+
         if ($totalFees == null) {
             Display::_error("Can't get total fees of transactions. Cancelling mining");
             return null;
@@ -86,7 +86,7 @@ class Miner {
         	Display::_printer("Start mining block                      %G%txns%W%=" . count($transactions) . "             %G%threads%W%=" . MINER_MAX_SUBPROCESS."    %G%difficulty%W%=".$gossip->difficulty);
 
         //Save transactions for this block
-        Tools::writeFile(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR.Subprocess::$FILE_TX_INFO,@serialize($transactions));
+        Tools::writeFile(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR.Subprocess::$FILE_TX_INFO,Tools::str2hex(@serialize($transactions)));
         Tools::writeFile(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR.Subprocess::$FILE_MINERS_STARTED);
 
         //Get info to pass miner

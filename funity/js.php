@@ -27,7 +27,7 @@
   - Yes. We support <? | <?= | <?js ... ?>.
 */
 
-define("JS_CACHE_DIR", (getenv("TMP")?getenv("TMP"):"/tmp")."/mxdity");
+define("JS_CACHE_DIR", (getenv("TMP")?getenv("TMP"):"/tmp")."/funity");
 define("JS_DEBUG", 1);
 function enum() {
   static $index = 1;

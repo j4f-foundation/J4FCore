@@ -27,6 +27,7 @@ class J4FVMBase {
 	public static $var_types = array('address','uint256','string');
 	public static $data = [];
 	public static $txn_hash = '';
+	public static $contract_hash = '';
 
 	/**
      * Function that parse all funity functions
@@ -111,7 +112,7 @@ class J4FVMBase {
 			$code_parsed = @str_replace($matches[0],@str_replace('Contract','var',$matches[0]),$code_parsed);
 
 		//Parse prints
-		if (!$debug) {
+		if ($debug === false) {
 			$matches = [];
 			preg_match_all("/print\((.*)\);/",$code_parsed,$matches);
 			foreach ($matches as $match) {
@@ -454,7 +455,7 @@ class J4FVMBase {
 				if (preg_match($REGEX_Address,$sender) && preg_match($REGEX_Address,$receiver) && preg_match('/\.{0,}\d/',$receiver)) {
 
 					//write Internal Transaction on blockchain (local)
-					$db->addInternalTransaction(self::$txn_hash,$sender,$receiver,$amount);
+					$db->addInternalTransaction(self::$txn_hash,self::$contract_hash,$sender,$receiver,$amount);
 					return true;
 				}
 			}

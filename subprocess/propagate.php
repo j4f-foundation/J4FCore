@@ -63,7 +63,7 @@ $peerPORT = $argv[3];
 $numRetrys = $argv[4];
 
 //Load Block class from cache file
-$blockMined = Tools::objectToObject(@unserialize(@file_get_contents(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR.Subprocess::$FILE_PROPAGATE_BLOCK)),"Block");
+$blockMined = Tools::objectToObject(@unserialize(Tools::hex2str(@file_get_contents(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR.Subprocess::$FILE_PROPAGATE_BLOCK))),"Block");
 if ($blockMined != null && is_object($blockMined)) {
 
     Tools::writeLog('SUBPROCESS::Start new propagation to '.$peerIP.':'.$peerPORT);
@@ -77,7 +77,7 @@ if ($blockMined != null && is_object($blockMined)) {
     $infoToSend = array(
         'action' => 'MINEDBLOCK',
         'hash_previous' => $blockMined->previous,
-		'block' => @serialize($blockMined),
+		'block' => Tools::str2hex(@serialize($blockMined)),
 		'node_ip' => $myNodeIp,
 		'node_port' => $myNodePort,
     );

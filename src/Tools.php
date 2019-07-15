@@ -296,7 +296,7 @@ class Tools {
     public static function sendBlockMinedToNetworkWithSubprocess(&$chaindata,$blockMined,$skipPeer=null) {
 
         //Write block cache for propagation subprocess
-        Tools::writeFile(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR.Subprocess::$FILE_PROPAGATE_BLOCK,@serialize($blockMined));
+        Tools::writeFile(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR.Subprocess::$FILE_PROPAGATE_BLOCK,Tools::str2hex(@serialize($blockMined)));
 
         if (DISPLAY_DEBUG && DISPLAY_DEBUG_LEVEL >= 3) {
             $mini_hash = substr($blockMined->hash,-12);

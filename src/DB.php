@@ -499,7 +499,7 @@ class DB {
                 //Start Transactions
                 $this->db->begin_transaction();
 
-                $sqlInsertTransaction = "INSERT INTO transactions_pending (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp) 
+                $sqlInsertTransaction = "INSERT INTO transactions_pending (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp)
                     VALUES ('','" . $transaction->txn_hash . "','" . $transaction->wallet_from_key . "','" . $transaction->wallet_from . "','" . $transaction->wallet_to . "','" . $transaction->amount . "','" . $transaction->signature . "','" . $transaction->tx_fee . "','" . $transaction->data . "','" . $transaction->timestamp . "');";
 
                 //Commit transaction
@@ -535,7 +535,7 @@ class DB {
                 //Start Transactions
                 $this->db->begin_transaction();
 
-                $sqlInsertTransaction = "INSERT INTO transactions_pending (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp) 
+                $sqlInsertTransaction = "INSERT INTO transactions_pending (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp)
                     VALUES ('','" . $transaction['txn_hash'] . "','" . $transaction['wallet_from_key'] . "','" . $transaction['wallet_from'] . "','" . $transaction['wallet_to'] . "','" . $transaction['amount'] . "','" . $transaction['signature'] . "','" . $transaction['tx_fee'] . "','" . $transaction['data'] . "','" . $transaction['timestamp'] . "');";
 
                 //Commit transaction
@@ -572,7 +572,7 @@ class DB {
                     //Start Transactions
                     $this->db->begin_transaction();
 
-                    $sqlInsertTransaction = "INSERT INTO transactions_pending (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp) 
+                    $sqlInsertTransaction = "INSERT INTO transactions_pending (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp)
                     VALUES ('','".$transaction->txn_hash."','".$transaction->wallet_from_key."','".$transaction->wallet_from."','".$transaction->wallet_to."','".$transaction->amount."','".$transaction->signature."','".$transaction->tx_fee."','".$transaction->data."','".$transaction->timestamp."');";
 
                     //Commit transaction
@@ -652,7 +652,7 @@ class DB {
             //Start Transactions
             $this->db->begin_transaction();
 
-            $sqlInsertPendingTransactionToSend = "INSERT INTO transactions_pending_to_send (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp) 
+            $sqlInsertPendingTransactionToSend = "INSERT INTO transactions_pending_to_send (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp)
                     VALUES ('','".$transaction->message()."','".$wallet_from_pubkey."','".$wallet_from."','".$transaction->to."','".$transaction->amount."','".$transaction->signature."','".$transaction->tx_fee."','".$transaction->data."','".$transaction->timestamp."');";
 
             //Commit transaction
@@ -740,7 +740,7 @@ class DB {
                         $wallet_from = Wallet::GetWalletAddressFromPubKey($transaction->from);
                     }
 
-                    $sql_update_transactions = "INSERT INTO transactions (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp) 
+                    $sql_update_transactions = "INSERT INTO transactions (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp)
                     VALUES ('".$blockInfo->hash."','".$transaction->message()."','".$wallet_from_pubkey."','".$wallet_from."','".$transaction->to."','".$transaction->amount."','".$transaction->signature."','".$transaction->tx_fee."','".$transaction->data."','".$transaction->timestamp."');";
                     if (!$this->db->query($sql_update_transactions)) {
                         $error = true;
@@ -795,7 +795,7 @@ class DB {
 
                 foreach ($blockInfo['transactions'] as $transaction) {
 
-                    $sqlInsertTransaction = "INSERT INTO transactions (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp) 
+                    $sqlInsertTransaction = "INSERT INTO transactions (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp)
                     VALUES ('".$blockInfo['block_hash']."','".$transaction['txn_hash']."','".$transaction['wallet_from_key']."','".$transaction['wallet_from']."','".$transaction['wallet_to']."','".$transaction['amount']."','".$transaction['signature']."','".$transaction['tx_fee']."','".$transaction['data']."','".$transaction['timestamp']."');";
                     if (!$this->db->query($sqlInsertTransaction)) {
                         $error = true;
@@ -853,7 +853,7 @@ class DB {
 			);
 			";
 			$this->db->query($sqlRemoveSmartContracts);
-			
+
             //Remove transactions of block from blockchain
             $sqlRemoveTransactions = "DELETE FROM transactions WHERE block_hash = '".$infoBlock['block_hash']."';";
             if ($this->db->query($sqlRemoveTransactions)) {
@@ -934,7 +934,7 @@ class DB {
      * @param int $height
      */
     public function RemoveLastBlocksFrom($height) {
-		
+
 		//Remove SmartContracts of this block
 		$this->db->query("
 		DELETE FROM smart_contracts WHERE txn_hash IN (
@@ -1249,7 +1249,7 @@ class DB {
             return true;
         }
 	}
-	
+
     /**
      * Returns a contract given a transaction hash
      *
@@ -1265,7 +1265,7 @@ class DB {
         }
         return null;
 	}
-	
+
     /**
      * Returns a contract given a hash
      *
@@ -1286,19 +1286,20 @@ class DB {
      * Save Internal TXN of SmartContract in Blockchain
      *
      * @param string $txn_hash
+	 * @param string $contract_hash
 	 * @param string $wallet_from
 	 * @param string $wallet_to
 	 * @param int $amount
      * @return bool
      */
-	public function addInternalTransaction($txn_hash,$wallet_from,$wallet_to,$amount) {
+	public function addInternalTransaction($txn_hash,$contract_hash,$wallet_from,$wallet_to,$amount) {
 
 		//Start Internal Transaction
 		$this->db->begin_transaction();
 
 		$timestamp = Tools::GetGlobalTime();
-		$sqlInternalTxn = "INSERT INTO smart_contracts_txn (txn_hash, wallet_from, wallet_to, amount, timestamp) 
-			VALUES ('" . $txn_hash . "','" . $wallet_from . "','" . $wallet_to . "','".$amount."','".$timestamp."');";
+		$sqlInternalTxn = "INSERT INTO smart_contracts_txn (txn_hash, contract_hash, wallet_from, wallet_to, amount, timestamp)
+			VALUES ('" . $txn_hash . "','" . $contract_hash . "','" . $wallet_from . "','" . $wallet_to . "','".$amount."','".$timestamp."');";
 
 		//Commit Internal Transaction
 		if ($this->db->query($sqlInternalTxn)) {

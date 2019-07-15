@@ -171,10 +171,10 @@ class Blockchain {
                 if ($chaindata->addBlock($heightNewBlock,$blockMinedByPeer)) {
 
 					//Make SmartContracts on local blockchain
-					Blockchain::MakeSmartContracts($chaindata,$blockMinedByPeer);
+					SmartContract::Make($chaindata,$blockMinedByPeer);
 
 					//Call Functions of SmartContracts on local blockchain
-					Blockchain::CallFunctionSmartContract($chaindata,$blockMinedByPeer);
+					SmartContract::CallFunction($chaindata,$blockMinedByPeer);
 
                     if ($chaindata->GetConfig('isBootstrap') == 'on')
                         Tools::SendMessageToDiscord($heightNewBlock,$blockMinedByPeer);
@@ -192,253 +192,6 @@ class Blockchain {
             $chaindata->AddBlockToDisplay($blockMinedByPeer,"0x00000001");
             return "0x00000001";
         }
-    }
-
-	/**
-     * Make Smart Contracts of this block
-     * All nodes create smart contracts on blockchain (local)
-     *
-     * @param DB $chaindata
-     * @param Block $block
-	 *
-     * @return bool
-     */
-    public static function MakeSmartContracts(&$chaindata,$block) {
-
-		foreach ($block->transactions as $transaction) {
-
-			//Check if transaction is valid
-			if ($transaction->isValid()) {
-
-				//Check if transaction is for make new contract
-				if ($transaction->to == 'J4F00000000000000000000000000000000000000000000000000000000' && $transaction->data != "0x") {
-
-					//Parse txn::data (contract code) to string
-					$contract_code = $transaction->data;
-					$code = Tools::hex2str($contract_code);
-					if (strlen($code) == 0)
-						return;
-
-					//Merge code into MXDity::MakeContract
-					$code_parsed = J4FVM::_init($code);
-
-					//Define sender Object
-					js::define("msg",
-						array(),
-						array(
-							"sender"=> Wallet::GetWalletAddressFromPubKey($transaction->from),
-							"amount"=> $transaction->amount,
-						)
-					);
-
-					//Define blockchain Object
-					js::define("blockchain",
-						array(
-							"Transfer" => "J4FVM::blockchain_transfer_compiler",
-						),
-						array()
-					);
-
-					js::define("math",
-						//Funciones de php ejecutadas desde JS
-						array(
-							"parse" => "J4FVM::math_parse",
-							"toDec" => "J4FVM::math_toDec",
-							"add" => "J4FVM::math_add",
-							"sub" => "J4FVM::math_sub",
-							"mul" => "J4FVM::math_mul",
-							"div" => "J4FVM::math_div",
-							"pow" => "J4FVM::math_pow",
-							"mod" => "J4FVM::math_mod",
-							"sqrt" => "J4FVM::math_sqrt",
-							"powmod" => "J4FVM::math_powmod",
-							"comp" => "J4FVM::math_compare",
-						),
-						//Propiedades
-						array()
-					);
-
-					//Define contract Object
-					js::define("contract",
-						array(
-							"get" => "J4FVM::js_get",
-							"set" => "J4FVM::js_set",
-							"table" => "J4FVM::js_table",
-							"table_set" => "J4FVM::js_table_set",
-							"table_get" => "J4FVM::js_table_get",
-							"table_get_sub" => "J4FVM::js_table_get_sub",
-							"table_uint256" => "J4FVM::js_table_uint256",
-						),
-						array()
-					);
-
-					//Get Contract Hash
-					$contractHash = PoW::hash($contract_code.$transaction->from.$transaction->timestamp.$transaction->signature);
-
-					#Contract status - Default not created
-					$run_status = 0;
-
-					try {
-
-						//Set TXN that created contract
-						J4FVM::$txn_hash = $transaction->hash;
-
-						//Run code
-						js::run($code_parsed,$contractHash);
-
-						//Contract status - OK
-						$run_status = 1;
-
-					} catch (Exception $e) {
-
-						var_dump($e->getMessage());
-
-						//Contract status - Error
-						$run_status = -1;
-					}
-
-					// If status contract its OK, save this contract
-					if ($run_status == 1) {
-
-						//Get data contract
-						$contractData = Tools::str2hex(@json_encode(J4FVM::$data));
-
-						//Add SmartContract on blockchain (local)
-						$chaindata->addSmartContract($contractHash,$transaction->hash,$contract_code,$contractData);
-					}
-				}
-			}
-		}
-	}
-
-	/**
-     * Call a function of Contracts
-     *
-     * @param DB $chaindata
-     * @param Block $lastBlock
-     * @param Block $blockMinedByPeer
-     * @return bool
-     */
-    public static function CallFunctionSmartContract(&$chaindata,$block) {
-
-		//Obteemos todas las transacciones del bloque
-		//Si alguna transaccion va dirigida a 00000
-
-		foreach ($block->transactions as $transaction) {
-
-			//Check if transaction is valid
-			if ($transaction->isValid()) {
-
-				//Txn to Contract
-				if ((strlen($transaction->to) > 64) && $transaction->data != "0x") {
-					$contract = $chaindata->GetContractByHash($transaction->to);
-					if ($contract != null) {
-						//Display::_printer('CONTRACT HASH: ' . $contract->contract_hash);
-
-						//Parse txn::data (call code) to string
-						$call_code_hex = $transaction->data;
-						$call_code = Tools::hex2str($call_code_hex);
-						if (strlen($call_code) == 0)
-							return;
-
-						//Parse CALL Code
-						$code_call_info = J4FVM::_parseCall($call_code);
-
-						//Parse contract code to string
-						$code_contract = Tools::hex2str($contract['code']);
-						if (strlen($code_contract) == 0)
-							return;
-
-						//Parse code Funity::Call_Contract
-						$code_parsed = J4FVM::call($code_contract,$code_call_info['func'],$code_call_info['func_params']);
-
-						//Define sender Object
-						js::define("msg",
-							array(),
-							array(
-								"sender"=> Wallet::GetWalletAddressFromPubKey($transaction->from),
-								"amount"=> $transaction->amount,
-							)
-						);
-
-						//Define blockchain Object
-						js::define("blockchain",
-							array(
-								"Transfer" => "J4FVM::blockchain_transfer",
-							),
-							array()
-						);
-
-						js::define("math",
-							//Funciones de php ejecutadas desde JS
-							array(
-								"parse" => "J4FVM::math_parse",
-								"toDec" => "J4FVM::math_toDec",
-								"add" => "J4FVM::math_add",
-								"sub" => "J4FVM::math_sub",
-								"mul" => "J4FVM::math_mul",
-								"div" => "J4FVM::math_div",
-								"pow" => "J4FVM::math_pow",
-								"mod" => "J4FVM::math_mod",
-								"sqrt" => "J4FVM::math_sqrt",
-								"powmod" => "J4FVM::math_powmod",
-								"comp" => "J4FVM::math_compare",
-							),
-							//Propiedades
-							array()
-						);
-
-						//Define contract Object
-						js::define("contract",
-							array(
-								"get" => "J4FVM::js_get",
-								"set" => "J4FVM::js_set",
-								"table" => "J4FVM::js_table",
-								"table_set" => "J4FVM::js_table_set",
-								"table_get" => "J4FVM::js_table_get",
-								"table_get_sub" => "J4FVM::js_table_get_sub",
-								"table_uint256" => "J4FVM::js_table_uint256",
-							),
-							array()
-						);
-
-						//Contract status - Default not created
-						$run_status = 0;
-
-						try {
-
-							//Set TXN that call contract
-							J4FVM::$txn_hash = $transaction->hash;
-
-							//Set data of contract
-							J4FVM::$data = @json_decode(Tools::hex2str($contract['data']),true);
-
-							//Run code
-							js::run($code_parsed);
-
-							//Contract status - OK
-							$run_status = 1;
-
-						} catch (Exception $e) {
-
-							//Contract status - Error
-							$run_status = -1;
-						}
-
-						// If status contract its OK, update contract storedata
-						if ($run_status == 1) {
-
-							//Get data contract
-							$contractData = Tools::str2hex(@json_encode(J4FVM::$data));
-
-							//Update StoredData of Smart Contract on blockchain (local)
-							$chaindata->updateStoredDataContract($contract['contract_hash'],$contractData);
-						}
-
-					}
-				}
-			}
-		}
     }
 
     /**
@@ -516,10 +269,10 @@ class Blockchain {
 					if ($chaindata->addBlock($lastBlock['height'],$blockMinedByPeer)) {
 
 						//Make SmartContracts on local blockchain
-						Blockchain::MakeSmartContracts($chaindata,$blockMinedByPeer);
+						SmartContract::Make($chaindata,$blockMinedByPeer);
 
 						//Call Functions of SmartContracts on local blockchain
-						Blockchain::CallFunctionSmartContract($chaindata,$blockMinedByPeer);
+						SmartContract::CallFunction($chaindata,$blockMinedByPeer);
 
 						//Add this block in pending block (DISPLAY)
 						$chaindata->AddBlockToDisplay($blockMinedByPeer,"1x00000000");

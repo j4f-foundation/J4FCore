@@ -257,6 +257,29 @@ if ($dbversion == 4) {
     $dbversion++;
 }
 
+if ($dbversion == 5) {
+
+    $db->db->query("
+	CREATE TABLE `smart_contracts_txn` (
+	  `txn_hash` varchar(128) NOT NULL,
+	  `contract_hash` varchar(128) NOT NULL,
+	  `wallet_from` varchar(128) NOT NULL,
+	  `wallet_to` varchar(128) NOT NULL,
+	  `amount` varchar(78) NOT NULL,
+	  `timestamp` varchar(12) NOT NULL,
+	  PRIMARY KEY (`txn_hash`),
+	  UNIQUE KEY `txn` (`txn_hash`) USING HASH,
+	  KEY `wallet_from_to` (`wallet_from`,`wallet_to`) USING HASH,
+	  KEY `contract` (`contract_hash`) USING HASH
+	) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+	");
+
+    Display::_printer("Updating DB Schema #".$dbversion);
+
+    //Increment version to next stage
+    $dbversion++;
+}
+
 
 
 // update dbversion
