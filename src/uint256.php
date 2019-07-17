@@ -37,7 +37,7 @@ Class uint256 {
 
 		if (strpos($number,'-') !== false)
 			$number = 0;
-			
+
 		$convert = @bcmul((string) $number, '1000000000000');
 		return @str_pad($convert, 78, "0", STR_PAD_LEFT);
 	}
@@ -64,7 +64,7 @@ Class uint256 {
 		$num1 = (strlen($number1) >= 78) ? self::toDec($number1):$number1;
 		$num2 = (strlen($number2) >= 78) ? self::toDec($number2):$number2;
 
-		$result = @bcadd($num1,$num2,12);
+		$result = @bcadd($num1,$num2,18);
 		return self::parse($result);
 	}
 
@@ -78,7 +78,7 @@ Class uint256 {
 	public static function sub($number1,$number2) {
 		$num1 = (strlen($number1) >= 78) ? self::toDec($number1):$number1;
 		$num2 = (strlen($number2) >= 78) ? self::toDec($number2):$number2;
-		$result = @bcsub($num1,$num2,12);
+		$result = @bcsub($num1,$num2,18);
 		return self::parse($result);
 	}
 
@@ -92,7 +92,7 @@ Class uint256 {
 	public static function mul($number1,$number2) {
 		$num1 = (strlen($number1) >= 78) ? self::toDec($number1):$number1;
 		$num2 = (strlen($number2) >= 78) ? self::toDec($number2):$number2;
-		$result = @bcmul($num1,$num2,12);
+		$result = @bcmul($num1,$num2,18);
 		return self::parse($result);
 	}
 
@@ -106,7 +106,7 @@ Class uint256 {
 	public static function div($number1,$number2) {
 		$num1 = (strlen($number1) >= 78) ? self::toDec($number1):$number1;
 		$num2 = (strlen($number2) >= 78) ? self::toDec($number2):$number2;
-		$result = @bcdiv($num1,$num2,12);
+		$result = @bcdiv($num1,$num2,18);
 		return self::parse($result);
 	}
 
@@ -120,7 +120,7 @@ Class uint256 {
 	public static function mod($number1,$number2) {
 		$num1 = (strlen($number1) >= 78) ? self::toDec($number1):$number1;
 		$num2 = (strlen($number2) >= 78) ? self::toDec($number2):$number2;
-		$result = @bcmod($num1, $num2,12);
+		$result = @bcmod($num1, $num2,18);
 		return self::parse($result);
 	}
 
@@ -134,7 +134,7 @@ Class uint256 {
 	public static function pow($number1,$number2) {
 		$num1 = (strlen($number1) >= 78) ? self::toDec($number1):$number1;
 		$num2 = (strlen($number2) >= 78) ? self::toDec($number2):$number2;
-		$result = @bcpow($num1, $num2,12);
+		$result = @bcpow($num1, $num2,18);
 		return self::parse($result);
 	}
 
@@ -146,7 +146,7 @@ Class uint256 {
      */
 	public static function sqrt($number) {
 		$num1 = (strlen($number1) >= 78) ? self::toDec($number1):$number1;
-		$result = @bcsqrt($number,12);
+		$result = @bcsqrt($number,18);
 		return self::parse($result);
 	}
 
@@ -161,7 +161,7 @@ Class uint256 {
 	public static function powmod($number1,$number2,$modulus) {
 		$num1 = (strlen($number1) >= 78) ? self::toDec($number1):$number1;
 		$num2 = (strlen($number2) >= 78) ? self::toDec($number2):$number2;
-		$result = @bcpowmod($num1, $num2,$modulus,12);
+		$result = @bcpowmod($num1, $num2,$modulus,18);
 		return self::parse($result);
 	}
 
@@ -176,7 +176,7 @@ Class uint256 {
 	public static function comp($number1,$number2) {
 		$num1 = (strlen($number1) >= 78) ? self::toDec($number1):$number1;
 		$num2 = (strlen($number2) >= 78) ? self::toDec($number2):$number2;
-		return bccomp($num1,$num2,12);
+		return bccomp($num1,$num2,18);
 	}
 
 	/**

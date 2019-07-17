@@ -61,7 +61,7 @@ class J4FVM extends J4FVMBase {
 	public static function call($code,$function,$params=array(),$debug=false) {
 
 		//Parse code
-		$code_parsed = self::_parse($code);
+		$code_parsed = self::_parse($code,$debug);
 
 		//Check if have Contract define struct
 		$contractName = self::GetContractName($code);
@@ -74,12 +74,38 @@ class J4FVM extends J4FVMBase {
 				$param .= "'".$p."'";
 			}
 
-			if ($debug) {
-				if (isset($_SESSION['compiler_data'])) {
-					J4FVM::$data = $_SESSION['compiler_data'];
-				}
-				//Add run function of contract
-				$code_parsed .= $contractName.'.'.$contractName.'();';
+			//Add run function of contract
+			$code_parsed .= $contractName.'.'.$function.'('.$param.');';
+		}
+
+		//Replace Contract Keyword to var (Javascript dont accept Contract type var)
+		return $code_parsed;
+	}
+
+	/**
+     * Function that parse code and call contract
+     *
+     * @param string $code
+	 * @param string $function
+	 * @param array $params
+	 * @param bool $debug
+     *
+     * @return string
+     */
+	public static function readCall($code,$function,$params=array(),$debug=false) {
+
+		//Parse code
+		$code_parsed = self::_parse($code,$debug);
+
+		//Check if have Contract define struct
+		$contractName = self::GetContractName($code);
+
+		if (J4FVM::canCallThisFunction($code,$function)) {
+			//Add all params
+			$param = '';
+			foreach ($params as $p) {
+				if (strlen($param) > 0) $param .= ',';
+				$param .= "'".$p."'";
 			}
 
 			//Add run function of contract
@@ -113,7 +139,8 @@ class J4FVM extends J4FVMBase {
      * @return string
      */
 	public static function canCallThisFunction($code,$functionToCall) {
-		$functions = self::getFunctions($code);
+		$functions = self::getFunctions($code,false);
+
 		if (!empty($functions['public'])) {
 			foreach ($functions['public'] as $function=>$params) {
 				if ($function == $functionToCall) {
@@ -196,7 +223,7 @@ class J4FVM extends J4FVMBase {
 	 *
 	 * @return array
      */
-	public static function getFunctions($code) {
+	public static function getFunctions($code,$withCode=false) {
 
 		$functions = array(
 			'public' => array(),
@@ -205,7 +232,8 @@ class J4FVM extends J4FVMBase {
 
 		//Parse normal functions
 		$matches = array();
-		preg_match_all('/(\w*)\s*:\s*function\s*\((.*)\)\s*(?:(public|private)|\s)/',$code,$matches);
+		$regex = '/(\w*)\s*:\s*function\s*\((.*)\)\s*(?:(public|private)|)\s*(?:(returns\s*bool|returns\s*string|returns\s*uint256|returns\s*int|returns\s*uint|returns)|)\s*\K({((?>"(?:[^"\\\\]*+|\\\\.)*"|\'(?:[^\'\\\\]*+|\\\\.)*\'|\/\/.*$|\/\*[\s\S]*?\*\/|#.*$|<<<\s*["\']?(\w+)["\']?[^;]+\3;$|[^{}<\'"\/#]++|[^{}]++|(?5))*)})/m';
+		preg_match_all($regex,$code,$matches);
 		if (!empty($matches[1])) {
 			$i = 0;
 			foreach ($matches[1] as $match) {
@@ -227,7 +255,10 @@ class J4FVM extends J4FVMBase {
 					}
 				}
 
-				$functions[$funcType][$funcName] = $parameters;
+				$functions[$funcType][$funcName]['params'] = $parameters;
+				$functions[$funcType][$funcName]['return'] = $matches[4][$i];
+				if ($withCode)
+					$functions[$funcType][$funcName]['code'] = $matches[5][$i];
 
 				$i++;
 			}
@@ -236,5 +267,37 @@ class J4FVM extends J4FVMBase {
 		return $functions;
 	}
 
+	/**
+     * Function that check required functions for J4FRC-10 Standard Token
+     *
+     * @param string $code
+	 *
+	 * @return string
+     */
+	public static function CheckJ4FRC10Standard($code) {
+
+		$return = '';
+
+		//balanceOf(address)
+		$matches = [];
+		preg_match_all('/balanceOf:\s*function\(\s*address\s*(.*)\)\s*public\s*returns\s*uint256/',$code,$matches);
+		if (empty($matches[0]))
+			$return .= 'print("<strong class=\"text-danger\">J4FVM_COMPILER_ERROR</strong> Function <strong>balanceOf(address) public returns uint256</strong> Required for <strong>J4FRC-10 Token</strong>");';
+
+		//transfer(address,uint256)
+		$matches = [];
+		//preg_match_all('/transferFrom:\s*function\((.*),(.*),(.*)\)\s*public/',$code,$matches);
+		preg_match_all('/transfer:\s*function\(\s*address\s(.*)\s*,\s*uint256\s*(.*)\)\s*public/',$code,$matches);
+		if (empty($matches[0]))
+			$return .= 'print("<strong class=\"text-danger\">J4FVM_COMPILER_ERROR</strong> Function <strong>transfer(address,uint256)</strong> Required for <strong>J4FRC-10 Token</strong>");';
+
+		//transferFrom(address,uint256)
+		$matches = [];
+		preg_match_all('/transferFrom:\s*function\(\s*address\s*(.*),\s*address\s*(.*),\s*uint256\s*(.*)\)\s*public/',$code,$matches);
+		if (empty($matches[0]))
+			$return .= 'print("<strong class=\"text-danger\">J4FVM_COMPILER_ERROR</strong> Function <strong>transferFrom(address,address,uint256)</strong> Required for <strong>J4FRC-10 Token</strong>");';
+
+		return $return;
+	}
 }
 ?>

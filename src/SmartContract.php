@@ -30,8 +30,6 @@ class SmartContract {
      *
      * @param DB $chaindata
      * @param Block $block
-	 *
-     * @return bool
      */
     public static function Make(&$chaindata,$block) {
 
@@ -52,8 +50,6 @@ class SmartContract {
 					//Merge code into MXDity::MakeContract
 					$code_parsed = J4FVM::_init($code);
 
-					//Display::_printer($code_parsed);
-
 					//Define sender Object
 					js::define("msg",
 						array(),
@@ -71,11 +67,27 @@ class SmartContract {
 						array()
 					);
 
+					//Define math Object
 					js::define("math",
-						//Funciones de php ejecutadas desde JS
+						array(
+							"add" => "J4FVM::math_add",
+							"sub" => "J4FVM::math_sub",
+							"mul" => "J4FVM::math_mul",
+							"div" => "J4FVM::math_div",
+							"pow" => "J4FVM::math_pow",
+							"mod" => "J4FVM::math_mod",
+							"sqrt" => "J4FVM::math_sqrt",
+							"powmod" => "J4FVM::math_powmod",
+							"comp" => "J4FVM::math_compare",
+						),
+						array()
+					);
+
+					//Define uint256 math Object
+					js::define("uint256",
 						array(
 							"parse" => "J4FVM::math_parse",
-							"toDec" => "J4FVM::math_toDec",
+							"toDec" => "J4FVMJ4FVM::math_parse",
 							"add" => "J4FVM::math_add",
 							"sub" => "J4FVM::math_sub",
 							"mul" => "J4FVM::math_mul",
@@ -110,24 +122,27 @@ class SmartContract {
 					#Contract status - Default not created
 					$run_status = 0;
 
-					try {
+					//Check if parsedCode have COMPILER_ERROR
+					if (strpos($code_parsed,'J4FVM_COMPILER_ERROR') === false) {
+						try {
 
-						//Set TXN that created contract
-						J4FVM::$txn_hash = $transaction->hash;
-						J4FVM::$contract_hash = $contractHash;
+							//Set TXN that created contract
+							J4FVM::$txn_hash = $transaction->hash;
+							J4FVM::$contract_hash = $contractHash;
 
-						//Run code
-						js::run($code_parsed,$contractHash);
+							//Run code
+							ob_start();
+							js::run($code_parsed,$contractHash);
+							$output = ob_get_contents();
+							ob_end_clean();
 
-						//Contract status - OK
-						$run_status = 1;
+							//Contract status - OK
+							$run_status = 1;
 
-					} catch (Exception $e) {
-
-						var_dump($e->getMessage());
-
-						//Contract status - Error
-						$run_status = -1;
+						} catch (Exception $e) {
+							//Contract status - Error
+							$run_status = -1;
+						}
 					}
 
 					// If status contract its OK, save this contract
@@ -150,7 +165,6 @@ class SmartContract {
 	 * @param DB $chaindata
 	 * @param Block $lastBlock
 	 * @param Block $blockMinedByPeer
-	 * @return bool
 	 */
 	public static function CallFunction(&$chaindata,$block) {
 
@@ -166,7 +180,6 @@ class SmartContract {
 				if ((strlen($transaction->to) > 64) && $transaction->data != "0x") {
 					$contract = $chaindata->GetContractByHash($transaction->to);
 					if ($contract != null) {
-						//Display::_printer('CONTRACT HASH: ' . $contract->contract_hash);
 
 						//Parse txn::data (call code) to string
 						$call_code_hex = $transaction->data;
@@ -185,7 +198,7 @@ class SmartContract {
 						//Parse code Funity::Call_Contract
 						$code_parsed = J4FVM::call($code_contract,$code_call_info['func'],$code_call_info['func_params']);
 
-						//Define sender Object
+						//Define msg sender Object
 						js::define("msg",
 							array(),
 							array(
@@ -202,11 +215,9 @@ class SmartContract {
 							array()
 						);
 
+						//Define math Object
 						js::define("math",
-							//Funciones de php ejecutadas desde JS
 							array(
-								"parse" => "J4FVM::math_parse",
-								"toDec" => "J4FVM::math_toDec",
 								"add" => "J4FVM::math_add",
 								"sub" => "J4FVM::math_sub",
 								"mul" => "J4FVM::math_mul",
@@ -217,7 +228,24 @@ class SmartContract {
 								"powmod" => "J4FVM::math_powmod",
 								"comp" => "J4FVM::math_compare",
 							),
-							//Propiedades
+							array()
+						);
+
+						//Define uint256 math Object
+						js::define("uint256",
+							array(
+								"parse" => "J4FVM::math_parse",
+								"toDec" => "J4FVMJ4FVM::math_parse",
+								"add" => "J4FVM::math_add",
+								"sub" => "J4FVM::math_sub",
+								"mul" => "J4FVM::math_mul",
+								"div" => "J4FVM::math_div",
+								"pow" => "J4FVM::math_pow",
+								"mod" => "J4FVM::math_mod",
+								"sqrt" => "J4FVM::math_sqrt",
+								"powmod" => "J4FVM::math_powmod",
+								"comp" => "J4FVM::math_compare",
+							),
 							array()
 						);
 
@@ -238,25 +266,32 @@ class SmartContract {
 						//Contract status - Default not created
 						$run_status = 0;
 
-						try {
+						//Check if parsedCode have COMPILER_ERROR
+						if (strpos($code_parsed,'J4FVM_COMPILER_ERROR') === false) {
+							try {
 
-							//Set TXN that call contract
-							J4FVM::$txn_hash = $transaction->hash;
-							J4FVM::$contract_hash = $contract['contract_hash'];
+								//Set TXN that call contract
+								J4FVM::$txn_hash = $transaction->hash;
+								J4FVM::$contract_hash = $contract['contract_hash'];
 
-							//Set data of contract
-							J4FVM::$data = @json_decode(Tools::hex2str($contract['data']),true);
+								//Set data of contract (last snapshot)
+								$stateMachine = SmartContractStateMachine::store($contract['contract_hash'],Tools::GetBaseDir().'data'.DIRECTORY_SEPARATOR.'db');
+								J4FVM::$data = @json_decode(Tools::hex2str($stateMachine->last()['state']),true);
 
-							//Run code
-							js::run($code_parsed,$contract['contract_hash']);
+								//Run code
+								ob_start();
+								js::run($code_parsed,$contract['contract_hash'].rand());
+								$output = ob_get_contents();
+								ob_end_clean();
 
-							//Contract status - OK
-							$run_status = 1;
+								//Contract status - OK
+								$run_status = 1;
 
-						} catch (Exception $e) {
+							} catch (Exception $e) {
 
-							//Contract status - Error
-							$run_status = -1;
+								//Contract status - Error
+								$run_status = -1;
+							}
 						}
 
 						// If status contract its OK, update contract storedata
@@ -266,12 +301,143 @@ class SmartContract {
 							$contractData = Tools::str2hex(@json_encode(J4FVM::$data));
 
 							//Update StoredData of Smart Contract on blockchain (local)
-							$chaindata->updateStoredDataContract($contract['contract_hash'],$contractData);
+							$chaindata->updateStoredDataContract($contract['contract_hash'],$transaction->hash,$contractData);
 						}
-
 					}
 				}
 			}
+		}
+	}
+
+	/**
+	 * Call a function of Contracts
+	 *
+	 * @param DB $chaindata
+	 * @param array $contract
+	 *
+	 * @return string
+	 */
+	public static function CallReadFunction(&$chaindata,$contract,$callFunctionHex) {
+
+		//Obteemos todas las transacciones del bloque
+		//Si alguna transaccion va dirigida a 00000
+		if ($contract != null) {
+			//Display::_printer('CONTRACT HASH: ' . $contract->contract_hash);
+
+			//Parse txn::data (call code) to string
+			$callCode = Tools::hex2str($callFunctionHex);
+			if (strlen($callCode) == 0)
+				return;
+
+			//Parse CALL Code
+			$callInfo = J4FVM::_parseCall($callCode);
+
+			//Parse contract code to string
+			$code_contract = Tools::hex2str($contract['code']);
+			if (strlen($code_contract) == 0)
+				return 'Error reading source code of Smart Contract';
+
+			//Parse code Funity::Call_Contract
+			$code_parsed = J4FVM::readCall($code_contract,$callInfo['func'],$callInfo['func_params'],true);
+
+			//Define msg sender Object
+			js::define("msg",
+				array(),
+				array(
+					"sender"=> '',
+					"amount"=> '0',
+				)
+			);
+
+			//Define blockchain Object
+			js::define("blockchain",
+				array(
+					"Transfer" => "J4FVM::blockchain_transfer_compiler",
+				),
+				array()
+			);
+
+			//Define math Object
+			js::define("math",
+				array(
+					"add" => "J4FVM::math_add",
+					"sub" => "J4FVM::math_sub",
+					"mul" => "J4FVM::math_mul",
+					"div" => "J4FVM::math_div",
+					"pow" => "J4FVM::math_pow",
+					"mod" => "J4FVM::math_mod",
+					"sqrt" => "J4FVM::math_sqrt",
+					"powmod" => "J4FVM::math_powmod",
+					"comp" => "J4FVM::math_compare",
+				),
+				array()
+			);
+
+			//Define uint256 math Object
+			js::define("uint256",
+				array(
+					"parse" => "J4FVM::uint256_parse",
+					"toDec" => "J4FVM::uint256_toDec",
+					"add" => "J4FVM::uint256_add",
+					"sub" => "J4FVM::uint256_sub",
+					"mul" => "J4FVM::uint256_mul",
+					"div" => "J4FVM::uint256_div",
+					"pow" => "J4FVM::uint256_pow",
+					"mod" => "J4FVM::uint256_mod",
+					"sqrt" => "J4FVM::uint256_sqrt",
+					"powmod" => "J4FVM::uint256_powmod",
+					"comp" => "J4FVM::uint256_compare",
+				),
+				array()
+			);
+
+			//Define contract Object
+			js::define("contract",
+				array(
+					"get" => "J4FVM::js_get",
+					"set" => "J4FVM::js_set",
+					"table" => "J4FVM::js_table",
+					"table_set" => "J4FVM::js_table_set",
+					"table_get" => "J4FVM::js_table_get",
+					"table_get_sub" => "J4FVM::js_table_get_sub",
+					"table_uint256" => "J4FVM::js_table_uint256",
+				),
+				array()
+			);
+
+			//Contract status - Default not created
+			$output = '';
+
+			//echo $code_parsed;
+
+			//Check if parsedCode have COMPILER_ERROR
+			if (strpos($code_parsed,'J4FVM_COMPILER_ERROR') === false) {
+				try {
+
+					//Set TXN that call contract
+					J4FVM::$txn_hash = null;
+					J4FVM::$contract_hash = $contract['contract_hash'];
+
+					//Set data of contract
+					$stateMachine = SmartContractStateMachine::store($contract['contract_hash'],Tools::GetBaseDir().'data'.DIRECTORY_SEPARATOR.'db');
+					J4FVM::$data = @json_decode(Tools::hex2str($stateMachine->last()['state']),true);
+
+					//Run code
+					ob_start();
+					js::run($code_parsed,PoW::hash($contract['contract_hash'].rand()));
+					$output = ob_get_contents();
+					ob_end_clean();
+
+				} catch (Exception $e) {
+
+					$output = $code_parsed;
+				}
+			}
+
+			//echo '<pre>'.print_r($code_parsed,true).'</pre>';
+
+
+			return Tools::str2hex($output);
 		}
 	}
 

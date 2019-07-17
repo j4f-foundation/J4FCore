@@ -25,8 +25,9 @@
       - [j4f_getBlockByNumber](#j4f_getblockbynumber)
       - [j4f_getTransactionByHash](#j4f_gettransactionbyhash)
       - [j4f_sign](#j4f_sign)
-
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+	  - [j4f_parse](#j4f_parse)
+	  - [j4f_getContractByHash](#j4f_getContractByHash)
+	  - [j4f_callReadFunctionContractByHash](#j4f_callReadFunctionContractByHash)
 
 # JSON RPC API
 
@@ -79,6 +80,9 @@ domain:6969
 * [j4f_getBlockByNumber](#j4f_getblockbynumber)
 * [j4f_getTransactionByHash](#j4f_gettransactionbyhash)
 * [j4f_sign](#j4f_sign)
+* [j4f_parse](#j4f_parse)
+* [j4f_getContractByHash](#j4f_getContractByHash)
+* [j4f_callPublicFunctionContractByHash](#j4f_callPublicFunctionContractByHash)
 
 ## JSON RPC API Reference
 
@@ -846,5 +850,121 @@ http://NODE_IP:NODE_PORT/api/?id=20&method=j4f_sign&wallet=VTx000000000000000000
   "result":{
     "ILPjd7CjCJj36NfoCg2ojY8gZyXSUKYCy3iiKn1H52WT+TZyMmgIwrVZ+BKNv+qQ1Qo+dmA46wi5X72L9jthKFnhbfRs/7xpQP8W9sglbrIRBhTZ0HqB70R6yg5flHgTAIPKKuO7QKW+5PYiQKaSsSztMaeryMe619BRyMeQI7/qRScc/AZUzshQdDqedjkb+2eiVNdQzvNn0oKQ5A0kt7Txd117vRXYxkkdcHl7WMTnBiwlyM0luTBSe6hGZRXD5MqOSj8p5zGKveIPzyxdbwX77e8KB/bLNuw8rGaZwdg2jYj9VjK1ILaiRsyhWi6HWvjLCpECY0QNlynbO4MDBw=="
   }
+}
+```
+
+#### j4f_parse
+
+Parse a string in hexadecimal
+
+
+##### Parameters
+
+1. `STRING` - Data to parse
+
+```js
+params: [
+   "date":"This message will be parsed",
+]
+```
+
+##### Returns
+
+`String` - Data parsed in hexadecimal
+
+##### Example
+```js
+// Request
+curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_parse","params":["data":"This message will be parsed"],"id":21}'
+
+//HTTP Request
+http://NODE_IP:NODE_PORT/api/?id=21&method=j4f_parse&data=This+message+will+be+parsed
+
+// Result
+{
+  "jsonrpc":"2.0",
+  "id":21,
+  "result":{
+    "0x78da0bc9c82c56c84d2d2e4e4c4f5528cfccc951484a5528482c2a4e4d01008b8e09fc"
+  }
+}
+```
+
+#### j4f_getContractByHash
+
+Return contract info by hash
+
+
+##### Parameters
+
+1. `STRING` - Hash of contract
+
+```js
+params: [
+   "hash":"6f326172a9cf1a3e48ab1dc0cd61423a1ad7bb2e221a079f035608496042fbb49beac10ad825fa7a68c03c723773f043252d172de8bf804e12598c036222ce6b",
+]
+```
+
+##### Returns
+
+`Object` - A transaction object, or `null` when no transaction was found:
+
+  - `txnHash`: `STRING`, hash of transaction who created the contract
+  - `contractHash`: `STRING`, Hash of contract
+  - `code`: `STRING`, Code parsed in hexadecimal
+
+##### Example
+```js
+// Request
+curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_getContractByHash","params":["hash":"6f326172a9cf1a3e48ab1dc0cd61423a1ad7bb2e221a079f035608496042fbb49beac10ad825fa7a68c03c723773f043252d172de8bf804e12598c036222ce6b"],"id":22}'
+
+//HTTP Request
+http://NODE_IP:NODE_PORT/api/?id=22&method=j4f_getContractByHash&hash=6f326172a9cf1a3e48ab1dc0cd61423a1ad7bb2e221a079f035608496042fbb49beac10ad825fa7a68c03c723773f043252d172de8bf804e12598c036222ce6b
+
+// Result
+{
+  "jsonrpc":"2.0",
+  "id":21,
+  "result":{
+	"txnHash":"883cce61cad69e45c3b....",
+	"contractHash":"6f326172a9cf1a3e48....",
+	"code":"0x78dacd5....."
+  }
+}
+```
+
+#### j4f_callReadFunctionContractByHash
+
+Call a read function of contract
+
+##### Parameters
+
+1. `STRING` - Hash of contract
+2. `STRING` - OPCode Call parsed in hexadecimal
+
+```js
+params: [
+   "hash":"6f326172a9cf1a3e48ab1dc0cd61423a1ad7bb2e221a079f035608496042fbb49beac10ad825fa7a68c03c723773f043252d172de8bf804e12598c036222ce6b",
+   "data" "0x78da0bc9c82c56c84d2d2e4e4c4f5528cfccc951484a5528482c2a4e4d01008b8e09fc"
+]
+```
+
+##### Returns
+
+`string` - Return of function call parsed in hexadecimal
+
+##### Example
+```js
+// Request
+curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_callReadFunctionContractByHash","params":["hash":"6f326172a9cf1a3e48ab1dc0cd61423a1ad7bb2e221a079f035608496042fbb49beac10ad825fa7a68c03c723773f043252d172de8bf804e12598c036222ce6b","data":"0x78da0bc9c82c56c84d2d2e4e4c4f5528cfccc951484a5528482c2a4e4d01008b8e09fc"],"id":23}'
+
+//HTTP Request
+http://NODE_IP:NODE_PORT/api/?id=23&method=j4f_callReadFunctionContractByHash&hash=6f326172a9cf1a3e48ab1dc0cd61423a1ad7bb2e221a079f035608496042fbb49beac10ad825fa7a68c03c723773f043252d172de8bf804e12598c036222ce6b&data=0x78da0bc9c82c56c84d2d2e4e4c4f5528cfccc951484a5528482c2a4e4d01008b8e09fc
+
+// Result
+{
+  "jsonrpc":"2.0",
+  "id":23,
+  "result": "0x6f326172a9cf1a3e48...."
 }
 ```

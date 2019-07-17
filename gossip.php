@@ -42,6 +42,7 @@ include('src/GenesisBlock.php');
 include('src/Peer.php');
 include('src/Miner.php');
 include('src/SmartContract.php');
+include('src/SmartContractStateMachine.php');
 include('src/J4FVMBase.php');
 include('src/J4FVM.php');
 include('src/uint256.php');

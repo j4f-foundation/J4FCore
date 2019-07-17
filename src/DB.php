@@ -839,10 +839,32 @@ class DB {
         $infoBlock = $this->db->query("SELECT block_hash FROM blocks WHERE height = '".$height."';")->fetch_assoc();
         if (!empty($infoBlock)) {
 
-            //Start Transactions
+			//Start Transactions
 			$this->db->begin_transaction();
 
-			//Remove SmartContracts of this block
+			//Get new contracts of this block
+			$sql_createContracts = "
+			SELECT contract_hash
+			FROM smart_contracts WHERE txn_hash IN (
+				SELECT txn_hash
+				FROM transactions
+				WHERE wallet_to = 'J4F00000000000000000000000000000000000000000000000000000000'
+				AND data <> '0x'
+				AND block_hash = '".$infoBlock['block_hash']."'
+			);";
+			$tmp_createContracts = $this->db->query($sql_createContracts);
+			$newContracts = [];
+	        if (!empty($tmp_createContracts)) {
+	            while ($contractInfo = $tmp_createContracts->fetch_array(MYSQLI_ASSOC)) {
+	                $newContracts[] = $contractInfo;
+	            }
+	        }
+			//Remove stateMachine of this contracts
+			foreach ($newContracts as $contract) {
+				$stateMachine = SmartContractStateMachine::store($contract['contract_hash'],Tools::GetBaseDir().'data'.DIRECTORY_SEPARATOR.'db');
+				$stateMachine->deleteStates();
+			}
+			//Remove new SmartContracts of this block
 			$sqlRemoveSmartContracts = "
 			DELETE FROM smart_contracts WHERE txn_hash IN (
 				SELECT txn_hash
@@ -852,20 +874,66 @@ class DB {
 				AND block_hash = '".$infoBlock['block_hash']."'
 			);
 			";
-			$this->db->query($sqlRemoveSmartContracts);
+			if ($this->db->query($sqlRemoveSmartContracts))
+				$error = true;
 
-            //Remove transactions of block from blockchain
+			//Remove internal transactions of this smart contracts
+			$sqlRemoveInterntalTransactionsCreateContracts = "
+			DELETE FROM smart_contracts_txn WHERE txn_hash IN (
+				SELECT txn_hash
+				FROM transactions
+				WHERE wallet_to = 'J4F00000000000000000000000000000000000000000000000000000000'
+				AND data <> '0x'
+				AND block_hash = '".$infoBlock['block_hash']."'
+			);
+			";
+			if ($this->db->query($sqlRemoveInterntalTransactionsCreateContracts))
+				$error = true;
+
+			//Get transactions call to contracts
+			$sql_callContracts = "
+			SELECT contract_hash, txn_hash
+			FROM smart_contracts WHERE txn_hash IN (
+				SELECT txn_hash
+				FROM transactions
+				WHERE wallet_to <> 'J4F00000000000000000000000000000000000000000000000000000000'
+				AND data <> '0x'
+				AND block_hash = '".$infoBlock['block_hash']."'
+			);
+			";
+			$tmp_callContracts = $this->db->query($sql_callContracts);
+			$callContracts = [];
+	        if (!empty($tmp_createContracts)) {
+	            while ($contractInfo = $tmp_callContracts->fetch_array(MYSQLI_ASSOC)) {
+	                $callContracts[] = $contractInfo;
+	            }
+	        }
+			//Reverse state of this contracts
+			foreach ($callContracts as $callContract) {
+				$stateMachine = SmartContractStateMachine::store($callContract['contract_hash'],Tools::GetBaseDir().'data'.DIRECTORY_SEPARATOR.'db');
+				$stateMachine->reverseState();
+			}
+			//Remove internal transactions of this smart contracts
+			$sqlRemoveInterntalTransactionsCallContracts = "
+			DELETE FROM smart_contracts_txn WHERE txn_hash IN (
+				SELECT txn_hash
+				FROM transactions
+				WHERE wallet_to <> 'J4F00000000000000000000000000000000000000000000000000000000'
+				AND data <> '0x'
+				AND block_hash = '".$infoBlock['block_hash']."'
+			);
+			";
+			if (!$this->db->query($sqlRemoveInterntalTransactionsCallContracts))
+				$error = true;
+
+            //Remove all transactions of block
             $sqlRemoveTransactions = "DELETE FROM transactions WHERE block_hash = '".$infoBlock['block_hash']."';";
             if ($this->db->query($sqlRemoveTransactions)) {
-
-                //Remove block from blockchain
+                //Remove block
                 $sqlRemoveBlock = "DELETE FROM blocks WHERE block_hash = '".$infoBlock['block_hash']."';";
-                if ($this->db->query($sqlRemoveBlock)) {
-                    $this->db->commit();
-                    return true;
-                }
-                else
+                if (!$this->db->query($sqlRemoveBlock)) {
                     $error = true;
+                }
             }
             else
                 $error = true;
@@ -874,6 +942,10 @@ class DB {
         //Rollback transaction
         if ($error)
             $this->db->rollback();
+		else {
+			$this->db->commit();
+			return true;
+		}
         return false;
     }
 
@@ -885,15 +957,38 @@ class DB {
      */
     public function RemoveBlockByHash($hash) {
 
+
         $error = false;
 
-        $infoBlock = $this->db->query("SELECT block_hash FROM blocks WHERE block_hash = '".$hash."';")->fetch_assoc();
+        $infoBlock = $this->db->query("SELECT block_hash FROM blocks WHERE hash = '".$hash."';")->fetch_assoc();
         if (!empty($infoBlock)) {
 
-            //Start Transactions
-            $this->db->begin_transaction();
+			//Start Transactions
+			$this->db->begin_transaction();
 
-			//Remove SmartContracts of this block
+			//Get new contracts of this block
+			$sql_createContracts = "
+			SELECT contract_hash
+			FROM smart_contracts WHERE txn_hash IN (
+				SELECT txn_hash
+				FROM transactions
+				WHERE wallet_to = 'J4F00000000000000000000000000000000000000000000000000000000'
+				AND data <> '0x'
+				AND block_hash = '".$infoBlock['block_hash']."'
+			);";
+			$tmp_createContracts = $this->db->query($sql_createContracts);
+			$newContracts = [];
+	        if (!empty($tmp_createContracts)) {
+	            while ($contractInfo = $tmp_createContracts->fetch_array(MYSQLI_ASSOC)) {
+	                $newContracts[] = $contractInfo;
+	            }
+	        }
+			//Remove stateMachine of this contracts
+			foreach ($newContracts as $contract) {
+				$stateMachine = SmartContractStateMachine::store($contract['contract_hash'],Tools::GetBaseDir().'data'.DIRECTORY_SEPARATOR.'db');
+				$stateMachine->deleteStates();
+			}
+			//Remove new SmartContracts of this block
 			$sqlRemoveSmartContracts = "
 			DELETE FROM smart_contracts WHERE txn_hash IN (
 				SELECT txn_hash
@@ -903,20 +998,66 @@ class DB {
 				AND block_hash = '".$infoBlock['block_hash']."'
 			);
 			";
-			$this->db->query($sqlRemoveSmartContracts);
+			if ($this->db->query($sqlRemoveSmartContracts))
+				$error = true;
 
-			//Remove transactions of block from blockchain
+			//Remove internal transactions of this smart contracts
+			$sqlRemoveInterntalTransactionsCreateContracts = "
+			DELETE FROM smart_contracts_txn WHERE txn_hash IN (
+				SELECT txn_hash
+				FROM transactions
+				WHERE wallet_to = 'J4F00000000000000000000000000000000000000000000000000000000'
+				AND data <> '0x'
+				AND block_hash = '".$infoBlock['block_hash']."'
+			);
+			";
+			if ($this->db->query($sqlRemoveInterntalTransactionsCreateContracts))
+				$error = true;
+
+			//Get transactions call to contracts
+			$sql_callContracts = "
+			SELECT contract_hash, txn_hash
+			FROM smart_contracts WHERE txn_hash IN (
+				SELECT txn_hash
+				FROM transactions
+				WHERE wallet_to <> 'J4F00000000000000000000000000000000000000000000000000000000'
+				AND data <> '0x'
+				AND block_hash = '".$infoBlock['block_hash']."'
+			);
+			";
+			$tmp_callContracts = $this->db->query($sql_callContracts);
+			$callContracts = [];
+	        if (!empty($tmp_createContracts)) {
+	            while ($contractInfo = $tmp_callContracts->fetch_array(MYSQLI_ASSOC)) {
+	                $callContracts[] = $contractInfo;
+	            }
+	        }
+			//Reverse state of this contracts
+			foreach ($callContracts as $callContract) {
+				$stateMachine = SmartContractStateMachine::store($callContract['contract_hash'],Tools::GetBaseDir().'data'.DIRECTORY_SEPARATOR.'db');
+				$stateMachine->reverseState();
+			}
+			//Remove internal transactions of this smart contracts
+			$sqlRemoveInterntalTransactionsCallContracts = "
+			DELETE FROM smart_contracts_txn WHERE txn_hash IN (
+				SELECT txn_hash
+				FROM transactions
+				WHERE wallet_to <> 'J4F00000000000000000000000000000000000000000000000000000000'
+				AND data <> '0x'
+				AND block_hash = '".$infoBlock['block_hash']."'
+			);
+			";
+			if (!$this->db->query($sqlRemoveInterntalTransactionsCallContracts))
+				$error = true;
+
+            //Remove all transactions of block
             $sqlRemoveTransactions = "DELETE FROM transactions WHERE block_hash = '".$infoBlock['block_hash']."';";
             if ($this->db->query($sqlRemoveTransactions)) {
-
-                //Remove block from blockchain
+                //Remove block
                 $sqlRemoveBlock = "DELETE FROM blocks WHERE block_hash = '".$infoBlock['block_hash']."';";
-                if ($this->db->query($sqlRemoveBlock)) {
-                    $this->db->commit();
-                    return true;
-                }
-                else
+                if (!$this->db->query($sqlRemoveBlock)) {
                     $error = true;
+                }
             }
             else
                 $error = true;
@@ -925,6 +1066,10 @@ class DB {
         //Rollback transaction
         if ($error)
             $this->db->rollback();
+		else {
+			$this->db->commit();
+			return true;
+		}
         return false;
     }
 
@@ -935,28 +1080,130 @@ class DB {
      */
     public function RemoveLastBlocksFrom($height) {
 
-		//Remove SmartContracts of this block
-		$this->db->query("
-		DELETE FROM smart_contracts WHERE txn_hash IN (
-			SELECT txn_hash
-			FROM transactions
-			WHERE wallet_to = 'J4F00000000000000000000000000000000000000000000000000000000'
-			AND data <> '0x'
-			AND block_hash IN (
+		$error = false;
+
+		$infoBlock = $this->db->query("SELECT block_hash FROM blocks WHERE height = '".$height."';")->fetch_assoc();
+		if (!empty($infoBlock)) {
+
+			//Start Transactions
+			$this->db->begin_transaction();
+
+			//Get new contracts of this block
+			$sql_createContracts = "
+			SELECT contract_hash
+			FROM smart_contracts WHERE txn_hash IN (
+				SELECT txn_hash
+				FROM transactions
+				WHERE wallet_to = 'J4F00000000000000000000000000000000000000000000000000000000'
+				AND data <> '0x'
+				AND block_hash = IN (
+					SELECT block_hash FROM blocks WHERE height > ".$height."
+				)
+			);";
+			$tmp_createContracts = $this->db->query($sql_createContracts);
+			$newContracts = [];
+			if (!empty($tmp_createContracts)) {
+				while ($contractInfo = $tmp_createContracts->fetch_array(MYSQLI_ASSOC)) {
+					$newContracts[] = $contractInfo;
+				}
+			}
+			//Remove stateMachine of this contracts
+			foreach ($newContracts as $contract) {
+				$stateMachine = SmartContractStateMachine::store($contract['contract_hash'],Tools::GetBaseDir().'data'.DIRECTORY_SEPARATOR.'db');
+				$stateMachine->deleteStates();
+			}
+			//Remove new SmartContracts of this block
+			$sqlRemoveSmartContracts = "
+			DELETE FROM smart_contracts WHERE txn_hash IN (
+				SELECT txn_hash
+				FROM transactions
+				WHERE wallet_to = 'J4F00000000000000000000000000000000000000000000000000000000'
+				AND data <> '0x'
+				AND block_hash = IN (
+					SELECT block_hash FROM blocks WHERE height > ".$height."
+				)
+			);
+			";
+			if ($this->db->query($sqlRemoveSmartContracts))
+			$error = true;
+
+			//Remove internal transactions of this smart contracts
+			$sqlRemoveInterntalTransactionsCreateContracts = "
+			DELETE FROM smart_contracts_txn WHERE txn_hash IN (
+				SELECT txn_hash
+				FROM transactions
+				WHERE wallet_to = 'J4F00000000000000000000000000000000000000000000000000000000'
+				AND data <> '0x'
+				AND block_hash = IN (
+					SELECT block_hash FROM blocks WHERE height > ".$height."
+				)
+			);
+			";
+			if ($this->db->query($sqlRemoveInterntalTransactionsCreateContracts))
+				$error = true;
+
+			//Get transactions call to contracts
+			$sql_callContracts = "
+			SELECT contract_hash, txn_hash
+			FROM smart_contracts WHERE txn_hash IN (
+				SELECT txn_hash
+				FROM transactions
+				WHERE wallet_to <> 'J4F00000000000000000000000000000000000000000000000000000000'
+				AND data <> '0x'
+				AND block_hash = IN (
+					SELECT block_hash FROM blocks WHERE height > ".$height."
+				)
+			);
+			";
+			$tmp_callContracts = $this->db->query($sql_callContracts);
+			$callContracts = [];
+			if (!empty($tmp_createContracts)) {
+				while ($contractInfo = $tmp_callContracts->fetch_array(MYSQLI_ASSOC)) {
+					$callContracts[] = $contractInfo;
+				}
+			}
+			//Reverse state of this contracts
+			foreach ($callContracts as $callContract) {
+				$stateMachine = SmartContractStateMachine::store($callContract['contract_hash'],Tools::GetBaseDir().'data'.DIRECTORY_SEPARATOR.'db');
+				$stateMachine->reverseState();
+			}
+			//Remove internal transactions of this smart contracts
+			$sqlRemoveInterntalTransactionsCallContracts = "
+			DELETE FROM smart_contracts_txn WHERE txn_hash IN (
+				SELECT txn_hash
+				FROM transactions
+				WHERE wallet_to <> 'J4F00000000000000000000000000000000000000000000000000000000'
+				AND data <> '0x'
+				AND block_hash = IN (
+					SELECT block_hash FROM blocks WHERE height > ".$height."
+				)
+			);
+			";
+			if (!$this->db->query($sqlRemoveInterntalTransactionsCallContracts))
+				$error = true;
+
+			//Remove transactions
+			$sql_removeAllTransactions = "
+			DELETE FROM transactions WHERE block_hash IN (
 				SELECT block_hash FROM blocks WHERE height > ".$height."
-			)
-		);
-		");
+			);
+			";
+			if (!$this->db->query($sql_removeAllTransactions))
+				$error = true;
 
-		//Remove transactions
-        $this->db->query("
-        DELETE FROM transactions WHERE block_hash IN (
-          SELECT block_hash FROM blocks WHERE height > ".$height."
-		);
-		");
+			//Remove blocks
+			if (!$this->db->query("DELETE FROM blocks WHERE height > ".$height))
+				$error = true;
+		}
 
-		//Remove block
-        $this->db->query("DELETE FROM blocks WHERE height > ".$height);
+		//Rollback transaction
+		if ($error)
+		$this->db->rollback();
+		else {
+			$this->db->commit();
+			return true;
+		}
+		return false;
     }
 
     /**
@@ -1192,14 +1439,14 @@ class DB {
         $info_contract_chaindata = $this->db->query("SELECT contract_hash FROM smart_contracts WHERE contract_hash = '".$contractHash."';")->fetch_assoc();
         if (empty($info_contract_chaindata)) {
 
-            //Start Transactions
+            //Start MySQL Transaction
             $this->db->begin_transaction();
 
-            //SQL Insert Block
-            $sqlInsertContract = "INSERT INTO smart_contracts (contract_hash,txn_hash,code,data)
-            VALUES ('".$contractHash."','".$txn_hash."','".$codeHexBytes."','".$dataHexBytes."');";
+            //SQL Insert Contract
+            $sqlInsertContract = "INSERT INTO smart_contracts (contract_hash,txn_hash,code)
+            VALUES ('".$contractHash."','".$txn_hash."','".$codeHexBytes."');";
 
-            //Add block into blockchain
+            //Add contract into blockchain
             if (!$this->db->query($sqlInsertContract)) {
                 $error = true;
             }
@@ -1214,40 +1461,27 @@ class DB {
         //No errors, contract added
         else {
             $this->db->commit();
+
+			//Save Contract State
+			$stateMachine = SmartContractStateMachine::store($contractHash,Tools::GetBaseDir().'data'.DIRECTORY_SEPARATOR.'db');
+			$stateMachine->insert($txn_hash,["state" => $dataHexBytes]);
             return true;
         }
 	}
 
 	/**
-     * Update storedData of Contract in the chaindata
+     * Update storedData of Contract in StateMachine
      *
      * @param string $contractHash
+	 * @param string $txnHash
 	 * @param string $dataHexBytes
      * @return bool
      */
-    public function updateStoredDataContract($contractHash,$dataHexBytes) {
-
-        $error = false;
-
-		//Start Transactions
-		$this->db->begin_transaction();
-
-		//SQL Update storedData of Contract
-		if (!$this->db->query("UPDATE smart_contracts SET data = '".$dataHexBytes."' WHERE contract_hash = '".$contractHash."';")) {
-			$error = true;
-		}
-
-        //If have error, rollback action
-        if ($error) {
-            $this->db->rollback();
-            return false;
-        }
-
-        //No errors, contract added
-        else {
-            $this->db->commit();
-            return true;
-        }
+    public function updateStoredDataContract($contractHash,$txnHash,$dataHexBytes) {
+		//NoSQL Update storedData of Contract
+		$stateMachine = SmartContractStateMachine::store($contractHash,Tools::GetBaseDir().'data'.DIRECTORY_SEPARATOR.'db');
+		$stateMachine->insert($txnHash,["state" => $dataHexBytes]);
+		return true;
 	}
 
     /**
@@ -1312,6 +1546,23 @@ class DB {
 			$this->db->rollback();
 
         return false;
+	}
+
+	/**
+     * Returns a internal transaction given a txn hash and contract hash
+     *
+	 * @param string $contract_hash
+     * @param string $txn_hash
+     * @return mixed
+     */
+    public function GetInternalTransactionByTxnHash($contract_hash,$txn_hash) {
+
+        $sql = "SELECT * FROM smart_contracts_txn WHERE txn_hash = '".$txn_hash."' AND contract_hash = '".$contract_hash."';";
+        $info_internalTxn = $this->db->query($sql)->fetch_assoc();
+        if (!empty($info_internalTxn)) {
+            return $info_internalTxn;
+        }
+        return null;
 	}
 
 

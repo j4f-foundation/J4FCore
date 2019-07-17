@@ -61,12 +61,12 @@ class js {
 			}
 
       		#echo "Compilation done in ".($t2-$t1). " seconds<hr>";
-			@file_put_contents($path, "<?php\n set_time_limit(5);\n".$php."\n?>");
+			@file_put_contents($path, "<?php\n".$php."\n?>");
       		#-- then we run it.
     	}
 		//echo highlight_linenum($path);
+		//echo $path;
 		include_once $path;
-		set_time_limit(0);
   	}
 
   #-- normally called by generated code. Your code doesn't need to call it.

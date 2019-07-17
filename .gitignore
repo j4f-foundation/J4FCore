@@ -5,6 +5,7 @@ images/
 fonts/
 ajax/
 data/wallets/
+data/db/
 css/
 bin/bootstrap_node.bat
 bin/bootstrap_node.sh

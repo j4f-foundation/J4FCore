@@ -736,22 +736,22 @@ static function write() {
   $args = func_get_args();
   foreach ($args as $arg) {
     $s = $arg->toStr();
-    echo $s->value.PHP_EOL;
+    echo $s->value;
   }
   //ob_flush();
-  flush();
+  //flush();
 }
 
 static function j4f_error() {
-	echo 'CONTRACT_ERROR: ';
+	echo 'J4FVM_CONTRACT_ERROR: ';
 
 	$args = func_get_args();
 	foreach ($args as $arg) {
 	  $s = $arg->toStr();
-	  echo $s->value.PHP_EOL;
+	  echo $s->value;
 	}
 	//ob_flush();
-	flush();
+	//flush();
 }
 
 static function die_ref_null() {
@@ -761,12 +761,10 @@ static function die_ref_null() {
 	$args = func_get_args();
 	foreach ($args as $arg) {
 	  $s = $arg->toStr();
-	  echo $s->value.PHP_EOL;
+	  echo $s->value;
 	}
 	//ob_flush();
-	flush();
-	die();
-	exit();
+	//flush();
   }
 
 } /* jsrt */

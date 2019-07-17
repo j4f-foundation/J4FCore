@@ -42,6 +42,7 @@ include('../src/GenesisBlock.php');
 include('../src/Peer.php');
 include('../src/Miner.php');
 include('../src/SmartContract.php');
+include('../src/SmartContractStateMachine.php');
 include('../src/J4FVMBase.php');
 include('../src/J4FVM.php');
 include('../src/uint256.php');
@@ -471,7 +472,8 @@ if ($id != null) {
                                 'to'                => $transaction['wallet_to'],
                                 'fee'               => $transaction['tx_fee'],
                                 'amount'            => $transaction['amount'],
-                                'signature'         => $transaction['signature']
+                                'signature'         => $transaction['signature'],
+								'data'         		=> $transaction['data']
                             );
                         }
                     }
@@ -518,6 +520,69 @@ if ($id != null) {
                                     );
                                 }
                             }
+                        }
+                    }
+                break;
+
+				case 'j4f_parse':
+                    if (!isset($params['data']) || strlen($params['data']) == 0) {
+                        $response_jsonrpc['error'] = array(
+                            'code'    => -32602,
+                            'message' => 'Invalid params'
+                        );
+                    } else {
+                        //Parse string
+                        $response_jsonrpc['result'] = Tools::str2hex($params['data']);
+                    }
+                break;
+
+				case 'j4f_getContractByHash':
+                    if (!isset($params['hash']) || strlen($params['hash']) == 0) {
+                        $response_jsonrpc['error'] = array(
+                            'code'    => -32602,
+                            'message' => 'Invalid params'
+                        );
+                    } else {
+
+                        //Get contract
+                        $contract = $chaindata->GetContractByHash($params['hash']);
+
+                        //Check if contract data its ok
+                        if (!is_array($contract) || empty($contract)) {
+                            $response_jsonrpc['error'] = array(
+                                'code'    => -32603,
+                                'message' => 'Internal error'
+                            );
+                        } else {
+                            $response_jsonrpc['result'] = array(
+                                'txnHash'         	=> $contract['txn_hash'],
+                                'contractHash'      => $contract['contract_hash'],
+								'code'         		=> $contract['code']
+                            );
+                        }
+                    }
+                break;
+
+				case 'j4f_callReadFunctionContractByHash':
+                    if (!isset($params['hash']) || strlen($params['hash']) == 0 || !isset($params['data']) || strlen($params['data']) == 0) {
+                        $response_jsonrpc['error'] = array(
+                            'code'    => -32602,
+                            'message' => 'Invalid params'
+                        );
+                    } else {
+                        //Get contract
+                        $contract = $chaindata->GetContractByHash($params['hash']);
+
+                        //Check if contract data its ok
+                        if (!is_array($contract) || empty($contract)) {
+                            $response_jsonrpc['error'] = array(
+                                'code'    => -32603,
+                                'message' => 'Internal error'
+                            );
+                        } else {
+							//Call External contract function (ReadOnly)
+							$outputCall = SmartContract::CallReadFunction($chaindata,$contract,$params['data']);
+                            $response_jsonrpc['result'] = $outputCall;
                         }
                     }
                 break;

@@ -24,7 +24,7 @@
 
 class J4FVMBase {
 
-	public static $var_types = array('address','uint256','string');
+	public static $var_types = array('address','uint256','int','uint','string');
 	public static $data = [];
 	public static $txn_hash = '';
 	public static $contract_hash = '';
@@ -42,7 +42,7 @@ class J4FVMBase {
 
 		//Parse normal functions
 		$matches = [];
-		preg_match_all('/(\w*)\s*:\s*function\s*\((.*)\)\s*(?:(public|private)|\s)/',$code_parsed,$matches);
+		preg_match_all('/(\w*)\s*:\s*function\s*\((.*)\)\s*(?:(public|private)|)\s*(?:(returns\s*bool|returns\s*string|returns\s*uint256|returns\s*uint|returns\s*int|returns)|\s*)/',$code_parsed,$matches);
 		if (!empty($matches[0])) {
 			$i = 0;
 			foreach ($matches[0] as $match) {
@@ -89,6 +89,31 @@ class J4FVMBase {
 		if (strpos($code_parsed,'-') != false)
 			$code_parsed = str_replace('-','--',$code_parsed);
 
+		//Get functions of contract with all info (params, returns, code)
+		$functions = J4FVM::getFunctions($code,true);
+
+		//Check if contract its a Token and have J4FRC-10 Standard
+		$tokenInfo = J4FVM::getTokenDefine($code);
+		if ($tokenInfo != null) {
+			$isJ4FRC10Standard = J4FVM::CheckJ4FRC10Standard($code);
+			if (strlen($isJ4FRC10Standard) > 0)
+				$code_parsed .= $isJ4FRC10Standard;
+		}
+
+		//Check if function have return definition but not have return code
+		foreach ($functions as $functionsByType) {
+			foreach ($functionsByType as $function=>$functionInfo) {
+				//Comprobamos si tiene return
+				if (strlen($functionInfo['return']) > 0) {
+					$matches = [];
+					preg_match_all('/return\(.*\)/',$functionInfo['code'],$matches);
+					if (empty($matches[0])) {
+						$code_parsed .= 'print("<strong class=\"text-danger\">COMPILER_ERROR</strong> Function <strong>'.$function.'()</strong> defined with returns but not have return code");';
+					}
+				}
+			}
+		}
+
 		return $code_parsed;
 	}
 
@@ -101,15 +126,17 @@ class J4FVMBase {
      */
 	public static function _parse($code,$debug=false) {
 
-		$code_parsed = self::_checkSyntaxError($code);
-
-		$code_parsed = self::_parseFunctions($code_parsed);
-
 		//Check if have Contract define struct
 		$matches = [];
-		preg_match("/[Cc]ontract\s{0,}([a-zA-Z0-9]*)\s{0,}=\s{0,}\{/",$code_parsed,$matches);
+		preg_match("/[Cc]ontract\s{0,}([a-zA-Z0-9]*)\s{0,}=\s{0,}\{/",$code,$matches);
 		if (!empty($matches[0]))
-			$code_parsed = @str_replace($matches[0],@str_replace('Contract','var',$matches[0]),$code_parsed);
+			$code_parsed = @str_replace($matches[0],@str_replace('Contract','var',$matches[0]),$code);
+
+		//Check Syntax Error
+		$code_parsed = self::_checkSyntaxError($code_parsed);
+
+		//Parse functions Funity to JS
+		$code_parsed = self::_parseFunctions($code_parsed);
 
 		//Parse prints
 		if ($debug === false) {
@@ -121,6 +148,9 @@ class J4FVMBase {
 						$code_parsed = str_replace($match,'',$code_parsed);
 			}
 		}
+
+		//Special ..
+		$code_parsed = str_replace('..','+',$code_parsed);
 
 		//mapping(address => uint256) balances,
 		$matches = [];
@@ -161,9 +191,9 @@ class J4FVMBase {
 			for ($i = 0; $i < count($matches[0]); $i++) {
 
 				$replace = '
-				var checkBalance = math.comp(this.'.$matches[1][$i].'['.$matches[2][$i].'],0);
+				var checkBalance = math.comp(this.'.$matches[1][$i].'['.$matches[2][$i].'],"0");
 		        if (checkBalance != 1 && checkBalance != 0) {
-		            this.'.$matches[1][$i].'['.$matches[2][$i].'] = math.parse(0);
+		            this.'.$matches[1][$i].'['.$matches[2][$i].'] = math.parse("0");
 		        }';
 				$code_parsed = str_replace($matches[0][$i],$replace,$code_parsed);
 			}
@@ -177,10 +207,7 @@ class J4FVMBase {
 		if (!empty($matches[0])) {
 			for ($i = 0; $i < count($matches[0]); $i++) {
 				if (isset($token[$matches[1][$i]]))
-					if (is_numeric($token[$matches[1][$i]]))
-						$code_parsed = str_replace($matches[0][$i],$token[$matches[1][$i]].$matches[2][$i],$code_parsed);
-					else
-						$code_parsed = str_replace($matches[0][$i],"'".trim($token[$matches[1][$i]])."'".$matches[2][$i],$code_parsed);
+					$code_parsed = str_replace($matches[0][$i],"'".trim($token[$matches[1][$i]])."'".$matches[2][$i],$code_parsed);
 				else
 					$code_parsed = str_replace($matches[0][$i],'0'.$matches[2][$i],$code_parsed);
 			}
@@ -192,7 +219,12 @@ class J4FVMBase {
 		//echo '<pre>'.print_r($matches,true).'</pre>';
 		if (!empty($matches[0])) {
 			for ($i = 0; $i < count($matches[0]); $i++) {
-				$code_parsed = str_replace($matches[0][$i],'return '.$matches[1][$i],$code_parsed);
+				if ($debug === false) {
+					$code_parsed = str_replace($matches[0][$i],'return '.$matches[1][$i],$code_parsed);
+				}
+				else {
+					$code_parsed = str_replace($matches[0][$i],'j4f_return('.$matches[1][$i].'); return null',$code_parsed);
+				}
 			}
 		}
 
@@ -202,7 +234,12 @@ class J4FVMBase {
 		//echo '<pre>'.print_r($matches,true).'</pre>';
 		if (!empty($matches[0])) {
 			for ($i = 0; $i < count($matches[0]); $i++) {
-				$code_parsed = str_replace($matches[0][$i],'return null',$code_parsed);
+				if ($debug === false) {
+					$code_parsed = str_replace($matches[0][$i],'return null',$code_parsed);
+				}
+				else {
+					$code_parsed = str_replace($matches[0][$i],'j4f_error('.$matches[1][$i].'); return null',$code_parsed);
+				}
 			}
 		}
 
@@ -331,10 +368,8 @@ class J4FVMBase {
 	 * @param array $value
      */
 	public static function js_table_set($index,$value) {
-
 		$index = php_str($index);
 		$array_value =  php_array($value);
-
 		self::$data[$index] = $array_value;
 	}
 
@@ -452,7 +487,7 @@ class J4FVMBase {
 
 				//Check param formats
 				$REGEX_Address = '/J4F[a-fA-F0-9]{56}/';
-				if (preg_match($REGEX_Address,$sender) && preg_match($REGEX_Address,$receiver) && preg_match('/\.{0,}\d/',$receiver)) {
+				if (preg_match($REGEX_Address,$sender) && preg_match($REGEX_Address,$receiver) && is_numeric($amount)) {
 
 					//write Internal Transaction on blockchain (local)
 					$db->addInternalTransaction(self::$txn_hash,self::$contract_hash,$sender,$receiver,$amount);
@@ -476,49 +511,89 @@ class J4FVMBase {
 		return '';
 	}
 
+	//UINT256 MATHS
+	public static function uint256_parse($num1) {
+		return js_str(uint256::parse(@number_format(php_str($num1),0,null,'')));
+	}
+
+	public static function uint256_toDec($num1) {
+		return js_str(uint256::toDec(@number_format(php_str($num1),0,null,'')));
+	}
+
+	public static function uint256_add($num1,$num2) {
+		return js_str(uint256::add(@number_format(php_str($num1),0,null,''),@number_format(php_str($num2),0,null,'')));
+	}
+
+	public static function uint256_sub($num1,$num2) {
+		return js_str(uint256::sub(@number_format(php_str($num1),0,null,''),@number_format(php_str($num2),0,null,'')));
+	}
+
+	public static function uint256_compare($num1,$num2) {
+		return js_str(uint256::comp(@number_format(php_str($num1),0,null,''),@number_format(php_str($num2),0,null,'')));
+	}
+
+	public static function uint256_mul($num1,$num2) {
+		return js_str(uint256::mul(@number_format(php_str($num1),0,null,''),@number_format(php_str($num2),0,null,'')));
+	}
+
+	public static function uint256_div($num1,$num2) {
+		return js_str(uint256::div(@number_format(php_str($num1),0,null,''),@number_format(php_str($num2),0,null,'')));
+	}
+
+	public static function uint256_pow($num1,$num2) {
+		return js_str(uint256::pow(@number_format(php_str($num1),0,null,''),@number_format(php_str($num2),0,null,'')));
+	}
+
+	public static function uint256_mod($num1,$num2) {
+		return js_str(uint256::mod(@number_format(php_str($num1),0,null,''),@number_format(php_str($num2),0,null,'')));
+	}
+
+	public static function uint256_sqrt($num1) {
+		return js_str(uint256::sqrt(@number_format(php_str($num1),0,null,'')));
+	}
+
+	public static function uint256_powmod($num1,$num2,$mod) {
+		return js_str(uint256::powmod(number_format(php_str($num1),0,null,''),@number_format(php_str($num2),0,null,''),@number_format(php_str($mod),0,null,'')));
+	}
+
 	//MATHS
 	public static function math_parse($num1) {
-		return js_str(uint256::parse(php_str($num1)));
+		return js_str(@number_format(php_str($num1),0,'.',''));
 	}
-
-	public static function math_toDec($num1) {
-		return js_str(uint256::toDec(php_str($num1)));
-	}
-
 	public static function math_add($num1,$num2) {
-		return js_str(uint256::add(php_str($num1),php_str($num2)));
+		return js_str(@bcadd(@number_format(php_str($num1),0,'.',''),@number_format(php_str($num2),0,'.','')));
 	}
 
 	public static function math_sub($num1,$num2) {
-		return js_str(uint256::sub(php_str($num1),php_str($num2)));
+		return js_str(@bcsub(@number_format(php_str($num1),0,'.',''),@number_format(php_str($num2),0,'.','')));
 	}
 
 	public static function math_compare($num1,$num2) {
-		return js_str(uint256::comp(php_str($num1),php_str($num2)));
+		return js_str(@bccomp(@number_format(php_str($num1),0,'.',''),@number_format(php_str($num2),0,'.','')));
 	}
 
 	public static function math_mul($num1,$num2) {
-		return js_str(uint256::mul(php_str($num1),php_str($num2)));
+		return js_str(@bcmul(@number_format(php_str($num1),0,'.',''),@number_format(php_str($num2),0,'.','')));
 	}
 
 	public static function math_div($num1,$num2) {
-		return js_str(uint256::div(php_str($num1),php_str($num2)));
+		return js_str(@bcdiv(@number_format(php_str($num1),0,'.',''),@number_format(php_str($num2),0,'.','')));
 	}
 
 	public static function math_pow($num1,$num2) {
-		return js_str(uint256::pow(php_str($num1),php_str($num2)));
+		return js_str(@bcpow(@number_format(php_str($num1),0,'.',''),@number_format(php_str($num2),0,'.','')));
 	}
 
 	public static function math_mod($num1,$num2) {
-		return js_str(uint256::mod($num1,$num2));
+		return js_str(@bcmod(@number_format(php_str($num1),0,'.',''),@number_format(php_str($num2),0,'.','')));
 	}
 
 	public static function math_sqrt($num1) {
-		return js_str(uint256::sqrt($num1));
+		return js_str(@bcsqrt(@number_format(php_str($num1),0,'.','')));
 	}
 
 	public static function math_powmod($num1,$num2,$mod) {
-		return js_str(uint256::powmod(php_str($num1),php_str($num2),php_str($mod)));
+		return js_str(@bcpowmod(@number_format(php_str($num1),0,'.',''),@number_format(php_str($num2),0,'.',''),number_format(php_str($mod),0,'.','')));
 	}
 }
 ?>

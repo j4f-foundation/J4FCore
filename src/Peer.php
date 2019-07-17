@@ -93,6 +93,8 @@ class Peer {
                     //Define new height for next block
                     $nextHeight = $lastBlock['height']+1;
 
+					//DISPLAY::_printer(print_r($blockToImport,true));
+
                     //If block is valid
                     if ($blockToImport->isValid($nextHeight,$isTestnet)) {
 

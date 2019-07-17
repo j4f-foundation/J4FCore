@@ -42,6 +42,7 @@ include(__DIR__.'/Miner.php');
 include(__DIR__.'/GenesisBlock.php');
 include(__DIR__.'/Peer.php');
 include(__DIR__.'/SmartContract.php');
+include(__DIR__.'/SmartContractStateMachine.php');;
 include(__DIR__.'/J4FVMBase.php');
 include(__DIR__.'/J4FVM.php');
 include(__DIR__.'/uint256.php');

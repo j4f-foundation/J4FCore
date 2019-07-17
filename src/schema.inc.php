@@ -280,7 +280,15 @@ if ($dbversion == 5) {
     $dbversion++;
 }
 
+if ($dbversion == 6) {
 
+    $db->db->query("ALTER TABLE `smart_contracts` DROP COLUMN `data`;");
+
+    Display::_printer("Updating DB Schema #".$dbversion);
+
+    //Increment version to next stage
+    $dbversion++;
+}
 
 // update dbversion
 if ($dbversion != $_CONFIG['dbversion']) {
