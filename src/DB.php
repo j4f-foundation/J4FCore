@@ -31,8 +31,6 @@ class DB {
         //Check if have error on connect to mysql server
         if (mysqli_connect_errno())
             return null;
-
-        $this->CheckIfExistTables();
     }
 
     /**
@@ -336,54 +334,62 @@ class DB {
      */
     public function GetWalletInfo($wallet) {
 
-        $totalReceived = "0";
-        $totalReceivedReal = "0";
-        $totalSpend = "0";
+		$totalSpend = $totalReceivedReal = $current = 0;
 
-        $totalReceived_tmp = $this->db->query("SELECT amount FROM transactions WHERE wallet_to = '".$wallet."';");
-        if (!empty($totalReceived_tmp)) {
-            while ($txnInfo = $totalReceived_tmp->fetch_array(MYSQLI_ASSOC)) {
-                $totalReceived = bcadd($totalReceived, $txnInfo['amount'], 8);
-            }
+		$walletInfo = $this->db->query("SELECT * FROM accounts WHERE hash = '".$wallet."';")->fetch_assoc();
+        if (!empty($walletInfo)) {
+			$totalSpend = uint256::parse($walletInfo['sended']);
+			$totalReceivedReal = uint256::parse($walletInfo['received']);
+			$current = uint256::parse(bcsub($walletInfo['received'],$walletInfo['sended'],18));
         }
 
-        $totalReceived_tmp = $this->db->query("SELECT amount FROM transactions WHERE wallet_to = '".$wallet."' AND (wallet_from <> '' OR wallet_from IS NULL);");
-        if (!empty($totalReceived_tmp)) {
-            while ($txnInfo = $totalReceived_tmp->fetch_array(MYSQLI_ASSOC)) {
-                $totalReceivedReal = bcadd($totalReceivedReal, $txnInfo['amount'], 8);
-            }
-        }
-
-        //Obtenemos lo que ha gastado el usuario (pendiente o no de tramitar)
-        $totalSpended_tmp = $this->db->query("SELECT amount FROM transactions WHERE wallet_from = '".$wallet."';");
-        if (!empty($totalSpended_tmp)) {
-            while ($txnInfo = $totalSpended_tmp->fetch_array(MYSQLI_ASSOC)) {
-                $totalSpend = bcadd($totalSpend, $txnInfo['amount'], 8);
-            }
-        }
-
-        $totalSpendedPending_tmp = $this->db->query("SELECT amount FROM transactions_pending WHERE wallet_from = '".$wallet."';");
-        if (!empty($totalSpendedPending_tmp)) {
-            while ($txnInfo = $totalSpendedPending_tmp->fetch_array(MYSQLI_ASSOC)) {
-                $totalSpend = bcadd($totalSpend, $txnInfo['amount'], 8);
-            }
-        }
-
-        $totalSpendedPendingToSend_tmp = $this->db->query("SELECT amount FROM transactions_pending_to_send WHERE wallet_from = '".$wallet."';");
-        if (!empty($totalSpendedPendingToSend_tmp)) {
-            while ($txnInfo = $totalSpendedPendingToSend_tmp->fetch_array(MYSQLI_ASSOC)) {
-                $totalSpend = bcadd($totalSpend, $txnInfo['amount'], 8);
-            }
-        }
-
-        $current = bcsub($totalReceived,$totalSpend,8);
-
-        return array(
+		return array(
             'sended' => $totalSpend,
             'received' => $totalReceivedReal,
             'current' => $current
         );
+
     }
+
+	/**
+	 * Returns the tokens of a wallet
+	 *
+	 * @param $wallet
+	 * @return array
+	 */
+	public function GetWalletTokens($wallet) {
+
+		$tokens = array();
+
+		$tokensAccount = $this->db->query("SELECT * FROM accounts_j4frc10 WHERE hash = '".$wallet."';");
+		if (!empty($tokensAccount)) {
+			while ($tokenAccountInfo = $tokensAccount->fetch_array(MYSQLI_ASSOC)) {
+				$tokenHash = $tokenAccountInfo['contract_hash'];
+
+				$totalSpend = uint256::parse($tokenAccountInfo['sended']);
+				$totalReceivedReal = uint256::parse($tokenAccountInfo['received']);
+				$current = uint256::parse(bcsub($tokenAccountInfo['received'],$tokenAccountInfo['sended'],18));
+
+
+				$tokens[$tokenHash]['info'] = array(
+		            'sended' => $totalSpend,
+		            'received' => $totalReceivedReal,
+		            'current' => $current
+		        );
+			}
+		}
+
+		foreach ($tokens as $tokenHash=>$tokenInfo) {
+
+			$contractInfo = $this->GetContractByHash($tokenHash);
+			$tokenDefines = J4FVM::getTokenDefine(Tools::hex2str($contractInfo['code']));
+
+			$tokens[$tokenHash]['Token'] = $tokenDefines['Token'];
+			$tokens[$tokenHash]['Name'] = $tokenDefines['Name'];
+		}
+
+		return $tokens;
+	}
 
     /**
      * Returns all the transactions of a wallet
@@ -740,6 +746,43 @@ class DB {
                         $error = true;
                         break;
                     }
+
+					//Update Account FROM
+					if (strlen($wallet_from) > 0 && $wallet_from != 'J4F00000000000000000000000000000000000000000000000000000000') {
+						$sql_updateAccountFrom = "
+						INSERT INTO accounts (hash,sended,received,mined)
+						VALUES ('".$wallet_from."','".$transaction->amount."' + '".$transaction->tx_fee."',0,0)
+						ON DUPLICATE KEY UPDATE sended = sended + ".$transaction->amount." + ".$transaction->tx_fee.";
+						";
+	                    if (!$this->db->query($sql_updateAccountFrom)) {
+	                        $error = true;
+	                        break;
+	                    }
+					}
+					//Update Account TO
+					if (strlen($transaction->to) > 0) {
+						// MINED BLOCK
+						if (strlen($wallet_from) == 0) {
+							$sql_updateAccountTo = "
+							INSERT INTO accounts (hash,sended,received,mined)
+							VALUES ('".$transaction->to."',0,0,'".$transaction->amount."')
+							ON DUPLICATE KEY UPDATE mined = mined + VALUES(mined);
+							";
+						}
+						else {
+							$sql_updateAccountTo = "
+							INSERT INTO accounts (hash,sended,received,mined)
+							VALUES ('".$transaction->to."',0,'".$transaction->amount."',0)
+							ON DUPLICATE KEY UPDATE received = received + VALUES(received);
+							";
+						}
+
+						if (!$this->db->query($sql_updateAccountTo)) {
+							$error = true;
+							break;
+						}
+					}
+
                     //We eliminated the pending transaction
                     $this->removePendingTransaction($transaction->message());
                     $this->removePendingTransactionToSend($transaction->message());
@@ -795,6 +838,42 @@ class DB {
                         $error = true;
                         break;
                     }
+
+					//Update Account FROM
+					if (strlen($wallet_from) > 0 && $wallet_from != 'J4F00000000000000000000000000000000000000000000000000000000') {
+						$sql_updateAccountFrom = "
+						INSERT INTO accounts (hash,sended,received,mined)
+						VALUES ('".$wallet_from."','".$transaction['amount']."' + '".$transaction['tx_fee']."',0,0)
+						ON DUPLICATE KEY UPDATE sended = sended + VALUES(sended) + '".$transaction['tx_fee']."';
+						";
+	                    if (!$this->db->query($sql_updateAccountFrom)) {
+	                        $error = true;
+	                        break;
+	                    }
+					}
+					//Update Account TO
+					if (strlen($transaction['wallet_to']) > 0) {
+						// MINED BLOCK
+						if (strlen($wallet_from) == 0) {
+							$sql_updateAccountTo = "
+							INSERT INTO accounts (hash,sended,received,mined)
+							VALUES ('".$transaction['wallet_to']."',0,0,'".$transaction['amount']."')
+							ON DUPLICATE KEY UPDATE mined = mined + VALUES(mined);
+							";
+						}
+						else {
+							$sql_updateAccountTo = "
+							INSERT INTO accounts (hash,sended,received,mined)
+							VALUES ('".$transaction['wallet_to']."',0,'".$transaction['amount']."',0)
+							ON DUPLICATE KEY UPDATE received = received + VALUES(received);
+							";
+						}
+
+						if (!$this->db->query($sql_updateAccountTo)) {
+							$error = true;
+							break;
+						}
+					}
 
                     //We eliminated the pending transaction
                     $this->removePendingTransaction($transaction['txn_hash']);
@@ -868,9 +947,34 @@ class DB {
 				AND block_hash = '".$infoBlock['block_hash']."'
 			);
 			";
-			if ($this->db->query($sqlRemoveSmartContracts))
+			if (!$this->db->query($sqlRemoveSmartContracts))
 				$error = true;
 
+			//Reverse account status with this internal transactions of this smart contracts
+			$sql_selectRemoveInterntalTransactionsCreateContracts = "
+			SELECT * FROM smart_contracts_txn WHERE txn_hash IN (
+				SELECT txn_hash
+				FROM transactions
+				WHERE wallet_to = 'J4F00000000000000000000000000000000000000000000000000000000'
+				AND data <> '0x'
+				AND block_hash = '".$infoBlock['block_hash']."'
+			);";
+			$tmp_InternalTxns = $this->db->query($sql_selectRemoveInterntalTransactionsCreateContracts);
+			if (!empty($tmp_InternalTxns)) {
+	            while ($internalTxn = $tmp_InternalTxns->fetch_array(MYSQLI_ASSOC)) {
+
+					$sql_updateAccountTo = "
+					UPDATE accounts_j4frc10 SET
+					received = received - '".$internalTxn['amount']."'
+					WHERE contract_hash = '".$internalTxn['contract_hash']."'
+					AND hash = '".$internalTxn['wallet_to']."';
+					";
+					if (!$this->db->query($sql_updateAccountTo)) {
+						$error = true;
+						break;
+					}
+	            }
+	        }
 			//Remove internal transactions of this smart contracts
 			$sqlRemoveInterntalTransactionsCreateContracts = "
 			DELETE FROM smart_contracts_txn WHERE txn_hash IN (
@@ -881,7 +985,7 @@ class DB {
 				AND block_hash = '".$infoBlock['block_hash']."'
 			);
 			";
-			if ($this->db->query($sqlRemoveInterntalTransactionsCreateContracts))
+			if (!$this->db->query($sqlRemoveInterntalTransactionsCreateContracts))
 				$error = true;
 
 			//Get transactions call to contracts
@@ -907,6 +1011,43 @@ class DB {
 				$stateMachine = SmartContractStateMachine::store($callContract['contract_hash'],Tools::GetBaseDir().'data'.DIRECTORY_SEPARATOR.'db');
 				$stateMachine->reverseState();
 			}
+			//Reverse account status with this internal transactions of this smart contracts
+			$sql_selectRemoveInterntalTransactionsCallContracts = "
+			SELECT * FROM smart_contracts_txn WHERE txn_hash IN (
+				SELECT txn_hash
+				FROM transactions
+				WHERE wallet_to <> 'J4F00000000000000000000000000000000000000000000000000000000'
+				AND data <> '0x'
+				AND block_hash = '".$infoBlock['block_hash']."'
+			);";
+			$tmp_InternalTxnsCalls = $this->db->query($sql_selectRemoveInterntalTransactionsCallContracts);
+			if (!empty($tmp_InternalTxnsCalls)) {
+				while ($internalTxnCall = $tmp_InternalTxnsCalls->fetch_array(MYSQLI_ASSOC)) {
+
+					$sql_updateAccountFrom = "
+					UPDATE accounts_j4frc10 SET
+					sended = sended - '".$internalTxnCall['amount']."'
+					WHERE contract_hash = '".$internalTxnCall['contract_hash']."'
+					AND hash = '".$internalTxnCall['wallet_from']."';
+					";
+					if (!$this->db->query($sql_updateAccountFrom)) {
+						$error = true;
+						break;
+					}
+
+					$sql_updateAccountTo = "
+					UPDATE accounts_j4frc10 SET
+					received = received - '".$internalTxnCall['amount']."'
+					WHERE contract_hash = '".$internalTxnCall['contract_hash']."'
+					AND hash = '".$internalTxnCall['wallet_to']."';
+					";
+					if (!$this->db->query($sql_updateAccountTo)) {
+						$error = true;
+						break;
+					}
+
+				}
+			}
 			//Remove internal transactions of this smart contracts
 			$sqlRemoveInterntalTransactionsCallContracts = "
 			DELETE FROM smart_contracts_txn WHERE txn_hash IN (
@@ -920,16 +1061,61 @@ class DB {
 			if (!$this->db->query($sqlRemoveInterntalTransactionsCallContracts))
 				$error = true;
 
+			//Reverse account status of this transactions
+			$sql_selectTransactionsToReverse = "SELECT * FROM transactions WHERE block_hash = '".$infoBlock['block_hash']."';";
+			$tmp_TxnsToReverse = $this->db->query($sql_selectTransactionsToReverse);
+			if (!empty($tmp_TxnsToReverse)) {
+				while ($txnToReverse = $tmp_TxnsToReverse->fetch_array(MYSQLI_ASSOC)) {
+
+					//Mine txn
+					if ($txnToReverse['wallet_from'] == '') {
+						$sql_updateAccountFrom = "
+						UPDATE accounts SET
+						mined = mined - '".$txnToReverse['amount']."'
+						WHERE hash = '".$txnToReverse['wallet_to']."';
+						";
+						if (!$this->db->query($sql_updateAccountFrom)) {
+							$error = true;
+							break;
+						}
+					}
+
+					//Noram Txn
+					else {
+
+						$sql_updateAccountFrom = "
+						UPDATE accounts SET
+						sended = sended - ".$txnToReverse['amount'].",
+						sended = sended - ".$txnToReverse['tx_fee']."
+						WHERE hash = '".$txnToReverse['wallet_from']."';
+						";
+						if (!$this->db->query($sql_updateAccountFrom)) {
+							$error = true;
+							break;
+						}
+
+						$sql_updateAccountTo = "
+						UPDATE accounts SET
+						received = received - '".$txnToReverse['amount']."'
+						WHERE hash = '".$txnToReverse['wallet_to']."';
+						";
+						if (!$this->db->query($sql_updateAccountTo)) {
+							$error = true;
+							break;
+						}
+					}
+
+				}
+			}
+
             //Remove all transactions of block
             $sqlRemoveTransactions = "DELETE FROM transactions WHERE block_hash = '".$infoBlock['block_hash']."';";
-            if ($this->db->query($sqlRemoveTransactions)) {
-                //Remove block
-                $sqlRemoveBlock = "DELETE FROM blocks WHERE block_hash = '".$infoBlock['block_hash']."';";
-                if (!$this->db->query($sqlRemoveBlock)) {
-                    $error = true;
-                }
-            }
-            else
+            if (!$this->db->query($sqlRemoveTransactions))
+                $error = true;
+
+			//Remove block
+            $sqlRemoveBlock = "DELETE FROM blocks WHERE block_hash = '".$infoBlock['block_hash']."';";
+            if (!$this->db->query($sqlRemoveBlock))
                 $error = true;
         }
 
@@ -950,7 +1136,6 @@ class DB {
      * @return bool
      */
     public function RemoveBlockByHash($hash) {
-
 
         $error = false;
 
@@ -992,8 +1177,35 @@ class DB {
 				AND block_hash = '".$infoBlock['block_hash']."'
 			);
 			";
-			if ($this->db->query($sqlRemoveSmartContracts))
+			if (!$this->db->query($sqlRemoveSmartContracts))
 				$error = true;
+
+			//Reverse account status with this internal transactions of this smart contracts
+			$sql_selectRemoveInterntalTransactionsCreateContracts = "
+			SELECT * FROM smart_contracts_txn WHERE txn_hash IN (
+				SELECT txn_hash
+				FROM transactions
+				WHERE wallet_to = 'J4F00000000000000000000000000000000000000000000000000000000'
+				AND data <> '0x'
+				AND block_hash = '".$infoBlock['block_hash']."'
+			);";
+			$tmp_InternalTxns = $this->db->query($sql_selectRemoveInterntalTransactionsCreateContracts);
+			if (!empty($tmp_InternalTxns)) {
+				while ($internalTxn = $tmp_InternalTxns->fetch_array(MYSQLI_ASSOC)) {
+
+					$sql_updateAccountTo = "
+					UPDATE accounts_j4frc10 SET
+					received = received - '".$internalTxn['amount']."'
+					WHERE contract_hash = '".$internalTxn['contract_hash']."'
+					AND hash = '".$internalTxn['wallet_to']."';
+					";
+					if (!$this->db->query($sql_updateAccountTo)) {
+						$error = true;
+						break;
+					}
+
+				}
+			}
 
 			//Remove internal transactions of this smart contracts
 			$sqlRemoveInterntalTransactionsCreateContracts = "
@@ -1005,7 +1217,7 @@ class DB {
 				AND block_hash = '".$infoBlock['block_hash']."'
 			);
 			";
-			if ($this->db->query($sqlRemoveInterntalTransactionsCreateContracts))
+			if (!$this->db->query($sqlRemoveInterntalTransactionsCreateContracts))
 				$error = true;
 
 			//Get transactions call to contracts
@@ -1031,6 +1243,43 @@ class DB {
 				$stateMachine = SmartContractStateMachine::store($callContract['contract_hash'],Tools::GetBaseDir().'data'.DIRECTORY_SEPARATOR.'db');
 				$stateMachine->reverseState();
 			}
+			//Reverse account status with this internal transactions of this smart contracts
+			$sql_selectRemoveInterntalTransactionsCallContracts = "
+			SELECT * FROM smart_contracts_txn WHERE txn_hash IN (
+				SELECT txn_hash
+				FROM transactions
+				WHERE wallet_to <> 'J4F00000000000000000000000000000000000000000000000000000000'
+				AND data <> '0x'
+				AND block_hash = '".$infoBlock['block_hash']."'
+			);";
+			$tmp_InternalTxnsCalls = $this->db->query($sql_selectRemoveInterntalTransactionsCallContracts);
+			if (!empty($tmp_InternalTxnsCalls)) {
+				while ($internalTxnCall = $tmp_InternalTxnsCalls->fetch_array(MYSQLI_ASSOC)) {
+
+					$sql_updateAccountFrom = "
+					UPDATE accounts_j4frc10 SET
+					sended = sended - '".$internalTxnCall['amount']."'
+					WHERE contract_hash = '".$internalTxnCall['contract_hash']."'
+					AND hash = '".$internalTxnCall['wallet_from']."';
+					";
+					if (!$this->db->query($sql_updateAccountFrom)) {
+						$error = true;
+						break;
+					}
+
+					$sql_updateAccountTo = "
+					UPDATE accounts_j4frc10 SET
+					received = received - '".$internalTxnCall['amount']."'
+					WHERE contract_hash = '".$internalTxnCall['contract_hash']."'
+					AND hash = '".$internalTxnCall['wallet_to']."';
+					";
+					if (!$this->db->query($sql_updateAccountTo)) {
+						$error = true;
+						break;
+					}
+
+				}
+			}
 			//Remove internal transactions of this smart contracts
 			$sqlRemoveInterntalTransactionsCallContracts = "
 			DELETE FROM smart_contracts_txn WHERE txn_hash IN (
@@ -1044,6 +1293,52 @@ class DB {
 			if (!$this->db->query($sqlRemoveInterntalTransactionsCallContracts))
 				$error = true;
 
+			//Reverse account status of this transactions
+			$sql_selectTransactionsToReverse = "SELECT * FROM transactions WHERE block_hash = '".$infoBlock['block_hash']."';";
+			$tmp_TxnsToReverse = $this->db->query($sql_selectTransactionsToReverse);
+			if (!empty($tmp_TxnsToReverse)) {
+				while ($txnToReverse = $tmp_TxnsToReverse->fetch_array(MYSQLI_ASSOC)) {
+
+					//Mine txn
+					if ($txnToReverse['wallet_from'] == '') {
+						$sql_updateAccountFrom = "
+						UPDATE accounts SET
+						mined = mined - '".$txnToReverse['amount']."'
+						WHERE hash = '".$txnToReverse['wallet_to']."';
+						";
+						if (!$this->db->query($sql_updateAccountFrom)) {
+							$error = true;
+							break;
+						}
+					}
+
+					//Noram Txn
+					else {
+
+						$sql_updateAccountFrom = "
+						UPDATE accounts SET
+						sended = sended - ".$txnToReverse['amount'].",
+						sended = sended - ".$txnToReverse['tx_fee']."
+						WHERE hash = '".$txnToReverse['wallet_from']."';
+						";
+						if (!$this->db->query($sql_updateAccountFrom)) {
+							$error = true;
+							break;
+						}
+
+						$sql_updateAccountTo = "
+						UPDATE accounts SET
+						received = received - '".$txnToReverse['amount']."'
+						WHERE hash = '".$txnToReverse['wallet_to']."';
+						";
+						if (!$this->db->query($sql_updateAccountTo)) {
+							$error = true;
+							break;
+						}
+					}
+
+				}
+			}
             //Remove all transactions of block
             $sqlRemoveTransactions = "DELETE FROM transactions WHERE block_hash = '".$infoBlock['block_hash']."';";
             if ($this->db->query($sqlRemoveTransactions)) {
@@ -1118,9 +1413,37 @@ class DB {
 				)
 			);
 			";
-			if ($this->db->query($sqlRemoveSmartContracts))
-			$error = true;
+			if (!$this->db->query($sqlRemoveSmartContracts))
+				$error = true;
 
+			//Reverse account status with this internal transactions of this smart contracts
+			$sql_selectRemoveInterntalTransactionsCreateContracts = "
+			SELECT * FROM smart_contracts_txn WHERE txn_hash IN (
+				SELECT txn_hash
+				FROM transactions
+				WHERE wallet_to = 'J4F00000000000000000000000000000000000000000000000000000000'
+				AND data <> '0x'
+				AND block_hash = IN (
+					SELECT block_hash FROM blocks WHERE height > ".$height."
+				)
+			);";
+			$tmp_InternalTxns = $this->db->query($sql_selectRemoveInterntalTransactionsCreateContracts);
+			if (!empty($tmp_InternalTxns)) {
+				while ($internalTxn = $tmp_InternalTxns->fetch_array(MYSQLI_ASSOC)) {
+
+					$sql_updateAccountTo = "
+					UPDATE accounts_j4frc10 SET
+					received = received - '".$internalTxn['amount']."'
+					WHERE contract_hash = '".$internalTxn['contract_hash']."'
+					AND hash = '".$internalTxn['wallet_to']."';
+					";
+					if (!$this->db->query($sql_updateAccountTo)) {
+						$error = true;
+						break;
+					}
+
+				}
+			}
 			//Remove internal transactions of this smart contracts
 			$sqlRemoveInterntalTransactionsCreateContracts = "
 			DELETE FROM smart_contracts_txn WHERE txn_hash IN (
@@ -1133,7 +1456,7 @@ class DB {
 				)
 			);
 			";
-			if ($this->db->query($sqlRemoveInterntalTransactionsCreateContracts))
+			if (!$this->db->query($sqlRemoveInterntalTransactionsCreateContracts))
 				$error = true;
 
 			//Get transactions call to contracts
@@ -1156,6 +1479,45 @@ class DB {
 					$callContracts[] = $contractInfo;
 				}
 			}
+			//Reverse account status with this internal transactions of this smart contracts
+			$sql_selectRemoveInterntalTransactionsCallContracts = "
+			SELECT * FROM smart_contracts_txn WHERE txn_hash IN (
+				SELECT txn_hash
+				FROM transactions
+				WHERE wallet_to <> 'J4F00000000000000000000000000000000000000000000000000000000'
+				AND data <> '0x'
+				AND block_hash = IN (
+					SELECT block_hash FROM blocks WHERE height > ".$height."
+				)
+			);";
+			$tmp_InternalTxnsCalls = $this->db->query($sql_selectRemoveInterntalTransactionsCallContracts);
+			if (!empty($tmp_InternalTxnsCalls)) {
+				while ($internalTxnCall = $tmp_InternalTxnsCalls->fetch_array(MYSQLI_ASSOC)) {
+
+					$sql_updateAccountFrom = "
+					UPDATE accounts_j4frc10 SET
+					sended = sended - '".$internalTxnCall['amount']."'
+					WHERE contract_hash = '".$internalTxnCall['contract_hash']."'
+					AND hash = '".$internalTxnCall['wallet_from']."';
+					";
+					if (!$this->db->query($sql_updateAccountFrom)) {
+						$error = true;
+						break;
+					}
+
+					$sql_updateAccountTo = "
+					UPDATE accounts_j4frc10 SET
+					received = received - '".$internalTxnCall['amount']."'
+					WHERE contract_hash = '".$internalTxnCall['contract_hash']."'
+					AND hash = '".$internalTxnCall['wallet_to']."';
+					";
+					if (!$this->db->query($sql_updateAccountTo)) {
+						$error = true;
+						break;
+					}
+
+				}
+			}
 			//Reverse state of this contracts
 			foreach ($callContracts as $callContract) {
 				$stateMachine = SmartContractStateMachine::store($callContract['contract_hash'],Tools::GetBaseDir().'data'.DIRECTORY_SEPARATOR.'db');
@@ -1175,6 +1537,55 @@ class DB {
 			";
 			if (!$this->db->query($sqlRemoveInterntalTransactionsCallContracts))
 				$error = true;
+
+			//Reverse account status of this transactions
+			$sql_selectTransactionsToReverse = "SELECT * FROM transactions WHERE block_hash IN (
+				SELECT block_hash FROM blocks WHERE height > ".$height."
+			);";
+			$tmp_TxnsToReverse = $this->db->query($sql_selectTransactionsToReverse);
+			if (!empty($tmp_TxnsToReverse)) {
+				while ($txnToReverse = $tmp_TxnsToReverse->fetch_array(MYSQLI_ASSOC)) {
+
+					//Mine txn
+					if ($txnToReverse['wallet_from'] == '') {
+						$sql_updateAccountFrom = "
+						UPDATE accounts SET
+						mined = mined - '".$txnToReverse['amount']."'
+						WHERE hash = '".$txnToReverse['wallet_to']."';
+						";
+						if (!$this->db->query($sql_updateAccountFrom)) {
+							$error = true;
+							break;
+						}
+					}
+
+					//Noram Txn
+					else {
+
+						$sql_updateAccountFrom = "
+						UPDATE accounts SET
+						sended = sended - ".$txnToReverse['amount'].",
+						sended = sended - ".$txnToReverse['tx_fee']."
+						WHERE hash = '".$txnToReverse['wallet_from']."';
+						";
+						if (!$this->db->query($sql_updateAccountFrom)) {
+							$error = true;
+							break;
+						}
+
+						$sql_updateAccountTo = "
+						UPDATE accounts SET
+						received = received - '".$txnToReverse['amount']."'
+						WHERE hash = '".$txnToReverse['wallet_to']."';
+						";
+						if (!$this->db->query($sql_updateAccountTo)) {
+							$error = true;
+							break;
+						}
+					}
+
+				}
+			}
 
 			//Remove transactions
 			$sql_removeAllTransactions = "
@@ -1522,6 +1933,8 @@ class DB {
      */
 	public function addInternalTransaction($txn_hash,$contract_hash,$wallet_from,$wallet_to,$amount) {
 
+		$error = false;
+
 		//Start Internal Transaction
 		$this->db->begin_transaction();
 
@@ -1530,7 +1943,37 @@ class DB {
 			VALUES ('" . $txn_hash . "','" . $contract_hash . "','" . $wallet_from . "','" . $wallet_to . "','".$amount."','".$timestamp."');";
 
 		//Commit Internal Transaction
-		if ($this->db->query($sqlInternalTxn)) {
+		if (!$this->db->query($sqlInternalTxn)) {
+			$error = true;
+		}
+
+		//Update Account FROM
+		if (strlen($wallet_from) > 0 && $wallet_from != 'J4F00000000000000000000000000000000000000000000000000000000') {
+			$sql_updateAccountFrom = "
+			INSERT INTO accounts_j4frc10 (hash,contract_hash,sended,received)
+			VALUES ('".$wallet_from."','".$contract_hash."','".$amount."',0)
+			ON DUPLICATE KEY UPDATE sended = sended + VALUES(sended);
+			";
+			if (!$this->db->query($sql_updateAccountFrom)) {
+				$error = true;
+			}
+		}
+		//Update Account TO
+		if (strlen($wallet_to) > 0) {
+			$sql_updateAccountTo = "
+			INSERT INTO accounts_j4frc10 (hash,contract_hash,sended,received)
+			VALUES ('".$wallet_to."','".$contract_hash."',0,'".$amount."')
+			ON DUPLICATE KEY UPDATE received = received + VALUES(received);
+			";
+
+			if (!$this->db->query($sql_updateAccountTo)) {
+				$error = true;
+			}
+		}
+
+
+		//Commit Internal Transaction
+		if (!$error) {
 			$this->db->commit();
 			return true;
 		}
@@ -1558,79 +2001,6 @@ class DB {
         }
         return null;
 	}
-
-
-    /**
-     * Check that the basic tables exist for the blockchain to work
-     */
-    private function CheckIfExistTables() {
-        //We create the tables by default
-        $this->db->query("
-        CREATE TABLE `blocks` (
-          `height` int(200) unsigned NOT NULL,
-          `block_previous` varchar(64) DEFAULT NULL,
-          `block_hash` varchar(64) NOT NULL,
-          `root_merkle` varchar(64) NOT NULL,
-          `nonce` bigint(200) NOT NULL,
-          `timestamp_start_miner` varchar(12) NOT NULL,
-          `timestamp_end_miner` varchar(12) NOT NULL,
-          `difficulty` varchar(255) NOT NULL,
-          `version` varchar(10) NOT NULL,
-          `info` text NOT NULL,
-          PRIMARY KEY (`height`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-        ");
-        $this->db->query("
-        CREATE TABLE `transactions` (
-          `txn_hash` varchar(64) NOT NULL,
-          `block_hash` varchar(64) NOT NULL,
-          `wallet_from_key` longtext,
-          `wallet_from` varchar(64) DEFAULT NULL,
-          `wallet_to` varchar(64) NOT NULL,
-          `amount` varchar(64) NOT NULL,
-          `signature` longtext NOT NULL,
-          `tx_fee` varchar(10) DEFAULT NULL,
-          `timestamp` varchar(12) NOT NULL,
-          PRIMARY KEY (`txn_hash`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-        ");
-        $this->db->query("
-        CREATE TABLE `transactions_pending` (
-          `txn_hash` varchar(64) NOT NULL,
-          `block_hash` varchar(64) NOT NULL,
-          `wallet_from_key` longtext,
-          `wallet_from` varchar(64) DEFAULT NULL,
-          `wallet_to` varchar(64) NOT NULL,
-          `amount` varchar(64) NOT NULL,
-          `signature` longtext NOT NULL,
-          `tx_fee` varchar(10) DEFAULT NULL,
-          `timestamp` varchar(12) NOT NULL,
-          PRIMARY KEY (`txn_hash`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-        ");
-        $this->db->query("
-        CREATE TABLE `transactions_pending_to_send` (
-          `txn_hash` varchar(64) NOT NULL,
-          `block_hash` varchar(64) NOT NULL,
-          `wallet_from_key` longtext,
-          `wallet_from` varchar(64) DEFAULT NULL,
-          `wallet_to` varchar(64) NOT NULL,
-          `amount` varchar(64) NOT NULL,
-          `signature` longtext NOT NULL,
-          `tx_fee` varchar(10) DEFAULT NULL,
-          `timestamp` varchar(12) NOT NULL,
-          PRIMARY KEY (`txn_hash`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-        ");
-        $this->db->query("
-        CREATE TABLE IF NOT EXISTS `peers` (
-          `ip` varchar(120) NOT NULL,
-          `port` varchar(8) NOT NULL,
-          PRIMARY KEY (`ip`,`port`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-        ");
-    }
-
 }
 
 ?>

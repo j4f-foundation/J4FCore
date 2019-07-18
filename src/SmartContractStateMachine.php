@@ -89,12 +89,11 @@ class SmartContractStateMachine {
 				if ($i == 0)
 					@unlink($statesDir.$file);
 
-				//Remove last state
+				//Reverse to last state - 1
 				else if ($i == 1) {
 					$file = str_replace('.sdb','',$file);
 					$this->setLastSate($file);
 				}
-
 				else
 					break;
 
@@ -148,7 +147,7 @@ class SmartContractStateMachine {
 	// Method to init a store.
 	private function initStore() {
 
-		$store = trim($this->contractHash);
+		$store = substr(trim($this->contractHash),0,32);
 
 		// Validate the store name.
 		if (!$store || empty($store)) throw new \Exception('Invalid store name was found');
@@ -197,6 +196,9 @@ class SmartContractStateMachine {
 
 	// Writes an object in a store.
 	private function writeState($txnHash,$state) {
+
+		$txnHash = substr($txnHash,0,32);
+
 		// Cast to array
 		$state = (array) $state;
 		// Check if it has _id key

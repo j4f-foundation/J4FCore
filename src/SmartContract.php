@@ -110,6 +110,13 @@ class SmartContract {
 						array()
 					);
 
+					js::define("table",
+						array(
+							"count" => "J4FVM::table_count",
+						),
+						array()
+					);
+
 					//Get Contract Hash
 					$contractHash = PoW::hash($contract_code.$transaction->from.$transaction->timestamp.$transaction->signature);
 
@@ -257,6 +264,13 @@ class SmartContract {
 							array()
 						);
 
+						js::define("table",
+							array(
+								"count" => "J4FVM::table_count",
+							),
+							array()
+						);
+
 						//Contract status - Default not created
 						$run_status = 0;
 
@@ -395,6 +409,13 @@ class SmartContract {
 					"table_get" => "J4FVM::js_table_get",
 					"table_get_sub" => "J4FVM::js_table_get_sub",
 					"table_uint256" => "J4FVM::js_table_uint256",
+				),
+				array()
+			);
+
+			js::define("table",
+				array(
+					"count" => "J4FVM::table_count",
 				),
 				array()
 			);

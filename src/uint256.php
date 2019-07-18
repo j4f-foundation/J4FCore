@@ -25,15 +25,13 @@ Class uint256 {
      * @return string
      */
 	public static function parse($number) {
-
-		if (strlen($number) >= 78 && (strpos($number,'-') === false))
-			return $number;
-
-		if (strpos($number,'-') !== false)
-			$number = 0;
-
-		$convert = @bcmul((string) $number, '1000000000000');
-		return @str_pad($convert, 78, "0", STR_PAD_LEFT);
+		preg_match_all('/^(\d+\.\d*?[0-9])0{0,}$/',$number,$matches);
+		if (!isset($matches[1][0]))
+			return 0;
+		$numParsed = $matches[1][0];
+		if ($numParsed == '0.0')
+			return '0';
+		return $numParsed;
 	}
 
 	/**

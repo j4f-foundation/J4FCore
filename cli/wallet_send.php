@@ -67,25 +67,6 @@ if (isset($argv)) {
         if (strtoupper($argv[5]) == "TESTNET")
             $isTestNet = true;
     }
-
-    $tx_fee = 2;
-    if (isset($argv[6])) {
-        switch (strtoupper($argv[6])) {
-            case "HIGH":
-                $tx_fee = 3;
-            break;
-            case "MEDIUM":
-                $tx_fee = 2;
-            break;
-            case "LOW":
-                $tx_fee = 1;
-            break;
-            default:
-                $tx_fee = 2;
-            break;
-        }
-    }
-
     $wallet_from = $argv[1];
     $wallet_to = $argv[2];
 	$amount = $argv[3];
@@ -96,17 +77,16 @@ if (isset($argv)) {
     else
         $wallet_from_password = "";
 
-    echo Wallet::SendTransaction($wallet_from,$wallet_from_password,$wallet_to,$amount,$tx_fee,$data,$isTestNet);
+    echo Wallet::SendTransaction($wallet_from,$wallet_from_password,$wallet_to,$amount,$data,$isTestNet);
 } else {
     Display::ClearScreen();
     echo "Example of use:".PHP_EOL;
-    echo "php wallet_send.php WALLET_FROM|coinbase WALLET_TO|coinbase AMOUNT PASSWORD_FROM FEE".PHP_EOL;
-    echo "php wallet_send.php coinbase VTx00000000000000000000000000000000 100 PASSWORD_FROM high".PHP_EOL.PHP_EOL;
+    echo "php wallet_send.php WALLET_FROM|coinbase WALLET_TO|coinbase AMOUNT PASSWORD_FROM".PHP_EOL;
+    echo "php wallet_send.php coinbase VTx00000000000000000000000000000000 100 PASSWORD_FROM".PHP_EOL.PHP_EOL;
     echo "WALLET_FROM = It must be the sender address or the keyword coinbase".PHP_EOL;
     echo "WALLET_TO = It must be the destination address or the keyword coinbase".PHP_EOL;
     echo "AMOUNT = amount to send".PHP_EOL;
     echo "PASSWORD_FROM = Password from address".PHP_EOL;
     echo "NETWORK = Network to send TX (Values: TESTNET, MAINNET) - Default: MAINNET".PHP_EOL;
-    echo "FEE = Fee of transaction (Values: high, medium low) - Default: medium".PHP_EOL;
 }
 ?>

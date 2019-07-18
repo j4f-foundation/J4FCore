@@ -136,50 +136,26 @@ class Wallet {
             $address = self::GetWalletAddressFromPubKey($wallet_from_info['public']);
         }
 
-        //Instanciamos el puntero al chaindata
         $chaindata = new DB();
 
-        //Comprobamos si estamos sincronizados o no
+        //Check if are synched
         $lastBlockNum = BootstrapNode::GetLastBlockNum($chaindata,$isTestNet);
         $lastBlockNum_Local = $chaindata->GetNextBlockNum();
 
+		//Have same num blocks
         if ($lastBlockNum != $lastBlockNum_Local)
             return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." Blockchain it is not synchronized".PHP_EOL;
 
-        //Obtenemos lo que ha recibido el usuario en esta cartera
-        $totalReceived = "0";
-        $totalSpend = "0";
+		$totalSpend = $totalReceivedReal = $current = 0;
 
-        $totalReceived_tmp = $chaindata->db->query("SELECT amount FROM transactions WHERE wallet_to = '".$address."';");
-        if (!empty($totalReceived_tmp)) {
-            while ($txnInfo = $totalReceived_tmp->fetch_array(MYSQLI_ASSOC)) {
-                $totalReceived = bcadd($totalReceived, $txnInfo['amount'], 8);
-            }
+		$walletInfo = $chaindata->db->query("SELECT * FROM accounts WHERE hash = '".$wallet."';")->fetch_assoc();
+        if (!empty($walletInfo)) {
+			$totalSpend = uint256::parse($walletInfo['sended']);
+			$totalReceivedReal = uint256::parse($walletInfo['received']);
+			$current = uint256::parse(bcsub($walletInfo['received'],$walletInfo['sended'],18));
         }
 
-        //Obtenemos lo que ha gastado el usuario (pendiente o no de tramitar)
-        $totalSpended_tmp = $chaindata->db->query("SELECT amount FROM transactions WHERE wallet_from = '".$address."';");
-        if (!empty($totalSpended_tmp)) {
-            while ($txnInfo = $totalSpended_tmp->fetch_array(MYSQLI_ASSOC)) {
-                $totalSpend = bcadd($totalSpend, $txnInfo['amount'], 8);
-            }
-        }
-
-        $totalSpendedPending_tmp = $chaindata->db->query("SELECT amount FROM transactions_pending WHERE wallet_from = '".$address."';");
-        if (!empty($totalSpendedPending_tmp)) {
-            while ($txnInfo = $totalSpendedPending_tmp->fetch_array(MYSQLI_ASSOC)) {
-                $totalSpend = bcadd($totalSpend, $txnInfo['amount'], 8);
-            }
-        }
-
-        $totalSpendedPendingToSend_tmp = $chaindata->db->query("SELECT amount FROM transactions_pending_to_send WHERE wallet_from = '".$address."';");
-        if (!empty($totalSpendedPendingToSend_tmp)) {
-            while ($txnInfo = $totalSpendedPendingToSend_tmp->fetch_array(MYSQLI_ASSOC)) {
-                $totalSpend = bcadd($totalSpend, $txnInfo['amount'], 8);
-            }
-        }
-
-        return bcsub($totalReceived,$totalSpend,8);
+		return $current;
     }
 
     /**
@@ -206,40 +182,16 @@ class Wallet {
         if ($lastBlockNum != $lastBlockNum_Local)
             return "Error, Blockchain it is not synchronized";
 
-        //Obtenemos lo que ha recibido el usuario en esta cartera
-        $totalReceived = "0";
-        $totalSpend = "0";
+		$totalSpend = $totalReceivedReal = $current = 0;
 
-        $totalReceived_tmp = $chaindata->db->query("SELECT amount FROM transactions WHERE wallet_to = '".$address."';");
-        if (!empty($totalReceived_tmp)) {
-            while ($txnInfo = $totalReceived_tmp->fetch_array(MYSQLI_ASSOC)) {
-                $totalReceived = bcadd($totalReceived, $txnInfo['amount'], 8);
-            }
-        }
+		$walletInfo = $chaindata->db->query("SELECT * FROM accounts WHERE hash = '".$wallet."';")->fetch_assoc();
+		if (!empty($walletInfo)) {
+			$totalSpend = uint256::parse($walletInfo['sended']);
+			$totalReceivedReal = uint256::parse($walletInfo['received']);
+			$current = uint256::parse(bcsub($walletInfo['received'],$walletInfo['sended'],18));
+		}
 
-        //Obtenemos lo que ha gastado el usuario (pendiente o no de tramitar)
-        $totalSpended_tmp = $chaindata->db->query("SELECT amount FROM transactions WHERE wallet_from = '".$address."';");
-        if (!empty($totalSpended_tmp)) {
-            while ($txnInfo = $totalSpended_tmp->fetch_array(MYSQLI_ASSOC)) {
-                $totalSpend = bcadd($totalSpend, $txnInfo['amount'], 8);
-            }
-        }
-
-        $totalSpendedPending_tmp = $chaindata->db->query("SELECT amount FROM transactions_pending WHERE wallet_from = '".$address."';");
-        if (!empty($totalSpendedPending_tmp)) {
-            while ($txnInfo = $totalSpendedPending_tmp->fetch_array(MYSQLI_ASSOC)) {
-                $totalSpend = bcadd($totalSpend, $txnInfo['amount'], 8);
-            }
-        }
-
-        $totalSpendedPendingToSend_tmp = $chaindata->db->query("SELECT amount FROM transactions_pending_to_send WHERE wallet_from = '".$address."';");
-        if (!empty($totalSpendedPendingToSend_tmp)) {
-            while ($txnInfo = $totalSpendedPendingToSend_tmp->fetch_array(MYSQLI_ASSOC)) {
-                $totalSpend = bcadd($totalSpend, $txnInfo['amount'], 8);
-            }
-        }
-
-        return bcsub($totalReceived,$totalSpend,8);
+		return $current;
     }
 
     /**
@@ -272,18 +224,18 @@ class Wallet {
         $totalReceivedPending_tmp = $chaindata->db->query("SELECT amount FROM transactions_pending WHERE wallet_to = '".$address."';");
         if (!empty($totalReceivedPending_tmp)) {
             while ($txnInfo = $totalReceivedPending_tmp->fetch_array(MYSQLI_ASSOC)) {
-                $totalReceived = bcadd($totalReceived, $txnInfo['amount'], 8);
+                $totalReceived = bcadd($totalReceived, $txnInfo['amount'], 18);
             }
         }
 
         $totalReceivedPendingToSend_tmp = $chaindata->db->query("SELECT amount FROM transactions_pending_to_send WHERE wallet_to = '".$address."';");
         if (!empty($totalReceivedPendingToSend_tmp)) {
             while ($txnInfo = $totalReceivedPendingToSend_tmp->fetch_array(MYSQLI_ASSOC)) {
-                $totalReceived = bcadd($totalReceived, $txnInfo['amount'], 8);
+                $totalReceived = bcadd($totalReceived, $txnInfo['amount'], 18);
             }
         }
 
-        return number_format($totalReceived,8);
+        return number_format($totalReceived,18);
     }
 
     /**
@@ -300,33 +252,16 @@ class Wallet {
             $address = self::GetWalletAddressFromPubKey($wallet_from_info['public']);
         }
 
-        //Obtenemos lo que ha recibido el usuario en esta cartera
-        $totalReceived = "0";
-        $totalSend = "0";
+		$totalSpend = $totalReceivedReal = $current = 0;
 
-        $totalReceived_tmp = $chaindata->db->query("SELECT amount FROM transactions WHERE wallet_to = '".$address."';");
-        if (!empty($totalReceived_tmp)) {
-            while ($txnInfo = $totalReceived_tmp->fetch_array(MYSQLI_ASSOC)) {
-                $totalReceived = bcadd($totalReceived, $txnInfo['amount'], 8);
-            }
-        }
+		$walletInfo = $chaindata->db->query("SELECT * FROM accounts WHERE hash = '".$wallet."';")->fetch_assoc();
+		if (!empty($walletInfo)) {
+			$totalSpend = uint256::parse($walletInfo['sended']);
+			$totalReceivedReal = uint256::parse($walletInfo['received']);
+			$current = uint256::parse(bcsub($walletInfo['received'],$walletInfo['sended'],18));
+		}
 
-        //Obtenemos lo que ha gastado el usuario (pendiente o no de tramitar)
-        $totalSended_tmp = $chaindata->db->query("SELECT amount FROM transactions WHERE wallet_from = '".$address."';");
-        if (!empty($totalSended_tmp)) {
-            while ($txnInfo = $totalSended_tmp->fetch_array(MYSQLI_ASSOC)) {
-                $totalSend = bcadd($totalSend, $txnInfo['amount'], 8);
-            }
-        }
-
-        $totalSendedPending_tmp = $chaindata->db->query("SELECT amount FROM transactions_pending WHERE wallet_from = '".$address."';");
-        if (!empty($totalSendedPending_tmp)) {
-            while ($txnInfo = $totalSendedPending_tmp->fetch_array(MYSQLI_ASSOC)) {
-                $totalSend = bcadd($totalSend, $txnInfo['amount'], 8);
-            }
-        }
-
-        return bcsub($totalReceived,$totalSend,8);
+		return $current;
     }
 
     /**
@@ -369,7 +304,7 @@ class Wallet {
         $totalSpended_tmp = $chaindata->db->query("SELECT amount FROM transactions WHERE wallet_from = '".$wallet."';");
         if (!empty($totalSpended_tmp)) {
             while ($txnInfo = $totalSpended_tmp->fetch_array(MYSQLI_ASSOC)) {
-                $totalSended = bcadd($totalSended, $txnInfo['amount'], 8);
+                $totalSended = bcadd($totalSended, $txnInfo['amount'], 18);
                 $totalTransactions++;
             }
         }
@@ -402,14 +337,14 @@ class Wallet {
         $totalSendedPending_tmp = $chaindata->db->query("SELECT amount FROM transactions_pending WHERE wallet_from = '".$wallet."';");
         if (!empty($totalSendedPending_tmp)) {
             while ($txnInfo = $totalSendedPending_tmp->fetch_array(MYSQLI_ASSOC)) {
-                $totalPendingSended = bcadd($totalPendingSended, $txnInfo['amount'], 8);
+                $totalPendingSended = bcadd($totalPendingSended, $txnInfo['amount'], 18);
             }
         }
 
         $totalSendedPendingToSend_tmp = $chaindata->db->query("SELECT amount FROM transactions_pending_to_send WHERE wallet_from = '".$wallet."';");
         if (!empty($totalSendedPendingToSend_tmp)) {
             while ($txnInfo = $totalSendedPendingToSend_tmp->fetch_array(MYSQLI_ASSOC)) {
-                $totalPendingSended = bcadd($totalPendingSended, $txnInfo['amount'], 8);
+                $totalPendingSended = bcadd($totalPendingSended, $txnInfo['amount'], 18);
             }
         }
 
@@ -467,18 +402,18 @@ class Wallet {
     }
 
     /**
-     * Enviamos una transaccion
+     * Send a transaction
      *
      * @param $wallet_from
      * @param $wallet_from_password
      * @param $wallet_to
      * @param $amount
-     * @param $tx_fee
+	 * @param $data
      * @param $isTestNet
      * @param $cli
      * @return string
      */
-    public static function SendTransaction($wallet_from,$wallet_from_password,$wallet_to,$amount,$tx_fee,$data,$isTestNet=false,$cli=true) {
+    public static function SendTransaction($wallet_from,$wallet_from_password,$wallet_to,$amount,$data,$isTestNet=false,$cli=true) {
 
         //Instance the pointer to the chaindata
         $chaindata = new DB();
@@ -490,17 +425,8 @@ class Wallet {
         if ($lastBlockNum != $lastBlockNum_Local)
             return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." Blockchain it is not synchronized".PHP_EOL;
 
-        if (bccomp($amount ,"0.00000001",8) == -1)
-            return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." Minium to send 0.00000001".PHP_EOL;
-
-        if ($tx_fee == 3 && bccomp($amount ,"0.00001400",8) == -1)
-            return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." There is not enough balance in the account".PHP_EOL;
-
-        if ($tx_fee == 2 && bccomp($amount ,"0.00000900",8) == -1)
-            return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." There is not enough balance in the account".PHP_EOL;
-
-        if ($tx_fee == 1 && bccomp($amount ,"0.00000250",8) == -1)
-            return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." There is not enough balance in the account".PHP_EOL;
+        if (bccomp($amount ,"0.000000000000000001",8) == -1)
+            return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." Minium to send 0.000000000000000001".PHP_EOL;
 
 		if ($data != null) {
 			$isDataParsed = strpos($data,'0x');
@@ -527,17 +453,22 @@ class Wallet {
             // Get current balance of wallet
             $currentBalance = self::GetBalance($wallet_from,$isTestNet);
 
-            // If have balance
-            if (bccomp($currentBalance,$amount,8) == 0 || bccomp($currentBalance,$amount,8) == 1) {
-                if ($tx_fee == 3)
-                    $amount = bcsub($amount,"0.00001400",8);
-                else if ($tx_fee == 2)
-                    $amount = bcsub($amount,"0.00000900",8);
-                else if ($tx_fee == 1)
-                    $amount = bcsub($amount,"0.00000250",8);
+			//Calc Amount + Fees
+			$tx_fee = @bcdiv(@bcmul($amount,"0.15",18),"100",18);
+			$tx_fee_data = uint256::parse(@bcmul(@strlen($data),"0.0006",18));
+			$tx_fee_final = @bcadd($tx_fee,$tx_fee_data,18);
+			$amountWithFees = @bcadd($amount,$tx_fee_final,18);
+
+            // If have balance amounts + fees
+            if (bccomp($currentBalance,$amountWithFees,18) == 0 || bccomp($currentBalance,$amountWithFees,18) == 1) {
+
+				//Calculate 0.15 of Fee + data fee
+				$tx_fee = bcdiv(bcmul($amount,"0.15",18),"100",18);
+				$tx_fee_data = uint256::parse(@bcmul(@strlen($data),"0.0006",18));
+				$tx_fee_final = bcadd($tx_fee,$tx_fee_data,18);
 
                 //Make transaction and sign
-                $transaction = new Transaction($wallet_from_info["public"],$wallet_to,$amount,$wallet_from_info["private"],$wallet_from_password,$tx_fee,$data);
+                $transaction = new Transaction($wallet_from_info["public"],$wallet_to,$amount,$wallet_from_info["private"],$wallet_from_password,$tx_fee_final,$data);
 
                 // Check if transaction is valid
                 if ($transaction->isValid()) {
@@ -571,7 +502,19 @@ class Wallet {
         }
     }
 
-    public static function API_SendTransaction($wallet_from,$wallet_from_password,$wallet_to,$amount,$tx_fee,$data,$isTestNet=false,$cli=true) {
+	/**
+     * Send a transaction called by API
+     *
+     * @param $wallet_from
+     * @param $wallet_from_password
+     * @param $wallet_to
+     * @param $amount
+	 * @param $data
+     * @param $isTestNet
+     * @param $cli
+     * @return string
+     */
+    public static function API_SendTransaction($wallet_from,$wallet_from_password,$wallet_to,$amount,$data,$isTestNet=false,$cli=true) {
 
         //Instance the pointer to the chaindata
         $chaindata = new DB();
@@ -583,17 +526,8 @@ class Wallet {
         if ($lastBlockNum != $lastBlockNum_Local)
             return "Error, Blockchain it is not synchronized";
 
-        if (bccomp($amount ,"0.00000001",8) == -1)
-            return "Error, Minium to send 0.00000001";
-
-        if ($tx_fee == 3 && bccomp($amount ,"0.00001400",8) == -1)
-            return "Error, There is not enough balance in the account";
-
-        if ($tx_fee == 2 && bccomp($amount ,"0.00000900",8) == -1)
-            return "Error, There is not enough balance in the account";
-
-        if ($tx_fee == 1 && bccomp($amount ,"0.00000250",8) == -1)
-            return "Error, There is not enough balance in the account";
+        if (bccomp($amount ,"0.000000000000000001", 18) == -1)
+            return "Error, Minium to send 0.000000000000000001";
 
 		if ($data != null) {
 			$isDataParsed = strpos($data,'0x');
@@ -620,17 +554,22 @@ class Wallet {
             // Get current balance of wallet
             $currentBalance = self::GetBalance($wallet_from,$isTestNet);
 
+			//Calc Amount + Fees
+			$tx_fee = @bcdiv(@bcmul($amount,"0.15",18),"100",18);
+			$tx_fee_data = uint256::parse(@bcmul(@strlen($data),"0.0006",18));
+			$tx_fee_final = @bcadd($tx_fee,$tx_fee_data,18);
+			$amountWithFees = @bcadd($amount,$tx_fee_final,18);
+
             // If have balance
-            if (bccomp($currentBalance,$amount,8) == 0 || bccomp($currentBalance,$amount,8) == 1) {
-                if ($tx_fee == 3)
-                    $amount = bcsub($amount,"0.00001400",8);
-                else if ($tx_fee == 2)
-                    $amount = bcsub($amount,"0.00000900",8);
-                else if ($tx_fee == 1)
-                    $amount = bcsub($amount,"0.00000250",8);
+            if (@bccomp($currentBalance,$amountWithFees,8) == 0 || @bccomp($currentBalance,$amountWithFees,8) == 1) {
+
+				//Calculate 0.15 of Fee + data fee
+				$tx_fee = @bcdiv(@bcmul($amount,"0.15",18),"100",18);
+				$tx_fee_data = uint256::parse(@bcmul(@strlen($data),"0.0006",18));
+				$tx_fee_final = @bcadd($tx_fee,$tx_fee_data,18);
 
                 //Make transaction and sign
-                $transaction = new Transaction($wallet_from_info["public"],$wallet_to,$amount,$wallet_from_info["private"],$wallet_from_password,$tx_fee,$data);
+                $transaction = new Transaction($wallet_from_info["public"],$wallet_to,$amount,$wallet_from_info["private"],$wallet_from_password,$tx_fee_final,$data);
 
                 // Check if transaction is valid
                 if ($transaction->isValid()) {

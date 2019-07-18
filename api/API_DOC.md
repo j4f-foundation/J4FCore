@@ -633,15 +633,13 @@ Creates new message call transaction
   - `to`: `STRING` - The address the transaction is directed to.
   - `password`: `STRING` - The password address from.
   - `amount`: `INTEGER` - Integer of the value sent with this transaction
-  - `fee`: `STRING` - Fee of transaction - Accepted values `high` `medium` `low`
 
 ```js
 params: [{
   "from": "VTxed481ddab0bc5acefbaa67a2f35f8839",
   "to": "VTx31b9ad4ac95a8f4d4ba7f4c5bb908e20",
   "password": "PASSWORD_WALLET_FROM",
-  "amount": "1",
-  "fee": "high"
+  "amount": "1"
 }]
 ```
 

@@ -55,16 +55,16 @@ class Miner {
         }
 
         //Add fees
-        $total_amount_to_miner = bcadd($total_amount_to_miner,strval($totalFees),8);
+        $total_amount_to_miner = bcadd($total_amount_to_miner,strval($totalFees),18);
 
         //Calc reward by height
         $currentReward = Blockchain::getRewardByHeight($lastBlock['height']+1);
 
         //we add the reward with transaction fees
-		$total_amount_to_miner = bcadd($total_amount_to_miner,strval($currentReward),8);
+		$total_amount_to_miner = bcadd($total_amount_to_miner,strval($currentReward),18);
 
         //We created the mining reward txn + fees txns
-        $tx = new Transaction(null,$gossip->coinbase, $total_amount_to_miner, $gossip->key->privKey,"","");
+        $tx = new Transaction(null,$gossip->coinbase, $total_amount_to_miner, $gossip->key->privKey,"",null);
 
         //We take all pending transactions
         $transactions = array($tx);
@@ -73,7 +73,7 @@ class Miner {
         foreach ($transactions_pending as $txn) {
             $new_txn = new Transaction($txn['wallet_from_key'],$txn['wallet_to'], $txn['amount'], null,null, $txn['tx_fee'], $txn['data'], true, $txn['txn_hash'], $txn['signature'], $txn['timestamp']);
             if ($new_txn->isValid())
-                $transactions[] = $new_txn;
+				$transactions[] = $new_txn;
         }
 
 		if (SHOW_INFO_SUBPROCESS)

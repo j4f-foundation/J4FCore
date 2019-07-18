@@ -550,6 +550,12 @@ class J4FVMBase {
 		return js_str(uint256::powmod(number_format(php_str($num1),0,null,''),@number_format(php_str($num2),0,null,''),@number_format(php_str($mod),0,null,'')));
 	}
 
+	//TABLE
+	public static function table_count($table) {
+		$table = php_str($table);
+		return (isset(self::$data[$table])) ? js_str(count(self::$data[$table])):js_str("0");
+	}
+
 	//MATHS
 	public static function math_parse($num1) {
 		return js_str(@number_format(php_str($num1),0,'.',''));

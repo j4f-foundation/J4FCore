@@ -90,10 +90,10 @@ class Blockchain {
 
         //Testnet will always be 50
         if ($isTestNet)
-            return number_format("50", 8, '.', '');
+            return bcadd("50","0",18);
 
         // init reward Mainnet
-        $reward = 50;
+        $reward = bcadd("50","0",18);
 
         //Get divisible num
         $divisible = floor($currentHeight / 250000);
@@ -111,7 +111,7 @@ class Blockchain {
         if ($reward < 1)
             $reward = 0;
 
-        return number_format($reward, 8, '.', '');
+        return bcadd($reward, "0", 18);
     }
 
     /**
@@ -196,16 +196,11 @@ class Blockchain {
      */
     public static function GetFeesOfTransactions($pendingTransactions) {
 
-        $totalFees = "0";
+        $totalFees = bcadd("0","0",18);
         foreach ($pendingTransactions as $txn) {
             $new_txn = new Transaction($txn['wallet_from_key'],$txn['wallet_to'], $txn['amount'], null,null, $txn['tx_fee'],$txn['data'],true, $txn['txn_hash'], $txn['signature'], $txn['timestamp']);
             if ($new_txn->isValid()) {
-                if ($txn['tx_fee'] == 3)
-                    $totalFees = bcadd($totalFees,"0.00001400",8);
-                else if ($txn['tx_fee'] == 2)
-                    $totalFees = bcadd($totalFees,"0.00000900",8);
-                else if ($txn['tx_fee'] == 1)
-                    $totalFees = bcadd($totalFees,"0.00000250",8);
+				$totalFees = bcadd($totalFees,$new_txn->tx_fee,18);
             }
         }
         return $totalFees;

@@ -1,6 +1,6 @@
 ![Just4Fun](https://j4f.dev/images/just4fun_96_new.png) Just4Fun
 
-PHP cryptocurrency from scratch with Smart Contracts
+PHP Blockchain from scratch with Smart Contracts
 
 ```
 PoW sha3-256d + sha3-512

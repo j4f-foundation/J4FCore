@@ -152,9 +152,9 @@ class Gossip {
         //WE GENERATE THE GENESIS BLOCK
         if ($make_genesis_block) {
             if(!$isTestNet)
-                GenesisBlock::make($this->chaindata,$this->coinbase,$this->key->privKey,$this->isTestNet,"50");
+                GenesisBlock::make($this->chaindata,$this->coinbase,$this->key->privKey,$this->isTestNet,bcadd("50","0",18));
             else
-                GenesisBlock::make($this->chaindata,$this->coinbase,$this->key->privKey,$this->isTestNet,"99999999999999999999999999999999");
+                GenesisBlock::make($this->chaindata,$this->coinbase,$this->key->privKey,$this->isTestNet,bcadd("99999999999999999999999999999999","0",18));
         }
 
         //We are a BOOTSTRAP node

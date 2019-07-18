@@ -205,15 +205,10 @@ class Block {
      * @return string
      */
     public function GetFeesOfTransactions() {
-        $totalFees = "0";
+        $totalFees = bcadd("0","0",18);
         foreach ($this->transactions as $transaction) {
             if ($transaction->isValid()) {
-                if ($transaction->tx_fee == 3)
-                    $totalFees = bcadd($totalFees,"0.00001400",8);
-                else if ($transaction->tx_fee == 2)
-                    $totalFees = bcadd($totalFees,"0.00000900",8);
-                else if ($transaction->tx_fee == 1)
-                    $totalFees = bcadd($totalFees,"0.00000250",8);
+                $totalFees = bcadd($totalFees,$transaction->tx_fee,18);
             }
             else
                 return null;
@@ -241,7 +236,7 @@ class Block {
 			return false;
 
         //Subtract total transaction fees from total mining transaction, result = miner reward
-		$minerRewardBlock = $minerTransaction->amount - $totalFeesTransactionBlock;
+		$minerRewardBlock = bcsub($minerTransaction->amount,$totalFeesTransactionBlock,18);
 
         //Calc reward by height
 		$currentReward = Blockchain::getRewardByHeight($heightBlock,$isTestNet);

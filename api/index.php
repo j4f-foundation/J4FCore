@@ -327,34 +327,11 @@ if ($id != null) {
                         );
                     } else {
 
-                        //Default fee = normal
-                        $fee = 2;
-
-                        //Check if fee is sended and its ok
-                        if (isset($params['fee']) && strlen($params['fee']) == 0) {
-                            $response_jsonrpc['error'] = array(
-                                'code'    => -32602,
-                                'message' => 'Invalid params'
-                            );
-                        }
-                        else {
-                            if (isset($params['fee'])) {
-                                if (strtolower($params['fee']) == 'high')
-                                    $fee = 3;
-                                else if (strtolower($params['fee']) == 'medium')
-                                    $fee = 2;
-                                else if (strtolower($params['fee']) == 'low')
-                                    $fee = 1;
-                                else
-                                    $fee = 2;
-                            }
-                        }
-
 						$password = ($params['password'] == 'null') ? '':$params['password'];
 
 						$data = (isset($params['data'])) ? $params['data']:null;
 
-                        $txnHash = Wallet::API_SendTransaction($params['from'],$password,$params['to'],$params['amount'],$fee,$data,$isTestnet);
+                        $txnHash = Wallet::API_SendTransaction($params['from'],$password,$params['to'],$params['amount'],$data,$isTestnet);
 
                         //Check if transaction have error
                         if (strpos($txnHash,'Error') !== false) {

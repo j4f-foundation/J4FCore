@@ -41,10 +41,10 @@ class Transaction {
      */
     public function __construct($from,$to,$amount,$privKey,$password="",$tx_fee,$data='',$signed=false,$hash=null,$signature=null,$timestamp=null)
     {
-        $this->tx_fee = ($tx_fee != null) ? $tx_fee:'';
+        $this->tx_fee = ($tx_fee != null) ? bcadd($tx_fee,"0",18):bcadd("0","0",18);
         $this->from = $from;
         $this->to = $to;
-		$this->amount = $amount;
+		$this->amount = bcadd($amount,"0",18);
 
 		// Check if data is parsed
 		$data = trim($data);
@@ -78,7 +78,7 @@ class Transaction {
      * @return string
      */
     public function message() {
-        return PoW::hash($this->from.$this->to.$this->amount.$this->timestamp.$this->data);
+        return PoW::hash($this->from.$this->to.$this->amount.$this->tx_fee.$this->timestamp.$this->data);
     }
 
     /**
