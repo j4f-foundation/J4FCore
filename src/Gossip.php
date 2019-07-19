@@ -141,10 +141,6 @@ class Gossip {
         if (!$this->bootstrap_node)
             $this->chaindata->truncate("peers");
 
-        //Clear announced blocks
-        $this->chaindata->truncate("blocks_announced");
-        $this->chaindata->truncate("blocks_pending_to_display");
-
         //By default we mark that we are not connected to the bootstrap and that we do not have ports open for P2P
         $this->connected_to_bootstrap = false;
         $this->openned_ports = false;
@@ -938,38 +934,39 @@ class Gossip {
         //We obtain all pending transactions to send
         $pending_tx = $this->chaindata->GetAllPendingTransactionsToSend();
 
-        //We add the pending transaction to the chaindata
-        foreach ($pending_tx as $tx)
-            $this->chaindata->addPendingTransaction($tx);
+		if (!empty($pending_tx)) {
+			//We add the pending transaction to the chaindata
+			foreach ($pending_tx as $tx)
+				$this->chaindata->addPendingTransaction($tx);
 
-        //We get all the peers and send the pending transactions to all
-        $peers = $this->chaindata->GetAllPeers();
-        foreach ($peers as $peer) {
+			//We get all the peers and send the pending transactions to all
+			$peers = $this->chaindata->GetAllPeers();
+			foreach ($peers as $peer) {
 
-            $myPeerID = Tools::GetIdFromIpAndPort($this->ip,$this->port);
-            $peerID = Tools::GetIdFromIpAndPort($peer['ip'],$peer['port']);
+				$myPeerID = Tools::GetIdFromIpAndPort($this->ip,$this->port);
+				$peerID = Tools::GetIdFromIpAndPort($peer['ip'],$peer['port']);
 
-            if ($myPeerID != $peerID) {
-                $infoToSend = array(
-                    'action' => 'ADDPENDINGTRANSACTIONS',
-                    'txs' => $pending_tx
-                );
+				if ($myPeerID != $peerID) {
+					$infoToSend = array(
+						'action' => 'ADDPENDINGTRANSACTIONS',
+						'txs' => $pending_tx
+					);
+					if ($peer["ip"] == NODE_BOOTSTRAP) {
+						Tools::postContent('https://'.NODE_BOOTSTRAP.'/gossip.php', $infoToSend,5);
+					}
+					else if ($peer["ip"] == NODE_BOOTSTRAP_TESTNET) {
+						Tools::postContent('https://'.NODE_BOOTSTRAP_TESTNET.'/gossip.php', $infoToSend,5);
+					}
+					else {
+						Tools::postContent('http://' . $peer['ip'] . ':' . $peer['port'] . '/gossip.php', $infoToSend,5);
+					}
+				}
+			}
 
-                if ($peer["ip"] == NODE_BOOTSTRAP) {
-                    Tools::postContent('https://'.NODE_BOOTSTRAP.'/gossip.php', $infoToSend,5);
-                }
-                else if ($peer["ip"] == NODE_BOOTSTRAP_TESTNET) {
-                    Tools::postContent('https://'.NODE_BOOTSTRAP_TESTNET.'/gossip.php', $infoToSend,5);
-                }
-                else {
-                    Tools::postContent('http://' . $peer['ip'] . ':' . $peer['port'] . '/gossip.php', $infoToSend,5);
-                }
-            }
-        }
-
-        //We delete transactions sent from transactions_pending_to_send
-        foreach ($pending_tx as $tx)
-            $this->chaindata->removePendingTransactionToSend($tx['txn_hash']);
+			//We delete transactions sent from transactions_pending_to_send
+			foreach ($pending_tx as $tx)
+				$this->chaindata->removePendingTransactionToSend($tx['txn_hash']);
+		}
     }
 }
 ?>
