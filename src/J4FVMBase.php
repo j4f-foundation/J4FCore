@@ -558,42 +558,42 @@ class J4FVMBase {
 
 	//MATHS
 	public static function math_parse($num1) {
-		return js_str(@number_format(php_str($num1),0,'.',''));
+		return js_str(uint256::parse(bcadd(php_str($num1),"0",18)));
 	}
 	public static function math_add($num1,$num2) {
-		return js_str(@bcadd(@number_format(php_str($num1),0,'.',''),@number_format(php_str($num2),0,'.','')));
+		return js_str(uint256::parse(@bcadd(php_str($num1),php_str($num2),18)));
 	}
 
 	public static function math_sub($num1,$num2) {
-		return js_str(@bcsub(@number_format(php_str($num1),0,'.',''),@number_format(php_str($num2),0,'.','')));
+		return js_str(uint256::parse(@bcsub(php_str($num1),php_str($num2),18)));
 	}
 
 	public static function math_compare($num1,$num2) {
-		return js_str(@bccomp(@number_format(php_str($num1),0,'.',''),@number_format(php_str($num2),0,'.','')));
+		return js_str(@bccomp(php_str($num1),php_str($num2)));
 	}
 
 	public static function math_mul($num1,$num2) {
-		return js_str(@bcmul(@number_format(php_str($num1),0,'.',''),@number_format(php_str($num2),0,'.','')));
+		return js_str(uint256::parse(@bcmul(php_str($num1),php_str($num2),18)));
 	}
 
 	public static function math_div($num1,$num2) {
-		return js_str(@bcdiv(@number_format(php_str($num1),0,'.',''),@number_format(php_str($num2),0,'.','')));
+		return js_str(uint256::parse(@bcdiv(php_str($num1),php_str($num2),18)));
 	}
 
 	public static function math_pow($num1,$num2) {
-		return js_str(@bcpow(@number_format(php_str($num1),0,'.',''),@number_format(php_str($num2),0,'.','')));
+		return js_str(uint256::parse(@bcpow(php_str($num1),php_str($num2),18)));
 	}
 
 	public static function math_mod($num1,$num2) {
-		return js_str(@bcmod(@number_format(php_str($num1),0,'.',''),@number_format(php_str($num2),0,'.','')));
+		return js_str(uint256::parse(@bcmod(php_str($num1),php_str($num2),18)));
 	}
 
 	public static function math_sqrt($num1) {
-		return js_str(@bcsqrt(@number_format(php_str($num1),0,'.','')));
+		return js_str(self::math_parse(@bcsqrt(php_str($num1),18)));
 	}
 
 	public static function math_powmod($num1,$num2,$mod) {
-		return js_str(@bcpowmod(@number_format(php_str($num1),0,'.',''),@number_format(php_str($num2),0,'.',''),number_format(php_str($mod),0,'.','')));
+		return js_str(self::math_parse(@bcpowmod(php_str($num1),php_str($num2),php_str($mod))));
 	}
 }
 ?>

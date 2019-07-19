@@ -64,6 +64,8 @@ class SmartContract {
 					//Define math Object
 					js::define("math",
 						array(
+							"parse" => "J4FVM::math_parse",
+							"toDec" => "J4FVM::math_parse",
 							"add" => "J4FVM::math_add",
 							"sub" => "J4FVM::math_sub",
 							"mul" => "J4FVM::math_mul",
@@ -219,6 +221,8 @@ class SmartContract {
 						//Define math Object
 						js::define("math",
 							array(
+								"parse" => "J4FVM::math_parse",
+								"toDec" => "J4FVM::math_parse",
 								"add" => "J4FVM::math_add",
 								"sub" => "J4FVM::math_sub",
 								"mul" => "J4FVM::math_mul",
@@ -368,6 +372,8 @@ class SmartContract {
 			//Define math Object
 			js::define("math",
 				array(
+					"parse" => "J4FVM::math_parse",
+					"toDec" => "J4FVM::math_parse",
 					"add" => "J4FVM::math_add",
 					"sub" => "J4FVM::math_sub",
 					"mul" => "J4FVM::math_mul",

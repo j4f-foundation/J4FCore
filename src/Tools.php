@@ -551,6 +551,15 @@ class Tools {
         return $ntp_time_explode[0];
     }
 
+	public static function numberFormat($number) {
+		$tmp = explode('.', $number);
+		$length = 0;
+		if(count($tmp)>1) {
+			$length = strlen($tmp[1]);
+		}
+		return number_format($number, $length);
+	}
+
     /**
      * Send a CURL POST message to a destination
      *

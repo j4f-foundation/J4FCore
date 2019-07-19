@@ -424,11 +424,11 @@ class Wallet {
         if ($lastBlockNum != $lastBlockNum_Local)
             return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." Blockchain it is not synchronized".PHP_EOL;
 
-        if (bccomp($amount ,"0.000000000000000001",8) == -1)
+        if (bccomp($amount ,"0",18) == -1)
 			if ($cli)
-            	return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." Minium to send 0.000000000000000001".PHP_EOL;
+            	return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." Minium to send 0".PHP_EOL;
 			else
-				return "Error, Minium to send 0.000000000000000001";
+				return "Error, Minium to send 0";
 
 		if ($data != null) {
 			$isDataParsed = strpos($data,'0x');
@@ -532,8 +532,8 @@ class Wallet {
         if ($lastBlockNum != $lastBlockNum_Local)
             return "Error, Blockchain it is not synchronized";
 
-        if (bccomp($amount ,"0.000000000000000001", 18) == -1)
-            return "Error, Minium to send 0.000000000000000001";
+        if (bccomp($amount ,"0",18) == -1)
+            return "Error, Minium to send 0";
 
 		if ($data != null) {
 			$isDataParsed = strpos($data,'0x');
