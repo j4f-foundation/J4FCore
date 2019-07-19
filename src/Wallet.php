@@ -148,11 +148,11 @@ class Wallet {
 
 		$totalSpend = $totalReceivedReal = $current = 0;
 
-		$walletInfo = $chaindata->db->query("SELECT * FROM accounts WHERE hash = '".$wallet."';")->fetch_assoc();
+		$walletInfo = $chaindata->db->query("SELECT * FROM accounts WHERE hash = '".$address."';")->fetch_assoc();
         if (!empty($walletInfo)) {
 			$totalSpend = uint256::parse($walletInfo['sended']);
-			$totalReceivedReal = uint256::parse($walletInfo['received']);
-			$current = uint256::parse(bcsub($walletInfo['received'],$walletInfo['sended'],18));
+			$totalReceivedReal = bcadd($walletInfo['received'],$walletInfo['mined'],18);
+			$current = uint256::parse(bcsub($totalReceivedReal,$walletInfo['sended'],18));
         }
 
 		return $current;
@@ -184,11 +184,11 @@ class Wallet {
 
 		$totalSpend = $totalReceivedReal = $current = 0;
 
-		$walletInfo = $chaindata->db->query("SELECT * FROM accounts WHERE hash = '".$wallet."';")->fetch_assoc();
+		$walletInfo = $chaindata->db->query("SELECT * FROM accounts WHERE hash = '".$address."';")->fetch_assoc();
 		if (!empty($walletInfo)) {
 			$totalSpend = uint256::parse($walletInfo['sended']);
-			$totalReceivedReal = uint256::parse($walletInfo['received']);
-			$current = uint256::parse(bcsub($walletInfo['received'],$walletInfo['sended'],18));
+			$totalReceivedReal = bcadd($walletInfo['received'],$walletInfo['mined'],18);
+			$current = uint256::parse(bcsub($totalReceivedReal,$walletInfo['sended'],18));
 		}
 
 		return $current;
@@ -224,18 +224,18 @@ class Wallet {
         $totalReceivedPending_tmp = $chaindata->db->query("SELECT amount FROM transactions_pending WHERE wallet_to = '".$address."';");
         if (!empty($totalReceivedPending_tmp)) {
             while ($txnInfo = $totalReceivedPending_tmp->fetch_array(MYSQLI_ASSOC)) {
-                $totalReceived = bcadd($totalReceived, $txnInfo['amount'], 18);
+                $totalReceived = @bcadd($totalReceived, $txnInfo['amount'], 18);
             }
         }
 
         $totalReceivedPendingToSend_tmp = $chaindata->db->query("SELECT amount FROM transactions_pending_to_send WHERE wallet_to = '".$address."';");
         if (!empty($totalReceivedPendingToSend_tmp)) {
             while ($txnInfo = $totalReceivedPendingToSend_tmp->fetch_array(MYSQLI_ASSOC)) {
-                $totalReceived = bcadd($totalReceived, $txnInfo['amount'], 18);
+                $totalReceived = @bcadd($totalReceived, $txnInfo['amount'], 18);
             }
         }
 
-        return number_format($totalReceived,18);
+        return uint256::parse($totalReceived);
     }
 
     /**
@@ -254,13 +254,12 @@ class Wallet {
 
 		$totalSpend = $totalReceivedReal = $current = 0;
 
-		$walletInfo = $chaindata->db->query("SELECT * FROM accounts WHERE hash = '".$wallet."';")->fetch_assoc();
+		$walletInfo = $chaindata->db->query("SELECT * FROM accounts WHERE hash = '".$address."';")->fetch_assoc();
 		if (!empty($walletInfo)) {
 			$totalSpend = uint256::parse($walletInfo['sended']);
-			$totalReceivedReal = uint256::parse($walletInfo['received']);
-			$current = uint256::parse(bcsub($walletInfo['received'],$walletInfo['sended'],18));
+			$totalReceivedReal = bcadd($walletInfo['received'],$walletInfo['mined'],18);
+			$current = uint256::parse(bcsub($totalReceivedReal,$walletInfo['sended'],18));
 		}
-
 		return $current;
     }
 
@@ -426,7 +425,10 @@ class Wallet {
             return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." Blockchain it is not synchronized".PHP_EOL;
 
         if (bccomp($amount ,"0.000000000000000001",8) == -1)
-            return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." Minium to send 0.000000000000000001".PHP_EOL;
+			if ($cli)
+            	return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." Minium to send 0.000000000000000001".PHP_EOL;
+			else
+				return "Error, Minium to send 0.000000000000000001";
 
 		if ($data != null) {
 			$isDataParsed = strpos($data,'0x');
@@ -450,6 +452,7 @@ class Wallet {
 
         // If have wallet from info
         if ($wallet_from_info !== false) {
+
             // Get current balance of wallet
             $currentBalance = self::GetBalance($wallet_from,$isTestNet);
 
@@ -493,7 +496,10 @@ class Wallet {
                     return "An error occurred while trying to create the transaction".PHP_EOL."The wallet_from password may be incorrect".PHP_EOL;
                 }
             } else {
-                return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." There is not enough balance in the account".PHP_EOL;
+				if ($cli)
+                	return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." There is not enough balance in the account".PHP_EOL;
+				else
+					return "Error, There is not enough balance in the account".PHP_EOL;
             }
         } else {
             $return_message = "Could not find the ".ColorsCLI::$FG_RED."public/private key".ColorsCLI::$FG_WHITE." of wallet ".ColorsCLI::$FG_GREEN.$wallet_from.ColorsCLI::$FG_WHITE.PHP_EOL;
@@ -568,15 +574,11 @@ class Wallet {
 				$tx_fee_data = uint256::parse(@bcmul(@strlen($data),"0.0006",18));
 				$tx_fee_final = @bcadd($tx_fee,$tx_fee_data,18);
 
-                //Make transaction and sign
+				//Make transaction and sign
                 $transaction = new Transaction($wallet_from_info["public"],$wallet_to,$amount,$wallet_from_info["private"],$wallet_from_password,$tx_fee_final,$data);
 
                 // Check if transaction is valid
                 if ($transaction->isValid()) {
-
-                    //Instance the pointer to the chaindata
-                    $chaindata = new DB();
-
                     //We add the pending transaction to send into our chaindata
                     if ($chaindata->addPendingTransactionToSend($transaction->message(),$transaction)) {
                         return $transaction->message();
