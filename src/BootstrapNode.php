@@ -20,7 +20,7 @@ class BootstrapNode {
 
     /**
      *
-     * We get the last block of the BootstrapNode
+     * We get peers from BootstrapNode
      *
      * @param DB $chaindata
      * @param $isTestNet
@@ -55,7 +55,7 @@ class BootstrapNode {
 
     /**
      *
-     * We get the last block of the BootstrapNode
+     * We get pending transactions from BootstrapNode
      *
      * @param DB $chaindata
      * @param $isTestNet

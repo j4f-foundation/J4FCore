@@ -126,6 +126,14 @@ class J4FVMBase {
 		if (!empty($matches[0]))
 			$code_parsed = @str_replace($matches[0],@str_replace('Contract','var',$matches[0]),$code);
 
+		//Class
+		$matches = [];
+		preg_match_all("/[Cc]lass\s{0,}+([a-zA-Z_\-]*)\s{0,}{/",$code_parsed,$matches);
+		if (!empty($matches[0])) {
+			for ($i = 0; $i < count($matches[0]); $i++)
+				$code_parsed = str_replace($matches[0][$i],'var '.$matches[1][$i].' = {',$code_parsed);
+		}
+
 		//Check Syntax Error
 		$code_parsed = self::_checkSyntaxError($code_parsed);
 

@@ -311,6 +311,27 @@ if ($dbversion == 7) {
 }
 
 
+if ($dbversion == 8) {
+
+    $db->db->query("
+	ALTER TABLE `transactions`
+	ADD INDEX `bHash` (`block_hash`) USING HASH;
+
+	ALTER TABLE `transactions_pending`
+	ADD INDEX `bHash` (`block_hash`) USING HASH;
+
+	ALTER TABLE `transactions_pending_to_send`
+	ADD INDEX `bHash` (`block_hash`) USING HASH;
+	");
+
+    Display::_printer("Updating DB Schema #".$dbversion);
+
+    //Increment version to next stage
+    $dbversion++;
+}
+
+
+
 // update dbversion
 if ($dbversion != $_CONFIG['dbversion']) {
     $db->SetConfig('dbversion',$dbversion);

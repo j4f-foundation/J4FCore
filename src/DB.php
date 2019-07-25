@@ -353,7 +353,7 @@ class DB {
      */
     public function GetWalletInfo($wallet) {
 
-		$totalSpend = $totalReceivedReal = $current = 0;
+		$totalSpend = $totalReceivedReal = $current = $totalReceived = 0;
 
 		$walletInfo = $this->db->query("SELECT * FROM accounts WHERE hash = '".$wallet."';")->fetch_assoc();
         if (!empty($walletInfo)) {
