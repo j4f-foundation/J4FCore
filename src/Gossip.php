@@ -170,7 +170,7 @@ class Gossip {
             Display::_printer("Difficulty: %G%".$this->difficulty);
             Display::_printer("Current peers: %G%".count($this->chaindata->GetAllPeers()));
 
-                //Check peers status
+            //Check peers status
             $this->CheckConnectionWithPeers();
         }
 
@@ -225,49 +225,64 @@ class Gossip {
                     exit();
                 }
 
-                //We get the last block from the BootstrapNode
-                $lastBlock_BootstrapNode = BootstrapNode::GetLastBlockNum($this->chaindata,$this->isTestNet);
+				if ($this->isTestNet)
+					$ipAndPort = NODE_BOOTSTRAP_TESTNET.':'.NODE_BOOSTRAP_PORT_TESTNET;
+				else
+					$ipAndPort = NODE_BOOTSTRAP.':'.NODE_BOOSTRAP_PORT;
+
+				$lastBlock_BootstrapNode = BootstrapNode::GetLastBlockNum($this->chaindata,$this->isTestNet);
                 $lastBlock_LocalNode = $this->chaindata->GetNextBlockNum();
 
                 //We check if we need to synchronize or not
                 if ($lastBlock_LocalNode < $lastBlock_BootstrapNode) {
                     Display::_printer("%LR%DeSync detected %W%- Downloading blocks (%G%".$lastBlock_LocalNode."%W%/%Y%".$lastBlock_BootstrapNode.")");
 
-                    //We declare that we are synchronizing
+					//We declare that we are synchronizing
                     $this->syncing = true;
 
                     $this->chaindata->SetConfig('syncing','on');
 
-                    //If we do not have the GENESIS block, we download it from the BootstrapNode
-                    if ($lastBlock_LocalNode == 0) {
-                        //Make Genesis from Peer
-                        $genesis_block_bootstrap = BootstrapNode::GetGenesisBlock($this->chaindata,$this->isTestNet);
-                        $genesisMakeBlockStatus = GenesisBlock::makeFromPeer($genesis_block_bootstrap,$this->chaindata);
+					//We get the last block from the BootstrapNode
+					Peer::SelectPeerToSync($this->chaindata);
 
-                        if ($genesisMakeBlockStatus)
-                            Display::_printer("%Y%Imported%W% GENESIS block header               %G%count%W%=1");
-                        else {
-                            Display::_error("Can't make GENESIS block");
-                            if (IS_WIN)
-                                readline("Press any Enter to close close window");
-                            exit();
-                        }
-                    }
-                }
-                else {
+					//Wait 5seg
+					usleep(5000000);
 
-                    $lastBlock = $this->chaindata->GetLastBlock(false);
+					if (@file_exists(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sync_with_peer"))
+						$ipAndPort = @file_get_contents(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sync_with_peer");
 
-                    Display::_printer("Blockchain up to date");
-                    Display::_printer("Height: %G%".$lastBlock['height']);
+					$ipPort = explode(':',$ipAndPort);
+					Display::_printer("Selected peer to sync -> %G%".Tools::GetIdFromIpAndPort($ipPort[0],$ipPort[1]));
+					Tools::writeLog('Selected peer to sync			%G%'.Tools::GetIdFromIpAndPort($ipPort[0],$ipPort[1]));
+					@unlink(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."highest_chain");
+				}
 
-                    $db->SetConfig('syncing','off');
+				//If we do not have the GENESIS block, we download it from Peer (HighestChain)
+				if ($lastBlock_LocalNode == 0) {
+					//Make Genesis from Peer
+					$genesis_block_peer = Peer::GetGenesisBlock($ipAndPort);
+					$genesisMakeBlockStatus = GenesisBlock::makeFromPeer($genesis_block_peer,$this->chaindata);
 
-                    $this->difficulty = Blockchain::checkDifficulty($this->chaindata, null, $this->isTestNet)[0];
+					if ($genesisMakeBlockStatus)
+						Display::_printer("%Y%Imported%W% GENESIS block header               %G%count%W%=1");
+					else {
+						Display::_error("Can't make GENESIS block");
+						if (IS_WIN)
+							readline("Press any Enter to close close window");
+						exit();
+					}
+				}
+				else {
+					$lastBlock = $this->chaindata->GetLastBlock(false);
 
-                    Display::_printer("LastBlock: %G%".$lastBlock['block_hash']);
-                    Display::_printer("Difficulty: %G%".$this->difficulty);
-                }
+		            Display::_printer("Height: %G%".$lastBlock['height']);
+
+					$this->difficulty = Blockchain::checkDifficulty($this->chaindata,null,$this->isTestNet)[0];
+
+		            Display::_printer("LastBlock: %G%".$lastBlock['block_hash']);
+		            Display::_printer("Difficulty: %G%".$this->difficulty);
+		            Display::_printer("Current peers: %G%".count($this->chaindata->GetAllPeers()));
+				}
 
                 //Check if have same GENESIS block from BootstrapNode
                 $genesis_block_bootstrap = BootstrapNode::GetGenesisBlock($this->chaindata,$this->isTestNet);
@@ -278,8 +293,6 @@ class Gossip {
                         readline("Press any Enter to close close window");
                     exit();
                 }
-
-
             } else {
                 if (IS_WIN)
                     readline("Press any Enter to close close window");

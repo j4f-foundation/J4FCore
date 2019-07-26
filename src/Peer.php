@@ -134,9 +134,9 @@ class Peer {
                     continue;
                 } else {
 
-					$numBlocksSanity = 50;
-					if ($lastBlock['height'] <= 50) {
-						$numBlocksSanity = 20;
+					$numBlocksSanity = 5;
+					if ($lastBlock['height'] <= 5) {
+						$numBlocksSanity = 1;
 					}
 					$heightBlockFromRemove = $lastBlock['height'] - $numBlocksSanity;
 
@@ -149,7 +149,7 @@ class Peer {
 					@unlink(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer");
 
                     //Display::_warning("Peer ".$ipAndPort." added to blacklist       %G%reason%W%=Peer Previous block doesnt match with local last block");
-                    //$gossip->chaindata->addPeerToBlackList($ipAndPort);
+                    $gossip->chaindata->addPeerToBlackList($ipAndPort);
                     return null;
                 }
             }
@@ -179,6 +179,23 @@ class Peer {
 
         return null;
     }
+
+	/**
+	 * Select peer to sync with it
+	 */
+	public static function SelectPeerToSync(&$chaindata) {
+
+		//Run subprocess peerAlive per peer
+		$peers = $chaindata->GetAllPeers();
+
+		if (count($peers) > 0) {
+			Display::_printer('Selecting peer to sync			%G%count%W%='.count($peers));
+			Tools::writeLog('Selecting peer to sync			%G%count%W%='.count($peers));
+
+			//Run subprocess propagation
+			Subprocess::newProcess(Tools::GetBaseDir()."subprocess".DIRECTORY_SEPARATOR,'getHighestChain',"",-1);
+		}
+	}
 
     /**
      *

@@ -65,7 +65,7 @@ if ($argv[1] == -1) {
             );
 
             //Run subprocess propagation
-            Subprocess::newProcess(Tools::GetBaseDir()."subprocess".DIRECTORY_SEPARATOR,'peerAlive',$params,$id);
+            Subprocess::newProcess(Tools::GetBaseDir()."subprocess".DIRECTORY_SEPARATOR,'getHighestChain',$params,$id);
             $id++;
         }
     }
@@ -89,11 +89,8 @@ if ($argv[1] == -1) {
     );
 
     $response = null;
-    if ($peerIP == NODE_BOOTSTRAP) {
-        $response = Tools::postContent('https://'.NODE_BOOTSTRAP.'/gossip.php', $infoToSend,60);
-    }
-    else if ($peerIP == NODE_BOOTSTRAP_TESTNET) {
-        $response = Tools::postContent('https://'.NODE_BOOTSTRAP_TESTNET.'/gossip.php', $infoToSend,60);
+    if ($peerIP == NODE_BOOTSTRAP || $peerIP == NODE_BOOTSTRAP_TESTNET) {
+		exit();
     }
     else {
         $response = Tools::postContent('http://' . $peerIP . ':' . $peerPORT . '/gossip.php', $infoToSend,60);
@@ -110,15 +107,44 @@ if ($argv[1] == -1) {
             //Check if have same GENESIS block from peer
             $peerGenesisBlock = Peer::GetGenesisBlock($peerIP.':'.$peerPORT);
             $localGenesisBlock = $chaindata->GetGenesisBlock();
-            if ($localGenesisBlock['block_hash'] == $peerGenesisBlock->block_hash) {
 
-                Tools::writeLog('SUBPROCESS::Selected peer '.$peerIP.':'.$peerPORT.' for sync');
+			//Check if i have genesis block (local blockchain)
+			if ($localGenesisBlock != null) {
+				if ($localGenesisBlock['block_hash'] == $peerGenesisBlock->block_hash) {
 
-                //Write sync_with_peer
-                Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$peerIP.":".$peerPORT);
-            } else {
-                Tools::writeLog('SUBPROCESS::This peer '.$peerIP.':'.$peerPORT.' have diferent GENESIS block');
-            }
+	                Tools::writeLog('SUBPROCESS::Selected peer '.$peerIP.':'.$peerPORT.' for sync');
+
+	                //Check if have highestChain
+					if (@file_exists(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."highest_chain"))
+						$highestChain = file_get_contents(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."highest_chain");
+					else
+						$highestChain = -1;
+
+					//Sync with peer (have more blocks)
+					if ($response->result->lastBlock > $highestChain) {
+						Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."highest_chain",$response->result->lastBlock);
+						Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$peerIP.":".$peerPORT);
+					}
+	            } else {
+	                Tools::writeLog('SUBPROCESS::This peer '.$peerIP.':'.$peerPORT.' have diferent GENESIS block');
+	            }
+			}
+			else {
+
+				Tools::writeLog('SUBPROCESS::Selected peer '.$peerIP.':'.$peerPORT.' for sync');
+
+				//Check if have highestChain
+				if (@file_exists(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."highest_chain"))
+					$highestChain = file_get_contents(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."highest_chain");
+				else
+					$highestChain = -1;
+
+				//Init sync
+				if ($response->result->lastBlock > $highestChain) {
+					Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."highest_chain",$response->result->lastBlock);
+					Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$peerIP.":".$peerPORT);
+				}
+			}
         }
     }
 
