@@ -43,12 +43,8 @@ class BootstrapNode {
         );
 
 		$infoPOST = Socket::sendMessageWithReturn($ip,$port,$infoToSend);
-		if ($infoPOST != null) {
-			if ($infoPOST['status'] == 1)
-				return $infoPOST['result'];
-			else
-				return 0;
-		}
+		if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1)
+			return $infoPOST['result'];
 		else
 			return 0;
     }
@@ -78,12 +74,8 @@ class BootstrapNode {
         );
 
 		$infoPOST = Socket::sendMessageWithReturn($ip,$port,$infoToSend);
-		if ($infoPOST != null) {
-			if ($infoPOST['status'] == 1)
-				return $infoPOST['result'];
-			else
-				return 0;
-		}
+		if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1)
+			return $infoPOST['result'];
 		else
 			return 0;
     }
@@ -113,12 +105,8 @@ class BootstrapNode {
         );
 
 		$infoPOST = Socket::sendMessageWithReturn($ip,$port,$infoToSend);
-		if ($infoPOST != null) {
-			if (isset($infoPOST['status']) && $infoPOST['status'] == 1)
-				return $infoPOST['result'];
-			else
-				return 0;
-		}
+		if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1)
+			return $infoPOST['result'];
 		else
 			return 0;
     }
@@ -147,12 +135,8 @@ class BootstrapNode {
             'action' => 'GETGENESIS'
         );
 		$infoPOST = Socket::sendMessageWithReturn($ip,$port,$infoToSend,60);
-		if ($infoPOST != null) {
-			if ($infoPOST['status'] == 1)
-				return $infoPOST['result'];
-			else
-				return 0;
-		}
+		if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1)
+			return $infoPOST['result'];
 		else
 			return 0;
     }
@@ -182,12 +166,8 @@ class BootstrapNode {
             'from' => $lastBlockOnLocalBlockChain
         );
 		$infoPOST = Socket::sendMessageWithReturn($ip,$port,$infoToSend);
-		if ($infoPOST != null) {
-			if ($infoPOST['status'] == 1)
-				return $infoPOST['result'];
-			else
-				return 0;
-		}
+		if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1)
+			return $infoPOST['result'];
 		else
 			return 0;
     }

@@ -226,24 +226,11 @@ class Gossip {
                 //We ask the BootstrapNode to give us the information of the connected peers
                 $peersNode = BootstrapNode::GetPeers($gossip->chaindata,$gossip->isTestNet);
                 if (is_array($peersNode) && !empty($peersNode)) {
-
                     $maxRand = PEERS_MAX;
-                    if (count($peersNode) < PEERS_MAX)
-                        $maxRand = count($peersNode);
-
-                    $randomPeers = array_rand($peersNode,$maxRand);
-                    if (is_array($randomPeers)) {
-                        foreach ($randomPeers as $randomPeer) {
-                            if (trim($gossip->ip).":".trim($gossip->port) != trim($peersNode[$randomPeer]->ip).":".trim($peersNode[$randomPeer]->port)) {
-                                if (count($gossip->peers) < PEERS_MAX) {
-                                    $gossip->_addPeer(trim($peersNode[$randomPeer]->ip),trim($peersNode[$randomPeer]->port));
-                                }
-                            }
-                        }
-                    } else {
-                        if (trim($gossip->ip).":".trim($this->port) != trim($peersNode[$randomPeers]->ip).":".trim($peersNode[$randomPeers]->port)) {
+                    foreach ($peersNode as $peer) {
+                        if (trim($gossip->ip).":".trim($gossip->port) != trim($peer['ip']).":".trim($peer['port'])) {
                             if (count($gossip->peers) < PEERS_MAX) {
-                                $gossip->_addPeer(trim($peersNode[$randomPeers]->ip),trim($peersNode[$randomPeers]->port));
+                                $gossip->_addPeer(trim($peer['ip']),trim($peer['port']));
                             }
                         }
                     }
@@ -769,7 +756,7 @@ class Gossip {
         );
 
         $response = Socket::sendMessageWithReturn($ip, $port, $infoToSend, 1);
-		if ($response) {
+		if ($response != null && isset($response['status'])) {
 			$gossip->chaindata->addPeer($ip, $port);
 
 			$gossip->peers[] = array($ip.':'.$port => $ip,$port);
@@ -813,8 +800,8 @@ class Gossip {
                 'client_port' => $this->port
             );
             $response = Socket::sendMessageWithReturn($ip, $port, $infoToSend, 1);
-            if ($response != null && isset($response->status)) {
-                if ($response->status == true) {
+            if ($response != null && isset($response['status'])) {
+                if ($response['status'] == true) {
                     $this->chaindata->addPeer($ip, $port);
                     $this->peers[] = array($ip.':'.$port => $ip,$port);
                     if ($displayMessage)
@@ -1046,7 +1033,6 @@ class Gossip {
             $this->chaindata->RemoveBlockToDisplay($blockPending['block_hash']);
         }
     }
-
 
     /**
      * Show subprocess miners log

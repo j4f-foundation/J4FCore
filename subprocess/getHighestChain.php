@@ -53,7 +53,7 @@ if ($argv[1] == -1) {
     $chaindata = new DB();
 
     //Run subprocess peerAlive per peer
-    $peers = $chaindata->GetAllPeers();
+    $peers = $chaindata->GetAllPeersWithoutBootstrap();
 
     $lastBlock = $chaindata->GetLastBlock();
 
@@ -92,16 +92,10 @@ if ($argv[1] == -1) {
         'action' => 'STATUSNODE'
     );
 
-    $response = null;
-    if ($peerIP == NODE_BOOTSTRAP || $peerIP == NODE_BOOTSTRAP_TESTNET) {
-		exit();
-    }
-    else {
-        $response = Socket::sendMessageWithReturn($peerIP,$peerPORT,$infoToSend,2);
-    }
+    $response = Socket::sendMessageWithReturn($peerIP,$peerPORT,$infoToSend,2);
 
     //Check if response as ok
-    if ($response['status']) {
+    if ($response != null && isset($response['status'])) {
 
         //Check if peer have same height block
         if ($response['result']['lastBlock'] > ($lastBlockHeight+1)) {
@@ -114,7 +108,7 @@ if ($argv[1] == -1) {
 
 			//Check if i have genesis block (local blockchain)
 			if ($localGenesisBlock != null) {
-				if ($localGenesisBlock['block_hash'] == $peerGenesisBlock->block_hash) {
+				if ($localGenesisBlock['block_hash'] == $peerGenesisBlock['block_hash']) {
 
 	                Tools::writeLog('SUBPROCESS::Selected peer '.$peerIP.':'.$peerPORT.' for sync');
 

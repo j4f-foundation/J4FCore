@@ -188,8 +188,7 @@ class Peer {
 	public static function SelectPeerToSync(&$chaindata) {
 
 		//Run subprocess peerAlive per peer
-		$peers = $chaindata->GetAllPeers();
-
+		$peers = $chaindata->GetAllPeersWithoutBootstrap();
 		if (count($peers) > 0) {
 			Display::_printer('Selecting peer to sync			%G%count%W%='.count($peers));
 			Tools::writeLog('Selecting peer to sync			%G%count%W%='.count($peers));
@@ -218,7 +217,7 @@ class Peer {
         );
 
         $infoPOST = Socket::sendMessageWithReturn($ip,$port,$infoToSend);
-        if ($infoPOST['status'] == 1)
+        if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1)
             return $infoPOST['result'];
         else
             return 0;

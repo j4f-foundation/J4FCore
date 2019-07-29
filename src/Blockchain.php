@@ -155,14 +155,14 @@ class Blockchain {
             $blockPendingToDisplay = $chaindata->GetBlockPendingToDisplayByHash($blockMinedByPeer->hash);
             if (empty($blockPendingToDisplay)) {
 
-                //Propagate mined block to network
-                //Tools::sendBlockMinedToNetworkWithSubprocess($chaindata,$blockMinedByPeer);
-
                 //Add this block in pending block (DISPLAY)
                 $chaindata->AddBlockToDisplay($blockMinedByPeer,"0x00000000");
 
                 //Add Block to blockchain
                 if ($chaindata->addBlock($heightNewBlock,$blockMinedByPeer)) {
+
+					//Propagate mined block to network
+	                Tools::sendBlockMinedToNetworkWithSubprocess($chaindata,$blockMinedByPeer);
 
 					//Make SmartContracts on local blockchain
 					SmartContract::Make($chaindata,$blockMinedByPeer);
@@ -176,11 +176,11 @@ class Blockchain {
                     return "0x00000000";
 
                 } else {
-                    return "Error, can't add block".$heightNewBlock;
+                    return "Error, can't add block ".$heightNewBlock;
                 }
 
             } else {
-                return "Block added previously, reject block".$heightNewBlock;
+                return "Block added previously, reject block" .$heightNewBlock;
             }
         } else {
             $chaindata->AddBlockToDisplay($blockMinedByPeer,"0x00000001");

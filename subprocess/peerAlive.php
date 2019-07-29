@@ -105,7 +105,7 @@ if ($argv[1] == -1) {
             //Check if have same GENESIS block from peer
             $peerGenesisBlock = Peer::GetGenesisBlock($peerIP.':'.$peerPORT);
             $localGenesisBlock = $chaindata->GetGenesisBlock();
-            if ($localGenesisBlock['block_hash'] == $peerGenesisBlock->block_hash) {
+            if ($localGenesisBlock['block_hash'] == $peerGenesisBlock['block_hash']) {
 
                 Tools::writeLog('SUBPROCESS::Selected peer '.$peerIP.':'.$peerPORT.' for sync');
 

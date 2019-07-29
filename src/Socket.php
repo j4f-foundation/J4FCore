@@ -40,6 +40,7 @@ class Socket {
 		$dataParsed = @json_encode($data);
 		$connector->connect($ip.':'.$port)->then(function (React\Socket\ConnectionInterface $connection) use (&$dataParsed) {
 			$connection->write($dataParsed);
+			$connection->end($data = null);
 		});
 		$loop->run();
 		return true;
