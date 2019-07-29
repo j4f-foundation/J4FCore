@@ -36,3 +36,5 @@ web_contract.php
 web_search.php
 web_footer.php
 funity/example_contract.php
+vendor/
+composer*

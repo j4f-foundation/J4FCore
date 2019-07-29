@@ -36,7 +36,11 @@ include(__DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'src'.DIRECTORY_SEP
 include(__DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'src'.DIRECTORY_SEPARATOR.'Transaction.php');
 include(__DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'src'.DIRECTORY_SEPARATOR.'GenesisBlock.php');
 include(__DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'src'.DIRECTORY_SEPARATOR.'Peer.php');
+include(__DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'src'.DIRECTORY_SEPARATOR.'Socket.php');
 include(__DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'src'.DIRECTORY_SEPARATOR.'uint256.php');
+require __DIR__ . DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'vendor'.DIRECTORY_SEPARATOR.'autoload.php';
+
+use React\Socket\ConnectionInterface;
 
 //Setting timezone to UTC
 date_default_timezone_set("UTC");
@@ -88,22 +92,13 @@ if ($argv[1] == -1) {
         'action' => 'STATUSNODE'
     );
 
-    $response = null;
-    if ($peerIP == NODE_BOOTSTRAP) {
-        $response = Tools::postContent('https://'.NODE_BOOTSTRAP.'/gossip.php', $infoToSend,60);
-    }
-    else if ($peerIP == NODE_BOOTSTRAP_TESTNET) {
-        $response = Tools::postContent('https://'.NODE_BOOTSTRAP_TESTNET.'/gossip.php', $infoToSend,60);
-    }
-    else {
-        $response = Tools::postContent('http://' . $peerIP . ':' . $peerPORT . '/gossip.php', $infoToSend,60);
-    }
+    $response = Socket::sendMessageWithReturn($peerIP,$peerPORT,$infoToSend,2);
 
     //Check if response as ok
-    if ($response->status) {
+    if ($response['status']) {
 
         //Check if peer have same height block
-        if ($response->result->lastBlock > ($lastBlockHeight+1)) {
+        if ($response['result']['lastBlock'] > ($lastBlockHeight+1)) {
 
             Tools::writeLog('SUBPROCESS::This peer '.$peerIP.':'.$peerPORT.' have more blocks than me');
 

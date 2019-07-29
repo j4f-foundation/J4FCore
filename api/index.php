@@ -40,7 +40,12 @@ include('../src/SmartContractStateMachine.php');
 include('../src/J4FVMBase.php');
 include('../src/J4FVM.php');
 include('../src/uint256.php');
+include('../src/Socket.php');
 include('../funity/js.php');
+
+require __DIR__ . DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'vendor'.DIRECTORY_SEPARATOR.'autoload.php';
+
+use React\Socket\ConnectionInterface;
 
 date_default_timezone_set("UTC");
 

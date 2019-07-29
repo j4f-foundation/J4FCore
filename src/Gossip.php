@@ -16,6 +16,8 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the J4FCore library. If not, see <http://www.gnu.org/licenses/>.
 
+use React\Socket\ConnectionInterface;
+
 class Gossip {
 
     public $name;
@@ -37,6 +39,7 @@ class Gossip {
     private $bootstrap_node;
     private $connected_to_bootstrap;
     private $openned_ports;
+	private $lastBlock_BootstrapNode;
 
     private $loop_x5 = 0;
 	private $loop_x10 = 0;
@@ -54,146 +57,174 @@ class Gossip {
      * @param bool      $bootstrap_node
      * @param bool      $isTestNet
      */
-    public function __construct($db, $name, $ip, $port, $enable_mine, $make_genesis_block=false, $bootstrap_node = false, $isTestNet=false)
+    public function __construct($db, $name, $ip, $port, $enable_mine, $make_genesis_block=false, $bootstrap_node = false, $isTestNet=false, $sanityBlockchain=-1)
     {
-        //Clear screen
-        Display::ClearScreen();
+		//Clear screen
+		Display::ClearScreen();
 
-        //Init Display message
-        Display::_printer("Welcome to the %G%MXC node - Version: " . VERSION);
-        Display::_printer("Maximum peer count                       %G%value%W%=".PEERS_MAX);
-        Display::_printer("Listening on %G%".$ip."%W%:%G%".$port);
-        Display::_printer("PeerID %G%".Tools::GetIdFromIpAndPort($ip,$port));
+		//Init Display message
+		Display::_printer("Welcome to the %G%MXC node - Version: " . VERSION);
+		Display::_printer("Maximum peer count                       %G%value%W%=".PEERS_MAX);
+		Display::_printer("PeerID %G%".Tools::GetIdFromIpAndPort($ip,$port));
 
-        $this->make_genesis = $make_genesis_block;
-        $this->bootstrap_node = $bootstrap_node;
-        $this->isTestNet = $isTestNet;
-        $this->enable_mine = $enable_mine;
+		$this->make_genesis = $make_genesis_block;
+		$this->bootstrap_node = $bootstrap_node;
+		$this->isTestNet = $isTestNet;
+		$this->enable_mine = $enable_mine;
 
-        //Save node info
-        $db->SetConfig('node_name',$name);
-        $db->SetConfig('node_ip',$ip);
-        $db->SetConfig('node_port',$port);
-        $db->SetConfig('node_version',VERSION);
+		//Save node info
+		$db->SetConfig('node_name',$name);
+		$db->SetConfig('node_ip',$ip);
+		$db->SetConfig('node_port',$port);
+		$db->SetConfig('node_version',VERSION);
 
-        //Set network config
-        if ($this->isTestNet)
-            $db->SetConfig('network','testnet');
-        else
-            $db->SetConfig('network','mainnet');
+		//Set network config
+		if ($this->isTestNet)
+			$db->SetConfig('network','testnet');
+		else
+			$db->SetConfig('network','mainnet');
 
-        //Set miner config
-        if ($this->enable_mine)
-            $db->SetConfig('miner','on');
-        else
-            $db->SetConfig('miner','off');
+		//Set miner config
+		if ($this->enable_mine)
+			$db->SetConfig('miner','on');
+		else
+			$db->SetConfig('miner','off');
 
-        //Set bootstrap config
-        if ($this->bootstrap_node)
-            $db->SetConfig('isBootstrap','on');
-        else
-            $db->SetConfig('isBootstrap','off');
+		//Set bootstrap config
+		if ($this->bootstrap_node)
+			$db->SetConfig('isBootstrap','on');
+		else
+			$db->SetConfig('isBootstrap','off');
 
-        //Set default hashrate to 0
-        $db->SetConfig('hashrate','0');
+		//Set default hashrate to 0
+		$db->SetConfig('hashrate','0');
 
-        //We declare that we are not synchronizing
-        $this->syncing = false;
-        $db->SetConfig('syncing','off');
-        $db->SetConfig('p2p','off');
+		//We declare that we are not synchronizing
+		$this->syncing = false;
+		$db->SetConfig('syncing','off');
+		$db->SetConfig('p2p','off');
 
-        $this->name = $name;
-        $this->ip = $ip;
-        $this->port = $port;
+		$this->name = $name;
+		$this->ip = $ip;
+		$this->port = $port;
 
-        //We create default folders
-        Tools::MakeDataDirectory();
+		//We create default folders
+		Tools::MakeDataDirectory();
 
-        //Clear TMP files
-        Tools::clearTmpFolder();
-        @unlink(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.'node_log');
+		//Clear TMP files
+		Tools::clearTmpFolder();
+		@unlink(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.'node_log');
 
-        //Default miners stopped
-        Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
+		//Default miners stopped
+		Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
 
-        //Update MainThread time for subprocess
-        Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MAIN_THREAD_CLOCK,time());
+		//Update MainThread time for subprocess
+		Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MAIN_THREAD_CLOCK,time());
 
-        //Instance the pointer to the chaindata and get config
-        $this->chaindata = new DB();
-        $this->config = $this->chaindata->GetAllConfig();
+		//Instance the pointer to the chaindata and get config
+		$this->chaindata = $db;
+		$this->config = $this->chaindata->GetAllConfig();
 
-        //We started with that we do not have pending transactions
-        $this->pending_transactions = array();
+		//We started with that we do not have pending transactions
+		$this->pending_transactions = array();
 
-        //We create the Wallet for the node
-        $this->key = new Key(Wallet::LoadOrCreate('coinbase',null));
+		//We create the Wallet for the node
+		$this->key = new Key(Wallet::LoadOrCreate('coinbase',null));
 
-        if (strlen($this->key->pubKey) != 451) {
-            Display::_error("Can't get the public/private key");
-            Display::_error("Make sure you have openssl installed and activated in php");
-            exit();
-        }
-        $this->coinbase = Wallet::GetWalletAddressFromPubKey($this->key->pubKey);
-        Display::_printer("Coinbase detected: %LG%".$this->coinbase);
+		if (strlen($this->key->pubKey) != 451) {
+			Display::_error("Can't get the public/private key");
+			Display::_error("Make sure you have openssl installed and activated in php");
+			exit();
+		}
+		$this->coinbase = Wallet::GetWalletAddressFromPubKey($this->key->pubKey);
+		Display::_printer("Coinbase detected: %LG%".$this->coinbase);
 
-        //We cleaned the table of peers
-        if (!$this->bootstrap_node)
-            $this->chaindata->truncate("peers");
+		//We cleaned the table of peers
+		if (!$this->bootstrap_node)
+			$this->chaindata->truncate("peers");
 
-        //By default we mark that we are not connected to the bootstrap and that we do not have ports open for P2P
-        $this->connected_to_bootstrap = false;
-        $this->openned_ports = false;
+		//By default we mark that we are not connected to the bootstrap and that we do not have ports open for P2P
+		$this->connected_to_bootstrap = false;
+		$this->openned_ports = false;
 
-        //WE GENERATE THE GENESIS BLOCK
-        if ($make_genesis_block) {
-            if(!$isTestNet)
-                GenesisBlock::make($this->chaindata,$this->coinbase,$this->key->privKey,$this->isTestNet,bcadd("50","0",18));
-            else
-                GenesisBlock::make($this->chaindata,$this->coinbase,$this->key->privKey,$this->isTestNet,bcadd("99999999999999999999999999999999","0",18));
-        }
+		$this->lastBlock_BootstrapNode = BootstrapNode::GetLastBlockNum($this->chaindata,$this->isTestNet);
 
-        //We are a BOOTSTRAP node
-        else if ($bootstrap_node) {
-            if ($this->isTestNet)
-                Display::_printer("%Y%BOOTSTRAP NODE %W%(%G%TESTNET%W%) loaded successfully");
-            else
-                Display::_printer("%Y%BOOTSTRAP NODE %W%loaded successfully");
+		//Save pointer of Gossip
+		$gossip = $this;
 
-            $lastBlock = $this->chaindata->GetLastBlock(false);
+		if ($sanityBlockchain > 0) {
+			$gossip->SanityFromBlockHeight($sanityBlockchain);
+			exit();
+		}
 
-            Display::_printer("Height: %G%".$lastBlock['height']);
+		$loop = React\EventLoop\Factory::create();
 
-            $this->difficulty = Blockchain::checkDifficulty($this->chaindata,null, $this->isTestNet)[0];
+		$config = React\Dns\Config\Config::loadSystemConfigBlocking();
+		$server = $config->nameservers ? reset($config->nameservers) : '8.8.8.8';
 
-            Display::_printer("LastBlock: %G%".$lastBlock['block_hash']);
-            Display::_printer("Difficulty: %G%".$this->difficulty);
-            Display::_printer("Current peers: %G%".count($this->chaindata->GetAllPeers()));
+		$factory = new React\Dns\Resolver\Factory();
+		$dns = $factory->create($server, $loop);
 
-            //Check peers status
-            $this->CheckConnectionWithPeers();
-        }
+		//Delayed Init Function
+		$loop->addTimer(0, function () use ($gossip) {
 
-        //If we already have information, we establish the loaded state
-        else {
-            //We connect to the Bootstrap node
-            if ($this->_addBootstrapNode()) {
-                $this->connected_to_bootstrap = true;
+	        //WE GENERATE THE GENESIS BLOCK
+	        if ($gossip->make_genesis) {
+	            if(!$gossip->isTestNet)
+	                GenesisBlock::make($gossip->chaindata,$gossip->coinbase,$gossip->key->privKey,$gossip->isTestNet,bcadd("50","0",18));
+	            else
+	                GenesisBlock::make($gossip->chaindata,$gossip->coinbase,$gossip->key->privKey,$gossip->isTestNet,bcadd("99999999999999999999999999999999","0",18));
+	        }
+
+	        //We are a BOOTSTRAP node
+	        else if ($gossip->bootstrap_node) {
+	            if ($gossip->isTestNet)
+	                Display::_printer("%Y%BOOTSTRAP NODE %W%(%G%TESTNET%W%) loaded successfully");
+	            else
+	                Display::_printer("%Y%BOOTSTRAP NODE %W%loaded successfully");
+
+	            $lastBlock = $gossip->chaindata->GetLastBlock(false);
+
+	            Display::_printer("Height: %G%".$lastBlock['height']);
+
+	            $gossip->difficulty = Blockchain::checkDifficulty($gossip->chaindata,null, $gossip->isTestNet)[0];
+
+	            Display::_printer("LastBlock: %G%".$lastBlock['block_hash']);
+	            Display::_printer("Difficulty: %G%".$gossip->difficulty);
+	            Display::_printer("Current peers: %G%".count($gossip->chaindata->GetAllPeers()));
+
+	            //Check peers status
+	            $gossip->CheckConnectionWithPeers();
+	        }
+
+	        //If we already have information, we establish the loaded state
+	        else {
+	            //We connect to the Bootstrap node
+	            $gossip->_addBootstrapNode($gossip);
 
                 //If we do not have open ports, we can not continue
-                if (!$this->openned_ports) {
-                    Display::_error("Impossible to establish a P2P connection");
-                    Display::_error("Check that it is accessible from the internet: %Y%http://".$this->ip.":".$this->port);
+                if (!$gossip->connected_to_bootstrap) {
+                    Display::_error("Impossible to establish a P2P connection with Bootstrap");
                     if (IS_WIN)
                         readline("Press any Enter to close close window");
                     exit();
                 }
 
+				//If we do not have open ports, we can not continue
+                if (!$gossip->openned_ports) {
+                    Display::_error("Impossible to establish a P2P connection");
+                    Display::_error("Check that it is accessible from the internet: %Y%tcp://".$gossip->ip.":".$gossip->port);
+                    if (IS_WIN)
+                        readline("Press any Enter to close close window");
+                    exit();
+                }
+
+
                 //Set p2p ON
-                $db->SetConfig('p2p','on');
+                $gossip->chaindata->SetConfig('p2p','on');
 
                 //We ask the BootstrapNode to give us the information of the connected peers
-                $peersNode = BootstrapNode::GetPeers($this->chaindata,$this->isTestNet);
+                $peersNode = BootstrapNode::GetPeers($gossip->chaindata,$gossip->isTestNet);
                 if (is_array($peersNode) && !empty($peersNode)) {
 
                     $maxRand = PEERS_MAX;
@@ -203,34 +234,34 @@ class Gossip {
                     $randomPeers = array_rand($peersNode,$maxRand);
                     if (is_array($randomPeers)) {
                         foreach ($randomPeers as $randomPeer) {
-                            if (trim($this->ip).":".trim($this->port) != trim($peersNode[$randomPeer]->ip).":".trim($peersNode[$randomPeer]->port)) {
-                                if (count($this->peers) < PEERS_MAX) {
-                                    $this->_addPeer(trim($peersNode[$randomPeer]->ip),trim($peersNode[$randomPeer]->port));
+                            if (trim($gossip->ip).":".trim($gossip->port) != trim($peersNode[$randomPeer]->ip).":".trim($peersNode[$randomPeer]->port)) {
+                                if (count($gossip->peers) < PEERS_MAX) {
+                                    $gossip->_addPeer(trim($peersNode[$randomPeer]->ip),trim($peersNode[$randomPeer]->port));
                                 }
                             }
                         }
                     } else {
-                        if (trim($this->ip).":".trim($this->port) != trim($peersNode[$randomPeers]->ip).":".trim($peersNode[$randomPeers]->port)) {
-                            if (count($this->peers) < PEERS_MAX) {
-                                $this->_addPeer(trim($peersNode[$randomPeers]->ip),trim($peersNode[$randomPeers]->port));
+                        if (trim($gossip->ip).":".trim($this->port) != trim($peersNode[$randomPeers]->ip).":".trim($peersNode[$randomPeers]->port)) {
+                            if (count($gossip->peers) < PEERS_MAX) {
+                                $gossip->_addPeer(trim($peersNode[$randomPeers]->ip),trim($peersNode[$randomPeers]->port));
                             }
                         }
                     }
                 }
 
-                if (count($this->peers) < PEERS_REQUIRED) {
-                    Display::_error("there are not enough peers       count=".count($this->peers)."   required=".PEERS_REQUIRED);
+                if (count($gossip->peers) < PEERS_REQUIRED) {
+                    Display::_error("there are not enough peers       count=".count($gossip->peers)."   required=".PEERS_REQUIRED);
                     if (IS_WIN)
                         readline("Press any Enter to close close window");
                     exit();
                 }
 
-				if ($this->isTestNet)
+				if ($gossip->isTestNet)
 					$ipAndPort = NODE_BOOTSTRAP_TESTNET.':'.NODE_BOOSTRAP_PORT_TESTNET;
 				else
 					$ipAndPort = NODE_BOOTSTRAP.':'.NODE_BOOSTRAP_PORT;
 
-				$lastBlock_BootstrapNode = BootstrapNode::GetLastBlockNum($this->chaindata,$this->isTestNet);
+				$lastBlock_BootstrapNode = BootstrapNode::GetLastBlockNum($gossip->chaindata,$gossip->isTestNet);
                 $lastBlock_LocalNode = $this->chaindata->GetNextBlockNum();
 
                 //We check if we need to synchronize or not
@@ -238,12 +269,12 @@ class Gossip {
                     Display::_printer("%LR%DeSync detected %W%- Downloading blocks (%G%".$lastBlock_LocalNode."%W%/%Y%".$lastBlock_BootstrapNode.")");
 
 					//We declare that we are synchronizing
-                    $this->syncing = true;
+                    $gossip->syncing = true;
 
-                    $this->chaindata->SetConfig('syncing','on');
+                    $gossip->chaindata->SetConfig('syncing','on');
 
 					//We get the last block from the BootstrapNode
-					Peer::SelectPeerToSync($this->chaindata);
+					Peer::SelectPeerToSync($gossip->chaindata);
 
 					//Wait 5seg
 					usleep(5000000);
@@ -261,7 +292,7 @@ class Gossip {
 				if ($lastBlock_LocalNode == 0) {
 					//Make Genesis from Peer
 					$genesis_block_peer = Peer::GetGenesisBlock($ipAndPort);
-					$genesisMakeBlockStatus = GenesisBlock::makeFromPeer($genesis_block_peer,$this->chaindata);
+					$genesisMakeBlockStatus = GenesisBlock::makeFromPeer($genesis_block_peer,$gossip->chaindata);
 
 					if ($genesisMakeBlockStatus)
 						Display::_printer("%Y%Imported%W% GENESIS block header               %G%count%W%=1");
@@ -273,42 +304,457 @@ class Gossip {
 					}
 				}
 				else {
-					$lastBlock = $this->chaindata->GetLastBlock(false);
+					$lastBlock = $gossip->chaindata->GetLastBlock(false);
 
 		            Display::_printer("Height: %G%".$lastBlock['height']);
 
-					$this->difficulty = Blockchain::checkDifficulty($this->chaindata,null,$this->isTestNet)[0];
+					$gossip->difficulty = Blockchain::checkDifficulty($gossip->chaindata,null,$gossip->isTestNet)[0];
 
 		            Display::_printer("LastBlock: %G%".$lastBlock['block_hash']);
-		            Display::_printer("Difficulty: %G%".$this->difficulty);
-		            Display::_printer("Current peers: %G%".count($this->chaindata->GetAllPeers()));
+		            Display::_printer("Difficulty: %G%".$gossip->difficulty);
+		            Display::_printer("Current peers: %G%".count($gossip->chaindata->GetAllPeers()));
 				}
 
                 //Check if have same GENESIS block from BootstrapNode
-                $genesis_block_bootstrap = BootstrapNode::GetGenesisBlock($this->chaindata,$this->isTestNet);
-                $genesis_block_local = $this->chaindata->GetGenesisBlock();
-                if ($genesis_block_local['block_hash'] != $genesis_block_bootstrap->block_hash) {
+                $genesis_block_bootstrap = BootstrapNode::GetGenesisBlock($gossip->chaindata,$gossip->isTestNet);
+                $genesis_block_local = $gossip->chaindata->GetGenesisBlock();
+                if ($genesis_block_local['block_hash'] != $genesis_block_bootstrap['block_hash']) {
                     Display::_error("%Y%GENESIS BLOCK NO MATCH%W%    genesis block does not match the block genesis of bootstrapNode");
                     if (IS_WIN)
                         readline("Press any Enter to close close window");
                     exit();
                 }
-            } else {
-                if (IS_WIN)
-                    readline("Press any Enter to close close window");
-                exit();
-            }
-        }
-    }
+	        }
+
+
+			if ($gossip->make_genesis)
+				return;
+
+			if (!$gossip->connected_to_bootstrap && !$gossip->bootstrap_node)
+				return;
+
+			//Get pending transactions from bootstrap
+			$gossip->GetPendingTransactions();
+
+		});
+
+		//General loop of the node
+		$loop->addPeriodicTimer(1, function() use (&$gossip) {
+
+			//We establish the title of the process
+			$gossip->SetTitleProcess();
+
+			//Update MainThread time for subprocess
+			Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MAIN_THREAD_CLOCK,time());
+
+			//Exec delayed loops
+			$gossip->loop_x5($gossip);
+
+			if (DISPLAY_DEBUG && DISPLAY_DEBUG_LEVEL >= 3)
+				$gossip->ShowLogSubprocess();
+
+			//If we are not synchronizing
+			if (!$gossip->syncing) {
+
+				//We send all transactions_pending_to_send to the network
+				$gossip->sendPendingTransactionsToNetwork();
+
+				//We have miner, start miner process
+				if ($gossip->enable_mine) {
+					$gossip->mineProcess();
+				}
+
+				//We check if there are new blocks to be display
+				$gossip->CheckIfNeedShowNewBlocks();
+			}
+
+			//If we are synchronizing and we are connected with the bootstrap
+			else if ($gossip->syncing) {
+
+				if ($gossip->isTestNet)
+					$ipAndPort = NODE_BOOTSTRAP_TESTNET.':'.NODE_BOOSTRAP_PORT_TESTNET;
+				else
+					$ipAndPort = NODE_BOOTSTRAP.':'.NODE_BOOSTRAP_PORT;
+
+				if (@file_exists(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sync_with_peer")) {
+					$ipAndPort = file_get_contents(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sync_with_peer");
+				}
+
+				//Check if have ip and port
+				if (strlen($ipAndPort) > 0) {
+
+					//We get the last block from peer
+					$lastBlock_PeerNode = Peer::GetLastBlockNum($ipAndPort);
+					$lastBlock_LocalNode = $gossip->chaindata->GetNextBlockNum();
+
+					if ($lastBlock_LocalNode < $lastBlock_PeerNode) {
+						$nextBlocksToSyncFromPeer = Peer::SyncNextBlocksFrom($ipAndPort,$lastBlock_LocalNode);
+						$resultSync = Peer::SyncBlocks($gossip,$nextBlocksToSyncFromPeer,$lastBlock_LocalNode,$lastBlock_PeerNode,$ipAndPort);
+
+						//If dont have result of sync, stop sync with this peer
+						if ($resultSync == null) {
+							//Delete sync file
+							@unlink(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer");
+						}
+					} else {
+						$gossip->syncing = false;
+
+						$gossip->chaindata->SetConfig('syncing','off');
+
+						//Delete sync file
+						@unlink(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer");
+
+						//We check the difficulty
+						$gossip->difficulty = Blockchain::checkDifficulty($gossip->chaindata, null, $gossip->isTestNet)[0];
+
+						//We clean the table of blocks mined by the peers
+						$gossip->chaindata->truncate("transactions_pending_to_send");
+						$gossip->chaindata->truncate("transactions_pending");
+						$gossip->chaindata->truncate("blocks_pending_to_display");
+						$gossip->chaindata->truncate("blocks_announced");
+					}
+				}
+			}
+
+			//If isnt bootstrap and connected to bootstrap
+			if (!$gossip->bootstrap_node && $gossip->connected_to_bootstrap) {
+				//We get the last block from the BootstrapNode
+				//$lastBlock_BootstrapNode = BootstrapNode::GetLastBlockNum($gossip->chaindata,$gossip->isTestNet);
+				$lastBlock_LocalNode = $gossip->chaindata->GetNextBlockNum();
+
+				//We check if we need to synchronize or not
+				if ($lastBlock_LocalNode < $gossip->lastBlock_BootstrapNode) {
+					//Display::_printer("%LR%DeSync detected %W%- Downloading blocks (%G%" . $lastBlock_LocalNode . "%W%/%Y%" . $lastBlock_BootstrapNode . ")");
+
+					if ($gossip->enable_mine && @file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MINERS_STARTED)) {
+						//Stop minning subprocess
+						Tools::clearTmpFolder();
+						Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
+						Display::_printer("%Y%Miner work cancelled%W%     Imported new headers");
+					}
+
+					//We declare that we are synchronizing
+					$gossip->syncing = true;
+
+					$gossip->chaindata->SetConfig('syncing','on');
+				}
+			}
+
+			//If is bootstrap
+			if ($gossip->bootstrap_node && !$gossip->syncing) {
+				if (@file_exists(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sync_with_peer")) {
+					//We declare that we are synchronizing
+					$gossip->syncing = true;
+
+					$gossip->chaindata->SetConfig('syncing','on');
+
+					if (DISPLAY_DEBUG && DISPLAY_DEBUG_LEVEL >= 1)
+						Display::_debug("Getting blocks from peer: " . @file_get_contents(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sync_with_peer"));
+				}
+			}
+
+			//Exec delayed loops
+			$gossip->loop_x10($gossip);
+
+		});
+
+		//Start Socket
+		$socket = new React\Socket\Server('0.0.0.0:'.$gossip->port, $loop);
+
+		Display::_printer("Listening on {$gossip->ip}:{$gossip->port}");
+
+		//Gossip
+		$socket->on('connection', function(ConnectionInterface $connection) use ($gossip) {
+
+		    $connection->on('data', function($peerData) use ($connection, $gossip){
+
+				$return = array(
+				    'status'    => false,
+				    'error'     => null,
+				    'message'   => null,
+				    'result'    => null
+				);
+
+				$msgFromPeer = @json_decode($peerData,true);
+				$msgFromPeerObject = @json_decode($peerData);
+
+				if (DISPLAY_DEBUG && DISPLAY_DEBUG_LEVEL >= 2)
+					Display::_printer('%Y%GOSSIP%W% Message from client			msg=' . substr($peerData,0,64).'...');
+
+				switch (strtoupper($msgFromPeer['action'])) {
+					case 'GETPENDINGTRANSACTIONS':
+						$return['status'] = true;
+						$return['result'] = $gossip->chaindata->GetAllPendingTransactions();
+					break;
+					case 'ADDPENDINGTRANSACTIONS':
+						if (isset($msgFromPeer['txs'])) {
+							$return['status'] = true;
+							$return['result'] = $gossip->chaindata->addPendingTransactionsByPeer(@unserialize($msgFromPeer['txs']));
+						}
+					break;
+					case 'GETBLOCKBYHASH':
+						if (isset($msgFromPeer['hash'])) {
+							//We get a block given a hash
+							$return['status'] = true;
+							$return['result'] = $gossip->chaindata->GetBlockByHash($msgFromPeer['hash']);
+						}
+						break;
+					case 'PING':
+						$return['status'] = true;
+					break;
+					case 'GETPEERS':
+						$return['status'] = true;
+						$return['result'] = $gossip->chaindata->GetAllPeers();
+					break;
+					case 'MINEDBLOCK':
+
+						//Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') -> New connection from peer '.$_SERVER['REMOTE_ADDR'].' to gossip.php?action=MINEDBLOCK');
+
+						//Check if have previous block hash and new block info
+						if (!isset($msgFromPeer['hash_previous']) || !isset($msgFromPeer['block'])) {
+							//Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') -> Error 0x10000002');
+							//Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') -> PREVIOUS_HASH: ' . $msgFromPeer['hash_previous']);
+							//Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') -> BLOCK: ' . $msgFromPeer['block']);
+							$return['status'] = true;
+							$return['error'] = "0x10000002";
+							$return['message'] = "Need hashPrevious & blockInfo";
+							break;
+						}
+
+						/** @var Block $blockMinedByPeer */
+						$blockMinedByPeer = Tools::objectToObject(unserialize($msgFromPeer['block']),"Block");
+
+						//Check if block received its OK
+						if (!is_object($blockMinedByPeer) || ( is_object($blockMinedByPeer) && !isset($blockMinedByPeer->hash) )) {
+							//Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') -> Error 5x00000000');
+							//Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') -> PREVIOUS_HASH: ' . $msgFromPeer['hash_previous']);
+							//Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') -> BLOCK: ' . $msgFromPeer['block']);
+							$return['status'] = true;
+							$return['error'] = "5x00000000";
+							$return['message'] = "Block received malformed";
+							break;
+						}
+
+						//Get current network
+						$isTestNet = ($gossip->chaindata->GetConfig('network') == 'testnet') ? true:false;
+
+						//Get last block
+						$lastBlock = $gossip->chaindata->GetLastBlock();
+
+						$currentLocalTime = Tools::GetGlobalTime();
+						//We check that the date of the block sent is not superior to mine
+						if ($blockMinedByPeer->timestamp_end > $currentLocalTime) {
+							//Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') -> Error 6x00000000');
+							$return['status'] = true;
+							$return['error'] = "6x00000002";
+							$return['message'] = "Block date is from the future";
+							break;
+						}
+
+						//Check if is a next block
+						if ($lastBlock['block_hash'] == $blockMinedByPeer->previous) {
+
+							//We check that date of new block is not less than the last block
+							if ($blockMinedByPeer->timestamp_end <= $lastBlock['timestamp_end_miner']) {
+								//Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') -> Error 6x00000000');
+								$return['status'] = true;
+								$return['error'] = "6x00000000";
+								$return['message'] = "Block date is from the past";
+								break;
+							}
+
+							//Check if i announced this block on main thread
+							/*
+							$blockPendingToDisplay = $gossip->chaindata->GetBlockPendingToDisplayByHash($blockMinedByPeer->hash);
+							if ($gossip->chaindata->BlockHasBeenAnnounced($blockMinedByPeer->hash) && !empty($blockPendingToDisplay)) {
+								$return['status'] = true;
+								$return['error'] = '7x00000000';
+								break;
+							}
+							*/
+
+							//Check if difficulty its ok
+							$currentDifficulty = Blockchain::checkDifficulty($gossip->chaindata,null,$isTestNet);
+							if ($currentDifficulty[0] != $blockMinedByPeer->difficulty) {
+								$return['status'] = true;
+								$return['error'] = "4x00000000";
+								$return['message'] = "Block difficulty hacked?";
+								//Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') (NEW BLOCK) -> Hacked difficulty? CurrentDifficulty; ' . $currentDifficulty[0] . ' BlockDifficulty; ' . $blockMinedByPeer->difficulty);
+								break;
+							}
+
+							//Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') (NEW BLOCK) -> Checking if new block is winner');
+
+							//Valid block to add in Blockchain
+							$returnCode = Blockchain::isValidBlockMinedByPeer($gossip->chaindata,$lastBlock,$blockMinedByPeer);
+							if ($returnCode == "0x00000000") {
+
+								if ( isset( $msgFromPeer['node_ip'] ) && isset($msgFromPeer['node_port']) ) {
+									Tools::sendBlockMinedToNetworkWithSubprocess($gossip->chaindata,$blockMinedByPeer,array(
+										'ip' => $msgFromPeer['node_ip'],
+										'port' => $msgFromPeer['node_port']
+									));
+								}
+								else {
+									Tools::sendBlockMinedToNetworkWithSubprocess($gossip->chaindata,$blockMinedByPeer,array());
+								}
+
+								$return['status'] = true;
+								$return['error'] = $returnCode;
+								$return['message'] = "Block added";
+							}
+							else {
+								$return['status'] = true;
+								$return['error'] = $returnCode;
+							}
+
+							//Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') -> Result isValidBlockMinedByPeer: '.$returnCode);
+
+						}
+
+						//Check if same height block but different hash block
+						else if ($lastBlock['block_previous'] == $blockMinedByPeer->previous && $lastBlock['block_hash'] != $blockMinedByPeer->hash) {
+
+							//Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') -> Send me Same height but different BLOCK');
+
+							//Check if difficulty its ok
+							$currentDifficulty = Blockchain::checkDifficulty($gossip->chaindata,($lastBlock['height']-1),$isTestNet);
+
+							if ($currentDifficulty[0] != $blockMinedByPeer->difficulty) {
+								$return['status'] = true;
+								$return['error'] = "4x00000000";
+								$return['message'] = "Block difficulty hacked?";
+								//Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') (SAME HEIGHT) -> Hacked difficulty? CurrentDifficulty; ' . $currentDifficulty[0] . ' BlockDifficulty; ' . $blockMinedByPeer->difficulty);
+								break;
+							}
+
+							//Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') (SAME HEIGHT) -> Checking if new block is winner');
+
+							//Valid new block in same hiehgt to add in Blockchain
+							$returnCode = Blockchain::isValidBlockMinedByPeerInSameHeight($gossip->chaindata,$lastBlock,$blockMinedByPeer);
+							if ($returnCode == "0x00000000") {
+								$return['status'] = true;
+								$return['error'] = $returnCode;
+
+								//If have miner enabled, stop all miners
+								if (@file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MINERS_STARTED)) {
+									Tools::clearTmpFolder();
+									Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
+								}
+							}
+							else {
+								$return['status'] = true;
+								$return['error'] = $returnCode;
+							}
+							//Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') (SAME HEIGHT) -> Result isValidBlockMinedByPeerInSameHeight: '.$returnCode);
+						}
+						//Check if same block
+						else if ($lastBlock['block_hash'] == $blockMinedByPeer->hash) {
+
+							//Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') -> Send me Same block: ' .$blockMinedByPeer->hash);
+
+							/*
+							$blockPendingToDisplay = $gossip->chaindata->GetBlockPendingToDisplayByHash($blockMinedByPeer->hash);
+							if ($gossip->chaindata->BlockHasBeenAnnounced($blockMinedByPeer->hash) || !empty($blockPendingToDisplay)) {
+								$return['status'] = true;
+								$return['error'] = "0x00000000";
+								Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') (SAME BLOCK) -> Discard block, i announced it');
+								break;
+							}
+							*/
+
+							$return['status'] = true;
+							$return['error'] = "0x00000000";
+
+							//Its same block i have in my blockchain but i not announced on main thread
+							$gossip->chaindata->AddBlockToDisplay($blockMinedByPeer,"2x00000000");
+
+							//Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') (SAME BLOCK) -> Accepted block, we will announce it in the main process');
+						}
+						else {
+							//Tools::writeLog('GOSSIP_MINEDBLOCK ('.Tools::GetIdFromIpAndPort($_SERVER['REMOTE_ADDR'],0).') -> Error 0x10000001');
+
+							//Write sync_with_peer
+							//Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$msgFromPeer['node_ip'].":".$msgFromPeer['node_port']);
+
+							//TODO Check if peer have more block than me, > = sync || < = send order to peer to synchronize with me
+							$return['status'] = true;
+							$return['error'] = "0x10000001";
+							$return['message'] = "LastBlock: " . $lastBlock['block_hash'] . " | Received: ".$blockMinedByPeer->hash.'   -   LastBlockPrevious: '.$lastBlock['block_hash'].' | ReceivedPrevious: ' . $blockMinedByPeer->previous;
+						}
+					break;
+					case 'HELLOBOOTSTRAP':
+						if (isset($msgFromPeer['client_ip']) && isset($msgFromPeer['client_port'])) {
+							$return['status'] = true;
+
+							$infoToSend = array(
+								'action' => 'HELLO_PONG'
+							);
+							if (Socket::isAlive($msgFromPeer['client_ip'],$msgFromPeer['client_port'])) {
+								$gossip->chaindata->addPeer($msgFromPeer['client_ip'],$msgFromPeer['client_port']);
+								$return['result'] = "p2p_on";
+							}
+							else
+								$return['result'] = "p2p_off";
+						}
+					BREAK;
+					case 'HELLO':
+						if (isset($msgFromPeer['client_ip']) && isset($msgFromPeer['client_port'])) {
+							$return['status'] = true;
+							$gossip->chaindata->addPeer($msgFromPeer['client_ip'],$msgFromPeer['client_port']);
+						} else {
+							$return['message'] = "No ClientIP or ClientPort defined";
+						}
+					BREAK;
+					case 'LASTBLOCKNUM':
+						$return['status'] = true;
+						$return['result'] = $gossip->chaindata->GetNextBlockNum();
+					break;
+					case 'STATUSNODE':
+						$return['status'] = true;
+						$config = $gossip->chaindata->GetAllConfig();
+						$return['result'] = array(
+							'hashrate'      => $config['hashrate'],
+							'miner'         => $config['miner'],
+							'network'       => $config['network'],
+							'p2p'           => $config['p2p'],
+							'syncing'       => $config['syncing'],
+							'dbversion'     => $config['dbversion'],
+							'nodeversion'   => $config['node_version'],
+							'lastBlock'     => $gossip->chaindata->GetNextBlockNum()
+						);
+					break;
+					case 'GETGENESIS':
+						$return['status'] = true;
+						$return['result'] = $gossip->chaindata->GetGenesisBlock();
+					break;
+					case 'SYNCBLOCKS':
+						if (isset($msgFromPeer['from'])) {
+							$return['status'] = true;
+							$return['result'] = $gossip->chaindata->SyncBlocks($msgFromPeer['from']);
+						}
+					break;
+					case 'HELLO_PONG':
+						$return['status'] = true;
+					break;
+				}
+				$connection->write(@json_encode($return));
+				$connection->end();
+		    });
+		});
+
+		//Start node
+		$loop->run();
+	}
 
     /**
      * We add the BootstrapNode
      *
      * @return  bool
      */
-    public function _addBootstrapNode() {
+    public function _addBootstrapNode(&$gossip) {
 
-        if ($this->isTestNet) {
+        if ($gossip->isTestNet) {
             $ip = NODE_BOOTSTRAP_TESTNET;
             $port = NODE_BOOSTRAP_PORT_TESTNET;
         } else {
@@ -318,35 +764,34 @@ class Gossip {
 
         $infoToSend = array(
             'action' => 'HELLOBOOTSTRAP',
-            'client_ip' => $this->ip,
-            'client_port' => $this->port
+            'client_ip' => $gossip->ip,
+            'client_port' => $gossip->port
         );
-        $url = 'https://' . $ip . '/gossip.php';
-        $response = Tools::postContent($url, $infoToSend);
 
-        if (isset($response->status)) {
-            if ($response->status == true) {
-                $this->chaindata->addPeer($ip, $port);
+        $response = Socket::sendMessageWithReturn($ip, $port, $infoToSend, 1);
+		if ($response) {
+			$gossip->chaindata->addPeer($ip, $port);
 
-                $this->peers[] = array($ip.':'.$port => $ip,$port);
+			$gossip->peers[] = array($ip.':'.$port => $ip,$port);
 
-                if ($this->isTestNet)
-                    Display::_printer("Connected to BootstrapNode (TESTNET) -> %G%" . Tools::GetIdFromIpAndPort($ip,$port));
-                else
-                    Display::_printer("Connected to BootstrapNode -> %G%" . Tools::GetIdFromIpAndPort($ip,$port));
+			if ($gossip->isTestNet)
+				Display::_printer("Connected to BootstrapNode (TESTNET) -> %G%" . Tools::GetIdFromIpAndPort($ip,$port));
+			else
+				Display::_printer("Connected to BootstrapNode -> %G%" . Tools::GetIdFromIpAndPort($ip,$port));
 
+			$gossip->openned_ports = true;
+			$gossip->connected_to_bootstrap = true;
+		}
+		else {
+			$gossip->openned_ports = false;
+			$gossip->connected_to_bootstrap = false;
 
-                $this->openned_ports = ($response->result == "p2p_off") ? false:true;
-            }
-            return true;
-        }
-        else {
-            if ($this->isTestNet)
-                Display::_error("Can't connect to BootstrapNode (TESTNET) %G%". Tools::GetIdFromIpAndPort($ip,$port));
-            else
-                Display::_error("Can't connect to BootstrapNode %G%". Tools::GetIdFromIpAndPort($ip,$port));
-            return false;
-        }
+			if ($gossip->isTestNet)
+				//Display::_error("Can't connect to BootstrapNode (TESTNET) %G%". Tools::GetIdFromIpAndPort($ip,$port));
+				Display::_error("Can't connect to BootstrapNode (TESTNET) %G%". $ip.':'.$port);
+			else
+				Display::_error("Can't connect to BootstrapNode %G%". Tools::GetIdFromIpAndPort($ip,$port));
+		}
     }
 
     /**
@@ -367,7 +812,7 @@ class Gossip {
                 'client_ip' => $this->ip,
                 'client_port' => $this->port
             );
-            $response = Tools::postContent('http://' . $ip . ':' . $port . '/gossip.php', $infoToSend, 1);
+            $response = Socket::sendMessageWithReturn($ip, $port, $infoToSend, 1);
             if ($response != null && isset($response->status)) {
                 if ($response->status == true) {
                     $this->chaindata->addPeer($ip, $port);
@@ -437,50 +882,40 @@ class Gossip {
     /**
      * This loop only run this loop only runs 1 time of 5 main loop
      */
-    public function loop_x5() {
-        $this->loop_x5++;
-        if ($this->loop_x5 == 5) {
-            $this->loop_x5 = 0;
+    public function loop_x5(&$gossip) {
+
+        $gossip->loop_x5++;
+        if ($gossip->loop_x5 == 5) {
+            $gossip->loop_x5 = 0;
 
             //If have miners show log
-            if ($this->enable_mine)
+            if ($gossip->enable_mine)
                 $this->ShowInfoSubprocessMiners();
 
-            if ($this->syncing)
+            if ($gossip->syncing)
                 return;
 
-            if (!$this->connected_to_bootstrap || !$this->bootstrap_node)
+            if (!$gossip->connected_to_bootstrap || !$gossip->bootstrap_node)
                 return;
 
-            //We get the pending transactions from BootstrapNode
-            if (!$this->bootstrap_node) {
-                $transactionsByPeer = BootstrapNode::GetPendingTransactions($this->chaindata,$this->isTestNet);
-                foreach ($transactionsByPeer as $transactionByPeer) {
+			//Get Pending transactions from network
+			$gossip->GetPendingTransactions();
 
-                    // Date of the transaction can not be longer than the local date
-                    if ($transactionByPeer->timestamp > Tools::GetGlobalTime())
-                        continue;
-
-                    //We check not sending money to itself
-                    if ($transactionByPeer->wallet_from == $transactionByPeer->wallet_to)
-                        continue;
-
-                    $this->chaindata->addPendingTransactionByBootstrap($transactionByPeer);
-                }
-            }
+			//Get lastblockNum from BootstrapNode
+			$gossip->lastBlock_BootstrapNode = BootstrapNode::GetLastBlockNum($gossip->chaindata,$gossip->isTestNet);
         }
     }
 
     /**
      * This loop only run this loop only runs 1 time of 5 main loop
      */
-    public function loop_x10() {
-        $this->loop_x10++;
-        if ($this->loop_x10 == 10) {
-            $this->loop_x10 = 0;
+    public function loop_x10(&$gossip) {
+        $gossip->loop_x10++;
+        if ($gossip->loop_x10 == 10) {
+            $gossip->loop_x10 = 0;
 
             //Check dead peers
-            $this->CheckConnectionWithPeers();
+            $gossip->CheckConnectionWithPeers();
         }
 	}
 
@@ -498,11 +933,11 @@ class Gossip {
                 foreach ($transactionsByPeer as $transactionByPeer) {
 
                     // Date of the transaction can not be longer than the local date
-                    if ($transactionByPeer->timestamp > Tools::GetGlobalTime())
+                    if ($transactionByPeer['timestamp'] > Tools::GetGlobalTime())
                         continue;
 
                     //We check not sending money to itself
-                    if ($transactionByPeer->wallet_from == $transactionByPeer->wallet_to)
+                    if ($transactionByPeer['wallet_from'] == $transactionByPeer['wallet_to'])
                         continue;
 
                     //We check that the date of the transaction is less than or equal to the current date
@@ -674,143 +1109,6 @@ class Gossip {
         }
     }
 
-    /**
-     * General loop of the node
-     */
-    public function loop() {
-
-        if ($this->make_genesis)
-            return;
-
-        if (!$this->connected_to_bootstrap && !$this->bootstrap_node)
-            return;
-
-        $this->GetPendingTransactions();
-
-        //If we do not build the genesis, we'll go around
-        while (true) {
-            //We establish the title of the process
-            $this->SetTitleProcess();
-
-            //Update MainThread time for subprocess
-            Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MAIN_THREAD_CLOCK,time());
-
-            //Get pending transactions
-            $this->GetPendingTransactions();
-
-            //Exec delayed loops
-            $this->loop_x5();
-
-            if (DISPLAY_DEBUG && DISPLAY_DEBUG_LEVEL >= 3)
-                $this->ShowLogSubprocess();
-
-            //If we are not synchronizing
-            if (!$this->syncing) {
-
-                //We send all transactions_pending_to_send to the network
-                $this->sendPendingTransactionsToNetwork();
-
-                //We have miner, start miner process
-                if ($this->enable_mine) {
-					$this->mineProcess();
-                }
-
-                //We check if there are new blocks to be display
-                $this->CheckIfNeedShowNewBlocks();
-            }
-
-            //If we are synchronizing and we are connected with the bootstrap
-            else if ($this->syncing) {
-
-                if ($this->isTestNet)
-                    $ipAndPort = NODE_BOOTSTRAP_TESTNET.':'.NODE_BOOSTRAP_PORT_TESTNET;
-                else
-                    $ipAndPort = NODE_BOOTSTRAP.':'.NODE_BOOSTRAP_PORT;
-
-                if (@file_exists(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sync_with_peer")) {
-                    $ipAndPort = file_get_contents(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sync_with_peer");
-                }
-
-                //Check if have ip and port
-                if (strlen($ipAndPort) > 0) {
-
-                    //We get the last block from peer
-                    $lastBlock_PeerNode = Peer::GetLastBlockNum($ipAndPort);
-                    $lastBlock_LocalNode = $this->chaindata->GetNextBlockNum();
-
-                    if ($lastBlock_LocalNode < $lastBlock_PeerNode) {
-                        $nextBlocksToSyncFromPeer = Peer::SyncNextBlocksFrom($ipAndPort,$lastBlock_LocalNode);
-                        $resultSync = Peer::SyncBlocks($this,$nextBlocksToSyncFromPeer,$lastBlock_LocalNode,$lastBlock_PeerNode,$ipAndPort);
-
-                        //If dont have result of sync, stop sync with this peer
-                        if ($resultSync == null) {
-                            //Delete sync file
-                            @unlink(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer");
-                        }
-                    } else {
-                        $this->syncing = false;
-
-                        $this->chaindata->SetConfig('syncing','off');
-
-                        //Delete sync file
-                        @unlink(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer");
-
-                        //We check the difficulty
-                        $this->difficulty = Blockchain::checkDifficulty($this->chaindata, null, $this->isTestNet)[0];
-
-                        //We clean the table of blocks mined by the peers
-                        $this->chaindata->truncate("transactions_pending_to_send");
-						$this->chaindata->truncate("transactions_pending");
-						$this->chaindata->truncate("blocks_pending_to_display");
-						$this->chaindata->truncate("blocks_announced");
-                    }
-                }
-                continue;
-            }
-
-            //If isnt bootstrap and connected to bootstrap
-            if (!$this->bootstrap_node && $this->connected_to_bootstrap) {
-                //We get the last block from the BootstrapNode
-                $lastBlock_BootstrapNode = BootstrapNode::GetLastBlockNum($this->chaindata,$this->isTestNet);
-                $lastBlock_LocalNode = $this->chaindata->GetNextBlockNum();
-
-                //We check if we need to synchronize or not
-                if ($lastBlock_LocalNode < $lastBlock_BootstrapNode) {
-                    //Display::_printer("%LR%DeSync detected %W%- Downloading blocks (%G%" . $lastBlock_LocalNode . "%W%/%Y%" . $lastBlock_BootstrapNode . ")");
-
-                    if ($this->enable_mine && @file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MINERS_STARTED)) {
-                        //Stop minning subprocess
-                        Tools::clearTmpFolder();
-                        Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
-                        Display::_printer("%Y%Miner work cancelled%W%     Imported new headers");
-                    }
-
-                    //We declare that we are synchronizing
-                    $this->syncing = true;
-
-                    $this->chaindata->SetConfig('syncing','on');
-                }
-            }
-
-            //If is bootstrap
-            if ($this->bootstrap_node && !$this->syncing) {
-                if (@file_exists(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sync_with_peer")) {
-                    //We declare that we are synchronizing
-                    $this->syncing = true;
-
-                    $this->chaindata->SetConfig('syncing','on');
-
-                    if (DISPLAY_DEBUG && DISPLAY_DEBUG_LEVEL >= 1)
-                        Display::_debug("Getting blocks from peer: " . @file_get_contents(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sync_with_peer"));
-                }
-            }
-
-            $this->loop_x10();
-
-            usleep(1000000);
-        }
-    }
-
 	/**
 	 * Mine process
 	 */
@@ -934,7 +1232,7 @@ class Gossip {
      * @param   int    $numBlocksToRemove
      */
 	public function SanityFromBlockHeight($numBlocksToRemove=1) {
-		Display::_printer("%LR%SANITY Started %W%- Remoing blocks (%G%" . $numBlocksToRemove . "%W%)");
+		Display::_printer("%LR%SANITY Started %W%- Removing blocks (%G%" . $numBlocksToRemove . "%W%)");
 		Blockchain::SanityFromBlockHeight($this->chaindata,$numBlocksToRemove);
 		Display::_printer("%LR%SANITY Finished %W%- Restart your client");
 	}
@@ -962,16 +1260,14 @@ class Gossip {
 				if ($myPeerID != $peerID) {
 					$infoToSend = array(
 						'action' => 'ADDPENDINGTRANSACTIONS',
-						'txs' => $pending_tx
+						'txs' => @serialize($pending_tx)
 					);
-					if ($peer["ip"] == NODE_BOOTSTRAP) {
-						Tools::postContent('https://'.NODE_BOOTSTRAP.'/gossip.php', $infoToSend,5);
-					}
-					else if ($peer["ip"] == NODE_BOOTSTRAP_TESTNET) {
-						Tools::postContent('https://'.NODE_BOOTSTRAP_TESTNET.'/gossip.php', $infoToSend,5);
-					}
-					else {
-						Tools::postContent('http://' . $peer['ip'] . ':' . $peer['port'] . '/gossip.php', $infoToSend,5);
+					$returnPropagate = Socket::sendMessageWithReturn($peer['ip'],$peer['port'],$infoToSend);
+					if (!isset($returnPropagate) && !isset($returnPropagate['status']) && $returnPropagate['status'] != true) {
+						$returnPropagate = array('status'=>false);
+						while (!$returnPropagate['status']) {
+							$returnPropagate = Socket::sendMessageWithReturn($peer['ip'],$peer['port'],$infoToSend);
+						}
 					}
 				}
 			}

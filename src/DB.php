@@ -95,7 +95,7 @@ class DB {
      */
     public function GetNetwork() {
         $currentNetwork = $this->db->query("SELECT val FROM config WHERE cfg = 'network';")->fetch_assoc();
-        if (!empty($currentConfig))
+        if (!empty($currentNetwork))
             return strtolower($currentNetwork['val']);
         return "mainnet";
     }
@@ -597,21 +597,21 @@ class DB {
      * @return bool
      */
     public function addPendingTransactionByBootstrap($transaction) {
-        if (isset($transaction->txn_hash) && strlen($transaction->txn_hash) > 0) {
+        if (isset($transaction['txn_hash']) && strlen($transaction['txn_hash']) > 0) {
             $into_tx_pending = $this->db->query("SELECT txn_hash FROM transactions_pending WHERE txn_hash = '".$transaction->txn_hash."';")->fetch_assoc();
             if (empty($into_tx_pending)) {
 
                 //Get current balance of WalletFrom and check if have money to send transaction
                 //This prevent hack transactions
-                $walletFromBalance = Wallet::GetBalanceWithChaindata($this,$transaction->wallet_from);
+                $walletFromBalance = Wallet::GetBalanceWithChaindata($this,$transaction['wallet_from']);
 
-                if ($walletFromBalance >= $transaction->amount) {
+                if ($walletFromBalance >= $transaction['amount']) {
 
                     //Start Transactions
                     $this->db->begin_transaction();
 
                     $sqlInsertTransaction = "INSERT INTO transactions_pending (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp)
-                    VALUES ('','".$transaction->txn_hash."','".$transaction->wallet_from_key."','".$transaction->wallet_from."','".$transaction->wallet_to."','".$transaction->amount."','".$transaction->signature."','".$transaction->tx_fee."','".$transaction->data."','".$transaction->timestamp."');";
+                    VALUES ('','".$transaction['txn_hash']."','".$transaction['wallet_from_key']."','".$transaction['wallet_from']."','".$transaction['wallet_to']."','".$transaction['amount']."','".$transaction['signature']."','".$transaction['tx_fee']."','".$transaction['data']."','".$transaction['timestamp']."');";
 
                     //Commit transaction
                     if ($this->db->query($sqlInsertTransaction)) {
@@ -633,9 +633,9 @@ class DB {
      *
      * @return array
      */
-    public function GetAllPendingTransactions() {
+    public function GetAllPendingTransactions($limit=511) {
         $txs = array();
-        $txs_chaindata = $this->db->query("SELECT * FROM transactions_pending WHERE wallet_from <> wallet_to ORDER BY tx_fee DESC, timestamp DESC LIMIT 512");
+        $txs_chaindata = $this->db->query("SELECT * FROM transactions_pending WHERE wallet_from <> wallet_to ORDER BY tx_fee DESC, timestamp DESC LIMIT " . $limit);
         if (!empty($txs_chaindata)) {
             while ($tx_chaindata = $txs_chaindata->fetch_array(MYSQLI_ASSOC)) {
                 if ($tx_chaindata['txn_hash'] != null && strlen($tx_chaindata['txn_hash']) > 0)
@@ -656,14 +656,14 @@ class DB {
         foreach ($transactionsByPeer as $tx) {
 
             // Date of the transaction can not be longer than the local date
-            if ($tx->timestamp > Tools::GetGlobalTime())
+            if ($tx['timestamp']> Tools::GetGlobalTime())
                 continue;
 
             //We check not sending money to itself
-            if ($tx->wallet_from == $tx->wallet_to)
+            if ($tx['wallet_from'] == $tx['wallet_to'])
                 continue;
 
-            $this->addPendingTransactionObject($tx);
+            $this->addPendingTransaction($tx);
         }
 
         return true;
@@ -2002,6 +2002,13 @@ class DB {
 
 		$error = false;
 
+		Tools::writeLog('addInternalTransaction');
+		Tools::writeLog('TXN_HASH: ' . $txn_hash);
+		Tools::writeLog('CONTRACT_HASH: ' . $contract_hash);
+		Tools::writeLog('FROM: ' . $wallet_from);
+		Tools::writeLog('TO: ' . $wallet_to);
+		Tools::writeLog('AMOUNT: ' . $amount);
+
 		//Start Internal Transaction
 		$this->db->begin_transaction();
 
@@ -2015,26 +2022,28 @@ class DB {
 		}
 
 		//Update Account FROM
-		if (strlen($wallet_from) > 0 && $wallet_from != 'J4F00000000000000000000000000000000000000000000000000000000') {
-			$sql_updateAccountFrom = "
-			INSERT INTO accounts_j4frc10 (hash,contract_hash,sended,received)
-			VALUES ('".$wallet_from."','".$contract_hash."','".$amount."',0)
-			ON DUPLICATE KEY UPDATE sended = sended + VALUES(sended);
-			";
-			if (!$this->db->query($sql_updateAccountFrom)) {
-				$error = true;
+		if (!$error) {
+			if (strlen($wallet_from) > 0 && $wallet_from != 'J4F00000000000000000000000000000000000000000000000000000000') {
+				$sql_updateAccountFrom = "
+				INSERT INTO accounts_j4frc10 (hash,contract_hash,sended,received)
+				VALUES ('".$wallet_from."','".$contract_hash."','".$amount."',0)
+				ON DUPLICATE KEY UPDATE sended = sended + VALUES(sended);
+				";
+				if (!$this->db->query($sql_updateAccountFrom)) {
+					$error = true;
+				}
 			}
-		}
-		//Update Account TO
-		if (strlen($wallet_to) > 0) {
-			$sql_updateAccountTo = "
-			INSERT INTO accounts_j4frc10 (hash,contract_hash,sended,received)
-			VALUES ('".$wallet_to."','".$contract_hash."',0,'".$amount."')
-			ON DUPLICATE KEY UPDATE received = received + VALUES(received);
-			";
+			//Update Account TO
+			if (strlen($wallet_to) > 0) {
+				$sql_updateAccountTo = "
+				INSERT INTO accounts_j4frc10 (hash,contract_hash,sended,received)
+				VALUES ('".$wallet_to."','".$contract_hash."',0,'".$amount."')
+				ON DUPLICATE KEY UPDATE received = received + VALUES(received);
+				";
 
-			if (!$this->db->query($sql_updateAccountTo)) {
-				$error = true;
+				if (!$this->db->query($sql_updateAccountTo)) {
+					$error = true;
+				}
 			}
 		}
 

@@ -23,10 +23,10 @@ define('DISPLAY_DEBUG',                 false);
 define('DISPLAY_DEBUG_LEVEL',           1); //Levels: 1-4
 
 // MXC BOOTSTRAP NODE INFO
-define('NODE_BOOTSTRAP',                'mainnet.j4f.dev');
-define('NODE_BOOSTRAP_PORT',            80);
-define('NODE_BOOTSTRAP_TESTNET',        'testnet.j4f.dev');
-define('NODE_BOOSTRAP_PORT_TESTNET',    80);
+define('NODE_BOOTSTRAP',                '137.74.50.40');
+define('NODE_BOOSTRAP_PORT',            6969);
+define('NODE_BOOTSTRAP_TESTNET',        '137.74.50.40');
+define('NODE_BOOSTRAP_PORT_TESTNET',    6969);
 
 //OS INFO
 define('IS_WIN',                        (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') ? true:false);

@@ -40,6 +40,7 @@ include(__DIR__.'/SmartContractStateMachine.php');;
 include(__DIR__.'/J4FVMBase.php');
 include(__DIR__.'/J4FVM.php');
 include(__DIR__.'/uint256.php');
+include(__DIR__.'/Socket.php');
 include(__DIR__.'/../funity/js.php');
 
 //J4F Version
@@ -56,6 +57,8 @@ Display::_printer("Welcome to the %G%J4F node - Version: " . VERSION);
 
 //Setting timezone to UTC
 date_default_timezone_set("UTC");
+
+ini_set('memory_limit', '512M');
 
 error_reporting(E_ALL & ~E_NOTICE);
 //error_reporting(0);

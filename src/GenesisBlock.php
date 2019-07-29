@@ -175,44 +175,45 @@ class GenesisBlock {
      */
     public static function makeFromPeer($genesis_block_bootstrap,&$chaindata) {
         $transactions = array();
-        if (!empty($genesis_block_bootstrap->transactions)) {
-            foreach ($genesis_block_bootstrap->transactions as $transactionInfo) {
+        if (!empty($genesis_block_bootstrap['transactions'])) {
+            foreach ($genesis_block_bootstrap['transactions'] as $transactionInfo) {
                 $transactions[] = new Transaction(
-                    $transactionInfo->wallet_from_key,
-                    $transactionInfo->wallet_to,
-                    $transactionInfo->amount,
+                    $transactionInfo['wallet_from_key'],
+                    $transactionInfo['wallet_to'],
+                    $transactionInfo['amount'],
                     null,
                     null,
 					'',
-					$transactionInfo->data,
+					$transactionInfo['data'],
                     true,
-                    $transactionInfo->txn_hash,
-                    $transactionInfo->signature,
-                    $transactionInfo->timestamp
+                    $transactionInfo['txn_hash'],
+                    $transactionInfo['signature'],
+                    $transactionInfo['timestamp']
                 );
             }
 		}
 
-        $infoBlock = @unserialize($genesis_block_bootstrap->info);
+        $infoBlock = @unserialize($genesis_block_bootstrap['info']);
 
         $genesis_block = new Block(
             0,
-            $genesis_block_bootstrap->block_previous,
-            $genesis_block_bootstrap->difficulty,
+            $genesis_block_bootstrap['block_previous'],
+            $genesis_block_bootstrap['difficulty'],
             $transactions,
             '',
             '',
             '',
             '',
 			true,
-            $genesis_block_bootstrap->block_hash,
-            $genesis_block_bootstrap->nonce,
-            $genesis_block_bootstrap->timestamp_start_miner,
-            $genesis_block_bootstrap->timestamp_end_miner,
-            $genesis_block_bootstrap->root_merkle,
+            $genesis_block_bootstrap['block_hash'],
+            $genesis_block_bootstrap['nonce'],
+            $genesis_block_bootstrap['timestamp_start_miner'],
+            $genesis_block_bootstrap['timestamp_end_miner'],
+            $genesis_block_bootstrap['root_merkle'],
             $infoBlock
         );
 
+		//var_dump($genesis_block);
         //Check if node is connected on testnet or mainnet
         $isTestnet = ($chaindata->GetNetwork() == "testnet") ? true:false;
 

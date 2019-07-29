@@ -330,6 +330,20 @@ if ($dbversion == 8) {
     $dbversion++;
 }
 
+if ($dbversion == 9) {
+
+    $db->db->query("
+	ALTER TABLE `accounts_j4frc10`
+	DROP PRIMARY KEY,
+	ADD PRIMARY KEY (`hash`, `contract_hash`);
+	");
+
+    Display::_printer("Updating DB Schema #".$dbversion);
+
+    //Increment version to next stage
+    $dbversion++;
+}
+
 
 
 // update dbversion

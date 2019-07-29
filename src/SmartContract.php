@@ -135,7 +135,7 @@ class SmartContract {
 
 							//Run code
 							ob_start();
-							js::run($code_parsed,$contractHash);
+							js::run($code_parsed,$contractHash.rand());
 							$output = ob_get_contents();
 							ob_end_clean();
 

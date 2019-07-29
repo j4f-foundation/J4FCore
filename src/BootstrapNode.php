@@ -42,10 +42,10 @@ class BootstrapNode {
             'action' => 'GETPEERS'
         );
 
-		$infoPOST = Tools::postContent('https://' . $ip . '/gossip.php', $infoToSend);
+		$infoPOST = Socket::sendMessageWithReturn($ip,$port,$infoToSend);
 		if ($infoPOST != null) {
-			if ($infoPOST->status == 1)
-				return $infoPOST->result;
+			if ($infoPOST['status'] == 1)
+				return $infoPOST['result'];
 			else
 				return 0;
 		}
@@ -77,10 +77,10 @@ class BootstrapNode {
             'action' => 'GETPENDINGTRANSACTIONS'
         );
 
-		$infoPOST = Tools::postContent('https://' . $ip . '/gossip.php', $infoToSend);
+		$infoPOST = Socket::sendMessageWithReturn($ip,$port,$infoToSend);
 		if ($infoPOST != null) {
-			if ($infoPOST->status == 1)
-				return $infoPOST->result;
+			if ($infoPOST['status'] == 1)
+				return $infoPOST['result'];
 			else
 				return 0;
 		}
@@ -112,10 +112,10 @@ class BootstrapNode {
             'action' => 'LASTBLOCKNUM'
         );
 
-		$infoPOST = Tools::postContent('https://' . $ip . '/gossip.php', $infoToSend);
+		$infoPOST = Socket::sendMessageWithReturn($ip,$port,$infoToSend);
 		if ($infoPOST != null) {
-			if ($infoPOST->status == 1)
-				return $infoPOST->result;
+			if (isset($infoPOST['status']) && $infoPOST['status'] == 1)
+				return $infoPOST['result'];
 			else
 				return 0;
 		}
@@ -146,15 +146,15 @@ class BootstrapNode {
         $infoToSend = array(
             'action' => 'GETGENESIS'
         );
-		$infoPOST = Tools::postContent('https://' . $ip . '/gossip.php', $infoToSend);
+		$infoPOST = Socket::sendMessageWithReturn($ip,$port,$infoToSend,60);
 		if ($infoPOST != null) {
-			if ($infoPOST->status == 1)
-				return $infoPOST->result;
+			if ($infoPOST['status'] == 1)
+				return $infoPOST['result'];
 			else
 				return 0;
 		}
 		else
-            return 0;
+			return 0;
     }
 
     /**
@@ -181,15 +181,15 @@ class BootstrapNode {
             'action' => 'SYNCBLOCKS',
             'from' => $lastBlockOnLocalBlockChain
         );
-		$infoPOST = Tools::postContent('https://' . $ip . '/gossip.php', $infoToSend);
+		$infoPOST = Socket::sendMessageWithReturn($ip,$port,$infoToSend);
 		if ($infoPOST != null) {
-			if ($infoPOST->status == 1)
-				return $infoPOST->result;
+			if ($infoPOST['status'] == 1)
+				return $infoPOST['result'];
 			else
 				return 0;
 		}
 		else
-            return 0;
+			return 0;
     }
 }
 ?>

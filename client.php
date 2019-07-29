@@ -18,6 +18,10 @@
 
 include(__DIR__.'/src/init.inc.php');
 
+require __DIR__ . '/vendor/autoload.php';
+
+use React\Socket\ConnectionInterface;
+
 if (count($argv) > 1) {
 
     $argvParser = new ArgvParser();
@@ -56,20 +60,16 @@ if (count($argv) > 1) {
     if (isset($arguments['testnet']))
         $isTestNet = true;
 
-    $gossip = new Gossip($db, $arguments['user'],$arguments['ip'],$arguments['port'], $enable_mine, $make_genesis, $bootstrap_node, $isTestNet);
+	//Check if want sanity blockchain
+	$sanityBlockchain = -1;
+	if (isset($arguments['sanity'])) {
+		$sanityBlockchain = $arguments['sanity'];
+	}
+
+    $gossip = new Gossip($db, $arguments['user'],$arguments['ip'],$arguments['port'], $enable_mine, $make_genesis, $bootstrap_node, $isTestNet, $sanityBlockchain);
     if (isset($arguments['peer-ip']) && isset($arguments['peer-port'])) {
         $gossip->_addPeer($arguments['peer-ip'],$arguments['peer-port']);
 	}
-
-	$sanityBlockchain = false;
-	if (isset($arguments['sanity'])) {
-		$sanityBlockchain = true;
-		$gossip->SanityFromBlockHeight($arguments['sanity']);
-	}
-
-	//Ejecutamos el Loop del Gossip
-	if (!$sanityBlockchain)
-		$gossip->loop();
 
 } else {
     Display::ClearScreen();

@@ -229,15 +229,7 @@ class Tools {
                 'block'             => @serialize($blockMined)
             );
 
-            if ($peer["ip"] == NODE_BOOTSTRAP) {
-                Tools::postContent('https://'.NODE_BOOTSTRAP.'/gossip.php', $infoToSend,30);
-            }
-            else if ($peer["ip"] == NODE_BOOTSTRAP_TESTNET) {
-                Tools::postContent('https://'.NODE_BOOTSTRAP_TESTNET.'/gossip.php', $infoToSend,30);
-            }
-            else {
-                Tools::postContent('http://' . $peer['ip'] . ':' . $peer['port'] . '/gossip.php', $infoToSend,30);
-            }
+            Socket::sendMessage($peer['ip'],$peer['port'],$infoToSend);
         }
     }
 

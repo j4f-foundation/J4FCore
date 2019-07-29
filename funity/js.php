@@ -54,7 +54,7 @@ class js {
       		if ($mode==JS_INLINE) $src = "?>".$src;
       		$t1 = microtime(1);
       		$php = jsc::compile($src);
-			  $t2 = microtime(2);
+			$t2 = microtime(2);
 
 			for ($i = 1; $i <= 50; $i++) {
 				$php = str_replace('jsrt_uf'.$i,'jsrt_uf'.$i.'_'.$id,$php);

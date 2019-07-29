@@ -37,44 +37,44 @@ class Peer {
         //Check if node is connected on testnet or mainnet
         $isTestnet = ($gossip->chaindata->GetNetwork() == "testnet") ? true:false;
 
-        if (count($nextBlocksToSyncFromPeer) > 0) {
+        if (is_array($nextBlocksToSyncFromPeer) && count($nextBlocksToSyncFromPeer) > 0) {
             foreach ($nextBlocksToSyncFromPeer as $object) {
 
-                $infoBlock = @unserialize($object->info);
+                $infoBlock = @unserialize($object['info']);
 
                 $transactions = array();
-                foreach ($object->transactions as $transactionInfo) {
+                foreach ($object['transactions'] as $transactionInfo) {
                     $transactions[] = new Transaction(
-                        $transactionInfo->wallet_from_key,
-                        $transactionInfo->wallet_to,
-                        $transactionInfo->amount,
+                        $transactionInfo['wallet_from_key'],
+                        $transactionInfo['wallet_to'],
+                        $transactionInfo['amount'],
                         null,
                         null,
-						(isset($transactionInfo->tx_fee)) ? $transactionInfo->tx_fee:'',
-						$transactionInfo->data,
+						(isset($transactionInfo['tx_fee'])) ? $transactionInfo['tx_fee']:'',
+						$transactionInfo['data'],
                         true,
-                        $transactionInfo->txn_hash,
-                        $transactionInfo->signature,
-                        $transactionInfo->timestamp
+                        $transactionInfo['txn_hash'],
+                        $transactionInfo['signature'],
+                        $transactionInfo['timestamp']
                     );
                 }
                 $transactionsSynced = $transactions;
 
                 $blockToImport = new Block(
-                    $object->height,
-                    $object->block_previous,
-                    $object->difficulty,
+                    $object['height'],
+                    $object['block_previous'],
+                    $object['difficulty'],
                     $transactions,
                     '',
                     '',
                     '',
                     '',
                     true,
-                    $object->block_hash,
-                    $object->nonce,
-                    $object->timestamp_start_miner,
-                    $object->timestamp_end_miner,
-                    $object->root_merkle,
+                    $object['block_hash'],
+                    $object['nonce'],
+                    $object['timestamp_start_miner'],
+                    $object['timestamp_end_miner'],
+                    $object['root_merkle'],
                     $infoBlock
                 );
 
@@ -82,7 +82,7 @@ class Peer {
                 $lastBlock = $gossip->chaindata->GetLastBlock();
 
                 //Check if my last block is the previous block of the block to import
-                if ($lastBlock['block_hash'] == $object->block_previous) {
+                if ($lastBlock['block_hash'] == $object['block_previous']) {
 
                     //Define new height for next block
                     $nextHeight = $lastBlock['height']+1;
@@ -103,6 +103,8 @@ class Peer {
 
 								//Call Functions of SmartContracts on local blockchain
 								SmartContract::CallFunction($gossip->chaindata,$blockToImport);
+
+								//Display::_debug('PASO 1');
 							}
 
                             //Save block pointer
@@ -130,7 +132,7 @@ class Peer {
 
                         $blocksSynced++;
                     }
-                } else if ($lastBlock['block_previous'] == $object->block_previous && $lastBlock['block_hash'] == $object->block_hash) {
+                } else if ($lastBlock['block_previous'] == $object['block_previous'] && $lastBlock['block_hash'] == $object['block_hash']) {
                     continue;
                 } else {
 
@@ -215,14 +217,9 @@ class Peer {
             'action' => 'GETGENESIS'
         );
 
-        if ($ip == NODE_BOOTSTRAP_TESTNET || $ip == NODE_BOOTSTRAP) {
-            $infoPOST = Tools::postContent('https://'.$ip.'/gossip.php', $infoToSend);
-        } else {
-            $infoPOST = Tools::postContent('http://'.$ip.':'.$port.'/gossip.php', $infoToSend);
-        }
-
-        if ($infoPOST->status == 1)
-            return $infoPOST->result;
+        $infoPOST = Socket::sendMessageWithReturn($ip,$port,$infoToSend);
+        if ($infoPOST['status'] == 1)
+            return $infoPOST['result'];
         else
             return 0;
     }
@@ -246,14 +243,9 @@ class Peer {
             'action' => 'LASTBLOCKNUM'
         );
 
-        if ($ip == NODE_BOOTSTRAP_TESTNET || $ip == NODE_BOOTSTRAP) {
-            $infoPOST = Tools::postContent('https://'.$ip.'/gossip.php', $infoToSend);
-        } else {
-            $infoPOST = Tools::postContent('http://'.$ip.':'.$port.'/gossip.php', $infoToSend);
-        }
-
-        if ($infoPOST->status == 1)
-            return $infoPOST->result;
+		$infoPOST = Socket::sendMessageWithReturn($ip,$port,$infoToSend);
+        if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1)
+            return $infoPOST['result'];
         else
             return 0;
     }
@@ -278,13 +270,9 @@ class Peer {
             'action' => 'SYNCBLOCKS',
             'from' => $lastBlockOnLocal
         );
-        if ($ip == NODE_BOOTSTRAP_TESTNET || $ip == NODE_BOOTSTRAP) {
-            $infoPOST = Tools::postContent('https://'.$ip.'/gossip.php', $infoToSend);
-        } else {
-            $infoPOST = Tools::postContent('http://'.$ip.':'.$port.'/gossip.php', $infoToSend);
-        }
-        if ($infoPOST->status == 1)
-            return $infoPOST->result;
+		$infoPOST = Socket::sendMessageWithReturn($ip,$port,$infoToSend);
+		if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1)
+            return $infoPOST['result'];
         else
             return 0;
     }
