@@ -1,1 +1,1 @@
-cd .. && php client.php -user USER -ip $(curl ifconfig.me) -port 80 -miner
+cd .. && php client.php -user USER -ip $(curl ifconfig.me) -port 6969 -miner

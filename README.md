@@ -78,10 +78,11 @@ For viewer node:
 
 Examples of use:
 ```
-php client.php -u USER1 -ip 0.0.0.0 -port 8080
-php client.php -u USER1 -ip 0.0.0.0 -port 8080 -miner
-php client.php -u USER1 -ip 0.0.0.0 -port 8080 -miner -testnet
-php client.php -u USER1 -ip 0.0.0.0 -port 8080 -testnet -sanity 100
+php client.php -u USER1 -ip 0.0.0.0 -port 6969
+php client.php -u USER1 -ip 0.0.0.0 -port 6969 -testnet
+php client.php -u USER1 -ip 0.0.0.0 -port 6969 -miner
+php client.php -u USER1 -ip 0.0.0.0 -port 6969 -miner -testnet
+php client.php -u USER1 -ip 0.0.0.0 -port 6969 -testnet -sanity 100
 ```
 
 # Contribute
