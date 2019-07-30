@@ -130,7 +130,6 @@ class Blockchain {
 
         //If the previous block received by network refer to the last block of my blockchain
         if ($blockMinedByPeer->previous != $lastBlock['block_hash']) {
-            $chaindata->AddBlockToDisplay($blockMinedByPeer,"0x00000003");
             return "0x00000003";
         }
 
@@ -140,7 +139,6 @@ class Blockchain {
 
         //If the block is valid
         if (!$blockMinedByPeer->isValid($heightNewBlock,$isTestnet)) {
-            $chaindata->AddBlockToDisplay($blockMinedByPeer,"0x00000002");
             return "0x00000002";
         }
 
@@ -160,9 +158,6 @@ class Blockchain {
 
                 //Add Block to blockchain
                 if ($chaindata->addBlock($heightNewBlock,$blockMinedByPeer)) {
-
-					//Propagate mined block to network
-	                Tools::sendBlockMinedToNetworkWithSubprocess($chaindata,$blockMinedByPeer);
 
 					//Make SmartContracts on local blockchain
 					SmartContract::Make($chaindata,$blockMinedByPeer);

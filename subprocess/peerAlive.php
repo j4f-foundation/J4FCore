@@ -53,7 +53,7 @@ if ($argv[1] == -1) {
     $chaindata = new DB();
 
     //Run subprocess peerAlive per peer
-    $peers = $chaindata->GetAllPeers();
+    $peers = $chaindata->GetAllPeersWithoutBootstrap();
 
     $lastBlock = $chaindata->GetLastBlock();
 

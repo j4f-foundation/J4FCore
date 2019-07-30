@@ -75,16 +75,23 @@ if ($blockMined != null && is_object($blockMined)) {
     $infoToSend = array(
         'action' => 'MINEDBLOCK',
         'hash_previous' => $blockMined->previous,
-		'block' => serialize($blockMined),
+		'block' => @serialize($blockMined),
 		'node_ip' => $myNodeIp,
 		'node_port' => $myNodePort,
     );
 
-    $returnFromPeer = Socket::sendMessageWithReturn($peerIP,$peerPORT,$infoToSend);
+	$countRePropagate = 0;
+	Socket::sendMessage($peerIP,$peerPORT,$infoToSend);
+	/*
+	$returnFromPeer = Socket::sendMessageWithReturn($peerIP,$peerPORT,$infoToSend);
 	if ($returnFromPeer['status'] != true) {
 		while (!$returnFromPeer['status']) {
 			$returnFromPeer = Socket::sendMessageWithReturn($peerIP,$peerPORT,$infoToSend);
+			$countRePropagate++;
+			if ($countRePropagate == 10)
+				break;
 		}
 	}
+	*/
 }
 die();

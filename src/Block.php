@@ -77,22 +77,9 @@ class Block {
             $lastBlockInfo = @unserialize($lastBlock['info']);
             $genesisBlockInfo = @unserialize($genesisBlock['info']);
 
-            $currentBlocksDifficulty = $lastBlockInfo['current_blocks_difficulty']+1;
-            if ($currentBlocksDifficulty > $genesisBlockInfo['num_blocks_to_change_difficulty'])
-                $currentBlocksDifficulty = uint256::parse(1);
-
-            $currentBlocksHalving = $lastBlockInfo['current_blocks_halving']+1;
-            if ($currentBlocksDifficulty > $genesisBlockInfo['num_blocks_to_halving'])
-                $currentBlocksDifficulty = 1;
-
             //We establish the information of the blockchain
             $this->info = array(
-                'current_blocks_difficulty' => $currentBlocksDifficulty,
-                'current_blocks_halving' => $currentBlocksHalving,
                 'max_difficulty' => '000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF',
-                'num_blocks_to_change_difficulty' => 2016,
-                'num_blocks_to_halving' => 250000,
-                'time_expected_to_mine' => 20160
             );
         }
     }

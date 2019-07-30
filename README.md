@@ -4,24 +4,22 @@ PHP Blockchain from scratch with Smart Contracts
 
 ```
 PoW sha3-256d + sha3-512
-Total coins: 56,240,067 J4F
+Total coins: Unlimited
 Blocks every: Mainnet ?? (average) | Testnet: 20 sec (average)
-Halving: every 250000 blocks decrease reward by half
 ```
 
 # Requisites
 
 - Time synchronized with NTP ([NTP Pool](https://www.pool.ntp.org))
-(How sync time [See more](https://www.digitalocean.com/community/tutorials/how-to-set-up-time-synchronization-on-ubuntu-16-04))
+([How sync time](https://www.digitalocean.com/community/tutorials/how-to-set-up-time-synchronization-on-ubuntu-16-04))
 - Open ports for p2p connection
-- Apache web server
+- ReactPHP [See more](https://reactphp.org/)
 - OpenSSL
 - MySQL Server
 - PHP 7.1 or higher
 - PHP Extensions:
   - php_mysqli
   - php_bcmath
-  - php_curl
 
 # TODO
 - [x] Migrate form SQLite to MySQL/MariaDB
@@ -51,19 +49,12 @@ If you want to talk about the development of currency or need support to run a n
 [Discord](https://discord.gg/kcSGSaa)
 
 # How run
-- Clone repository on root website folder
+- Clone repository
+- Install react with composer
+	- composer require react/react:^1.0
 - Create a MySQL database UTF8
 - Edit CONFIG.php and set MySQL info & PHP Run command
-- Edit apache2.conf (Default: /etc/apache2/apache2.conf) and change:
-```
-    <Directory /var/www/>
-    ...
-    AllowOverride None -> AllowOverride All
-    ...
-    </Directory>
-```
-
-- Navigate into bin folder
+- Navigate into bin folder and start node
 
 For miner node:
 ```
@@ -104,5 +95,5 @@ The mainnet has not yet been released.
 The forecast for its launch is 4-6 months
 ```
 
-# Donations
+# Development Fund
 `ETH` 0x33c6cea9136d30071c1b015cc9a2b4d1ad17848d

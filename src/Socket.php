@@ -35,14 +35,17 @@ class Socket {
 			return 'socket server offline';
 
 		$loop = React\EventLoop\Factory::create();
-		$connector = new React\Socket\Connector($loop);
+		$connector = new React\Socket\Connector($loop, array(
+		    'timeout' => 1.0
+		));
 
 		$dataParsed = @json_encode($data);
-		$connector->connect($ip.':'.$port)->then(function (React\Socket\ConnectionInterface $connection) use (&$dataParsed) {
+		$promise = $connector->connect($ip.':'.$port)->then(function (React\Socket\ConnectionInterface $connection) use (&$dataParsed) {
 			$connection->write($dataParsed);
-			$connection->end($data = null);
+			$connection->end();
 		});
 		$loop->run();
+		$promise->cancel();
 		return true;
     }
 
@@ -56,30 +59,44 @@ class Socket {
      */
     public static function sendMessageWithReturn($ip='127.0.0.1',$port='6969', $data, $timeout=5)
     {
-		$loop = React\EventLoop\Factory::create();
-		$connector = new React\Socket\Connector($loop);
-
 		if (!self::isAlive($ip,$port))
 			return 'socket server offline';
 
 		$loop = React\EventLoop\Factory::create();
-		$connector = new React\Socket\Connector($loop);
+		$connector = new React\Socket\Connector($loop, array(
+		    'timeout' => 5.0
+		));
 
 		$dataParsed = @json_encode($data);
 		$dataFromPeer = '';
 		$return = false;
 
-		$connector->connect($ip.':'.$port)->then(function (React\Socket\ConnectionInterface $connection) use (&$dataParsed, &$return, &$dataFromPeer) {
+		//Display::_debug('SEND MESSAGE: ' . $dataParsed);
+
+		//Delayed Stop Function
+		$currentTime = 0;
+		$breakSocket = false;
+		$loop->addPeriodicTimer(0.5, function () use ($loop, &$currentTime, &$breakSocket) {
+			$currentTime++;
+			if ($currentTime >= 10 || $breakSocket)
+				$loop->stop();
+		});
+
+		$promise = $connector->connect($ip.':'.$port)->then(function (React\Socket\ConnectionInterface $connection) use (&$dataParsed, &$return, &$dataFromPeer,&$breakSocket) {
 			$connection->write($dataParsed);
+
 			$connection->on('data', function($rawData) use ($connection, &$dataFromPeer){
 				$dataFromPeer .= $rawData;
 			});
-			$connection->on('close', function () use (&$dataFromPeer, &$return) {
+			$connection->on('close', function () use ($connection, &$dataFromPeer, &$return,&$breakSocket) {
 				$return = @json_decode($dataFromPeer,true);
+				//$connection->end();
+				$breakSocket = true;
 			});
 
 		});
 		$loop->run();
+		$promise->cancel();
 		return $return;
     }
 

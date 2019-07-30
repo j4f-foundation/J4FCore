@@ -149,6 +149,7 @@ class DB {
      */
     public function addPeerToBlackList($ipAndPort) {
 
+		/*
         //Get IP and Port
         $tmp = explode(':',$ipAndPort);
         $ip = $tmp[0];
@@ -158,7 +159,7 @@ class DB {
             $currentInfoPeer = $this->db->query("SELECT id FROM peers WHERE ip = '".$ip."' AND port = '".$port."';")->fetch_assoc();
 
             //Ban peer 10min
-            $blackListTime = time() + 10 * 60;
+            $blackListTime = time() + 5 * 60;
             if (empty($currentInfoPeer)) {
                 $this->db->query("INSERT INTO peers (ip,port,blacklist) VALUES ('".$ip."', '".$port."', '".$blackListTime."');");
             }
@@ -166,6 +167,7 @@ class DB {
                 $this->db->query("UPDATE peers SET blacklist='".$blackListTime."' WHERE ip = '".$ip."' AND port = '".$port."';");
             }
         }
+		*/
     }
 
     /**
