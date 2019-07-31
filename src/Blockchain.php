@@ -273,6 +273,9 @@ class Blockchain {
                 } else
                     return "0x00000001";
             }
+			else {
+				return "0x00000003";
+			}
         } else {
             $chaindata->AddBlockToDisplay($blockMinedByPeer,"1x00000001");
             return "0x00000001";

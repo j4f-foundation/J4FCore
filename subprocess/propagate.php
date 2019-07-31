@@ -76,22 +76,17 @@ if ($blockMined != null && is_object($blockMined)) {
         'action' => 'MINEDBLOCK',
         'hash_previous' => $blockMined->previous,
 		'block' => @serialize($blockMined),
+		'height' => $chaindata->GetNextBlockNum()-1,
 		'node_ip' => $myNodeIp,
 		'node_port' => $myNodePort,
     );
 
-	$countRePropagate = 0;
-	Socket::sendMessage($peerIP,$peerPORT,$infoToSend);
-	/*
 	$returnFromPeer = Socket::sendMessageWithReturn($peerIP,$peerPORT,$infoToSend);
-	if ($returnFromPeer['status'] != true) {
-		while (!$returnFromPeer['status']) {
-			$returnFromPeer = Socket::sendMessageWithReturn($peerIP,$peerPORT,$infoToSend);
-			$countRePropagate++;
-			if ($countRePropagate == 10)
-				break;
+	if ($returnFromPeer != null && isset($returnFromPeer['status']) && $returnFromPeer['status'] == true) {
+		//Peer suggest sanity on my blockchain
+		if ($returnFromPeer['result'] == 'sanity') {
+			Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$peerIP.":".$peerPORT);
 		}
 	}
-	*/
 }
 die();
