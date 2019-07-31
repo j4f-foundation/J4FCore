@@ -302,22 +302,14 @@ class SmartContract {
      */
 	public static function Withdraw($txnHash,$contractHash,$receiver=null) {
 
-		Display::_printer('Withdraw - PASO 1');
-
 		if ($contractHash != null && strlen($contractHash) == 128) {
-
-			Display::_printer('Withdraw - PASO 2');
 
 			//Check if have txn_hash for this Withdraw
 			if ($txnHash != '' && strlen($txnHash) == 128) {
 
-				Display::_printer('Withdraw - PASO 3');
-
 				//Instance DB
 				$db = new DB();
 				if ($db != null) {
-
-					Display::_printer('Withdraw - PASO 4');
 
 					//Check if receiver is defined
 					if ($receiver == null)
@@ -326,13 +318,9 @@ class SmartContract {
 					//Get contract balance
 					$contractBalance = $db->GetWalletInfo($contractHash)['current'];
 
-					Display::_printer('Withdraw - Balance: ' . $contractBalance);
-
 					//Check param formats
 					$REGEX_Address = '/J4F[a-fA-F0-9]{56}/';
 					if (@preg_match($REGEX_Address,$receiver) && @is_numeric($contractBalance) && @bccomp($contractBalance,0,18) == 1) {
-
-						Display::_printer('Withdraw - PASO 5');
 
 						//write Internal Transaction on blockchain (local)
 						$db->addInternalTransaction($txnHash,$contractHash,$contractHash,$receiver,$contractBalance);
@@ -360,7 +348,7 @@ class SmartContract {
 			self::Withdraw($txnHash,$contractHash,$receiver);
 
 			//Remove contract and all states
-			$db->removeContract($contractHash);
+			$db->removeSmartContract($contractHash);
 		}
 	}
 

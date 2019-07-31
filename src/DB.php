@@ -2144,7 +2144,7 @@ class DB {
 					}
 				}
 				//Update Account TO
-				if (strlen($transaction->to) > 0) {
+				if (strlen($wallet_to) > 0) {
 					$sql_updateAccountTo = "
 					INSERT INTO accounts (hash,sended,received,mined)
 					VALUES ('".$wallet_to."',0,'".$amount."',0)
