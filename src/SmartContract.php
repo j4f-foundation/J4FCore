@@ -53,71 +53,8 @@ class SmartContract {
 						)
 					);
 
-					//Define blockchain Object
-					js::define("blockchain",
-						array(
-							"Transfer" => "J4FVM::blockchain_transfer",
-						),
-						array()
-					);
-
-					//Define math Object
-					js::define("math",
-						array(
-							"parse" => "J4FVM::math_parse",
-							"toDec" => "J4FVM::math_parse",
-							"add" => "J4FVM::math_add",
-							"sub" => "J4FVM::math_sub",
-							"mul" => "J4FVM::math_mul",
-							"div" => "J4FVM::math_div",
-							"pow" => "J4FVM::math_pow",
-							"mod" => "J4FVM::math_mod",
-							"sqrt" => "J4FVM::math_sqrt",
-							"powmod" => "J4FVM::math_powmod",
-							"comp" => "J4FVM::math_compare",
-						),
-						array()
-					);
-
-					//Define uint256 math Object
-					js::define("uint256",
-						array(
-							"parse" => "J4FVM::math_parse",
-							"toDec" => "J4FVMJ4FVM::math_parse",
-							"add" => "J4FVM::math_add",
-							"sub" => "J4FVM::math_sub",
-							"mul" => "J4FVM::math_mul",
-							"div" => "J4FVM::math_div",
-							"pow" => "J4FVM::math_pow",
-							"mod" => "J4FVM::math_mod",
-							"sqrt" => "J4FVM::math_sqrt",
-							"powmod" => "J4FVM::math_powmod",
-							"comp" => "J4FVM::math_compare",
-						),
-						//Propiedades
-						array()
-					);
-
-					//Define contract Object
-					js::define("contract",
-						array(
-							"get" => "J4FVM::js_get",
-							"set" => "J4FVM::js_set",
-							"table" => "J4FVM::js_table",
-							"table_set" => "J4FVM::js_table_set",
-							"table_get" => "J4FVM::js_table_get",
-							"table_get_sub" => "J4FVM::js_table_get_sub",
-							"table_uint256" => "J4FVM::js_table_uint256",
-						),
-						array()
-					);
-
-					js::define("table",
-						array(
-							"count" => "J4FVM::table_count",
-						),
-						array()
-					);
+					//Make funity defines
+					self::MakeFunityDefines();
 
 					//Get Contract Hash
 					$contractHash = PoW::hash($contract_code.$transaction->from.$transaction->timestamp.$transaction->signature);
@@ -190,6 +127,24 @@ class SmartContract {
 						if (strlen($call_code) == 0)
 							return;
 
+						//Magic self destruct
+						if ($call_code == 'M_SELFDESTRUCT') {
+							//Check if owner of this contract
+							$contractOwner = $chaindata->GetOwnerContractByHash($transaction->to);
+							if (Wallet::GetWalletAddressFromPubKey($transaction->from) == $contractOwner)
+								self::Destruct($transaction->hash,$contract['contract_hash'],$contractOwner);
+							continue;
+						}
+
+						//Magic self withdraw
+						if ($call_code == 'M_WITHDRAW') {
+							//Check if owner of this contract
+							$contractOwner = $chaindata->GetOwnerContractByHash($transaction->to);
+							if (Wallet::GetWalletAddressFromPubKey($transaction->from) == $contractOwner)
+								self::Withdraw($transaction->hash,$contract['contract_hash'],$contractOwner);
+							continue;
+						}
+
 						//Parse CALL Code
 						$code_call_info = J4FVM::_parseCall($call_code);
 
@@ -210,70 +165,8 @@ class SmartContract {
 							)
 						);
 
-						//Define blockchain Object
-						js::define("blockchain",
-							array(
-								"Transfer" => "J4FVM::blockchain_transfer",
-							),
-							array()
-						);
-
-						//Define math Object
-						js::define("math",
-							array(
-								"parse" => "J4FVM::math_parse",
-								"toDec" => "J4FVM::math_parse",
-								"add" => "J4FVM::math_add",
-								"sub" => "J4FVM::math_sub",
-								"mul" => "J4FVM::math_mul",
-								"div" => "J4FVM::math_div",
-								"pow" => "J4FVM::math_pow",
-								"mod" => "J4FVM::math_mod",
-								"sqrt" => "J4FVM::math_sqrt",
-								"powmod" => "J4FVM::math_powmod",
-								"comp" => "J4FVM::math_compare",
-							),
-							array()
-						);
-
-						//Define uint256 math Object
-						js::define("uint256",
-							array(
-								"parse" => "J4FVM::math_parse",
-								"toDec" => "J4FVMJ4FVM::math_parse",
-								"add" => "J4FVM::math_add",
-								"sub" => "J4FVM::math_sub",
-								"mul" => "J4FVM::math_mul",
-								"div" => "J4FVM::math_div",
-								"pow" => "J4FVM::math_pow",
-								"mod" => "J4FVM::math_mod",
-								"sqrt" => "J4FVM::math_sqrt",
-								"powmod" => "J4FVM::math_powmod",
-								"comp" => "J4FVM::math_compare",
-							),
-							array()
-						);
-
-						//Define contract Object
-						js::define("contract",
-							array(
-								"get" => "J4FVM::js_get",
-								"set" => "J4FVM::js_set",
-								"table" => "J4FVM::js_table",
-								"table_set" => "J4FVM::js_table_set",
-								"table_get" => "J4FVM::js_table_get",
-								"table_get_sub" => "J4FVM::js_table_get_sub",
-								"table_uint256" => "J4FVM::js_table_uint256",
-							),
-							array()
-						);
-
-						js::define("table",
-							array(
-								"count" => "J4FVM::table_count",
-							),
-							array()
-						);
+						//Make funity defines
+						self::MakeFunityDefines();
 
 						//Contract status - Default not created
 						$run_status = 0;
@@ -361,70 +254,8 @@ class SmartContract {
 				)
 			);
 
-			//Define blockchain Object
-			js::define("blockchain",
-				array(
-					"Transfer" => "J4FVM::blockchain_transfer_compiler",
-				),
-				array()
-			);
-
-			//Define math Object
-			js::define("math",
-				array(
-					"parse" => "J4FVM::math_parse",
-					"toDec" => "J4FVM::math_parse",
-					"add" => "J4FVM::math_add",
-					"sub" => "J4FVM::math_sub",
-					"mul" => "J4FVM::math_mul",
-					"div" => "J4FVM::math_div",
-					"pow" => "J4FVM::math_pow",
-					"mod" => "J4FVM::math_mod",
-					"sqrt" => "J4FVM::math_sqrt",
-					"powmod" => "J4FVM::math_powmod",
-					"comp" => "J4FVM::math_compare",
-				),
-				array()
-			);
-
-			//Define uint256 math Object
-			js::define("uint256",
-				array(
-					"parse" => "J4FVM::uint256_parse",
-					"toDec" => "J4FVM::uint256_toDec",
-					"add" => "J4FVM::uint256_add",
-					"sub" => "J4FVM::uint256_sub",
-					"mul" => "J4FVM::uint256_mul",
-					"div" => "J4FVM::uint256_div",
-					"pow" => "J4FVM::uint256_pow",
-					"mod" => "J4FVM::uint256_mod",
-					"sqrt" => "J4FVM::uint256_sqrt",
-					"powmod" => "J4FVM::uint256_powmod",
-					"comp" => "J4FVM::uint256_compare",
-				),
-				array()
-			);
-
-			//Define contract Object
-			js::define("contract",
-				array(
-					"get" => "J4FVM::js_get",
-					"set" => "J4FVM::js_set",
-					"table" => "J4FVM::js_table",
-					"table_set" => "J4FVM::js_table_set",
-					"table_get" => "J4FVM::js_table_get",
-					"table_get_sub" => "J4FVM::js_table_get_sub",
-					"table_uint256" => "J4FVM::js_table_uint256",
-				),
-				array()
-			);
-
-			js::define("table",
-				array(
-					"count" => "J4FVM::table_count",
-				),
-				array()
-			);
+			//Make funity defines
+			self::MakeFunityDefines();
 
 			//Contract status - Default not created
 			$output = '';
@@ -460,6 +291,156 @@ class SmartContract {
 
 			return Tools::str2hex($output);
 		}
+	}
+
+	/**
+	 * Contract Function (withdraw)
+     * Write Internal Transaction of contract
+     *
+     * @param string $receiver
+     * @return bool
+     */
+	public static function Withdraw($txnHash,$contractHash,$receiver=null) {
+
+		Display::_printer('Withdraw - PASO 1');
+
+		if ($contractHash != null && strlen($contractHash) == 128) {
+
+			Display::_printer('Withdraw - PASO 2');
+
+			//Check if have txn_hash for this Withdraw
+			if ($txnHash != '' && strlen($txnHash) == 128) {
+
+				Display::_printer('Withdraw - PASO 3');
+
+				//Instance DB
+				$db = new DB();
+				if ($db != null) {
+
+					Display::_printer('Withdraw - PASO 4');
+
+					//Check if receiver is defined
+					if ($receiver == null)
+						$receiver = $db->GetOwnerContractByHash($contractHash);
+
+					//Get contract balance
+					$contractBalance = $db->GetWalletInfo($contractHash)['current'];
+
+					Display::_printer('Withdraw - Balance: ' . $contractBalance);
+
+					//Check param formats
+					$REGEX_Address = '/J4F[a-fA-F0-9]{56}/';
+					if (@preg_match($REGEX_Address,$receiver) && @is_numeric($contractBalance) && @bccomp($contractBalance,0,18) == 1) {
+
+						Display::_printer('Withdraw - PASO 5');
+
+						//write Internal Transaction on blockchain (local)
+						$db->addInternalTransaction($txnHash,$contractHash,$contractHash,$receiver,$contractBalance);
+						return true;
+					}
+				}
+
+				$db->db->close();
+			}
+		}
+		return false;
+	}
+
+	/**
+     * Remove contract and all information and withdraw to owner
+     *
+     * @param string $contractHash
+     */
+	public static function Destruct($txnHash,$contractHash,$receiver=null) {
+		//Instance DB
+		$db = new DB();
+		if ($db != null) {
+
+			//Withdraw contract balance to contract owner or receiver
+			self::Withdraw($txnHash,$contractHash,$receiver);
+
+			//Remove contract and all states
+			$db->removeContract($contractHash);
+		}
+	}
+
+	/**
+     * Make Funity defines for contract
+     */
+	public static function MakeFunityDefines() {
+		//Define blockchain Object
+		js::define("blockchain",
+			array(
+				"Transfer" => "J4FVM::blockchain_transfer",
+			),
+			array()
+		);
+
+		//Define math Object
+		js::define("math",
+			array(
+				"parse" => "J4FVM::math_parse",
+				"toDec" => "J4FVM::math_parse",
+				"add" => "J4FVM::math_add",
+				"sub" => "J4FVM::math_sub",
+				"mul" => "J4FVM::math_mul",
+				"div" => "J4FVM::math_div",
+				"pow" => "J4FVM::math_pow",
+				"mod" => "J4FVM::math_mod",
+				"sqrt" => "J4FVM::math_sqrt",
+				"powmod" => "J4FVM::math_powmod",
+				"comp" => "J4FVM::math_compare",
+			),
+			array()
+		);
+
+		//Define uint256 math Object
+		js::define("uint256",
+			array(
+				"parse" => "J4FVM::math_parse",
+				"toDec" => "J4FVMJ4FVM::math_parse",
+				"add" => "J4FVM::math_add",
+				"sub" => "J4FVM::math_sub",
+				"mul" => "J4FVM::math_mul",
+				"div" => "J4FVM::math_div",
+				"pow" => "J4FVM::math_pow",
+				"mod" => "J4FVM::math_mod",
+				"sqrt" => "J4FVM::math_sqrt",
+				"powmod" => "J4FVM::math_powmod",
+				"comp" => "J4FVM::math_compare",
+			),
+			//Propiedades
+			array()
+		);
+
+		//Define contract Object
+		js::define("contract",
+			array(
+				"get" => "J4FVM::js_get",
+				"set" => "J4FVM::js_set",
+				"table" => "J4FVM::js_table",
+				"table_set" => "J4FVM::js_table_set",
+				"table_get" => "J4FVM::js_table_get",
+				"table_get_sub" => "J4FVM::js_table_get_sub",
+				"table_uint256" => "J4FVM::js_table_uint256",
+				"withdraw" => "J4FVM::blockchain_transferWithdraw",
+			),
+			array()
+		);
+
+		js::define("table",
+			array(
+				"count" => "J4FVM::table_count",
+			),
+			array()
+		);
+
+		js::define("self",
+			array(
+				"destruct" => "J4FVM::contract_destruct",
+			),
+			array()
+		);
 	}
 
 }

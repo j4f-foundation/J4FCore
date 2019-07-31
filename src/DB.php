@@ -385,8 +385,8 @@ class DB {
 			$totalSpend = uint256::parse($walletInfo['sended']);
 			$totalReceived = uint256::parse($walletInfo['received']);
 			$totalMined = uint256::parse($walletInfo['mined']);
-			$totalMinedAndReceived = bcadd($walletInfo['received'],$walletInfo['mined'],18);
-			$current = uint256::parse(bcsub($totalMinedAndReceived,$walletInfo['sended'],18));
+			$totalMinedAndReceived = @bcadd($walletInfo['received'],$walletInfo['mined'],18);
+			$current = uint256::parse(@bcsub($totalMinedAndReceived,$walletInfo['sended'],18));
         }
 
 		return array(
@@ -1967,6 +1967,47 @@ class DB {
 	}
 
 	/**
+     * Remove a Smart Contract from chaindata
+     *
+     * @param string $contractHash
+     * @return bool
+     */
+	public function removeSmartContract($contractHash) {
+		$error = false;
+
+        $info_contract_chaindata = $this->db->query("SELECT contract_hash FROM smart_contracts WHERE contract_hash = '".$contractHash."';")->fetch_assoc();
+        if (!empty($info_contract_chaindata)) {
+
+            //Start MySQL Transaction
+            $this->db->begin_transaction();
+
+            //SQL Remove Contract
+            $sqlRemoveContract = "DELETE FROM smart_contracts WHERE contract_hash = '".$contractHash."';";
+
+            //Remove contract from blockchain
+            if (!$this->db->query($sqlRemoveContract)) {
+                $error = true;
+            }
+        }
+
+        //If have error, rollback action
+        if ($error) {
+            $this->db->rollback();
+            return false;
+        }
+
+        //No errors, contract added
+        else {
+            $this->db->commit();
+
+			//Remove Contract States
+			$stateMachine = SmartContractStateMachine::store($contractHash,Tools::GetBaseDir().'data'.DIRECTORY_SEPARATOR.'db');
+			$stateMachine->deleteStates();
+            return true;
+        }
+	}
+
+	/**
      * Update storedData of Contract in StateMachine
      *
      * @param string $contractHash
@@ -2013,6 +2054,27 @@ class DB {
         return null;
 	}
 
+	/**
+     * Returns a owner of contract given a hash
+     *
+     * @param $txn_hash
+     * @return mixed
+     */
+    public function GetOwnerContractByHash($contract_hash) {
+
+        $sql = "
+		SELECT t.wallet_from
+		FROM smart_contracts as sC
+		LEFT JOIN transactions AS t ON t.txn_hash = sC.txn_hash
+		WHERE contract_hash = '".$contract_hash."';
+		";
+        $info_contract = $this->db->query($sql)->fetch_assoc();
+        if (!empty($info_contract)) {
+            return $info_contract['wallet_from'];
+        }
+        return null;
+	}
+
     /**
      * Save Internal TXN of SmartContract in Blockchain
      *
@@ -2026,13 +2088,6 @@ class DB {
 	public function addInternalTransaction($txn_hash,$contract_hash,$wallet_from,$wallet_to,$amount) {
 
 		$error = false;
-
-		Tools::writeLog('addInternalTransaction');
-		Tools::writeLog('TXN_HASH: ' . $txn_hash);
-		Tools::writeLog('CONTRACT_HASH: ' . $contract_hash);
-		Tools::writeLog('FROM: ' . $wallet_from);
-		Tools::writeLog('TO: ' . $wallet_to);
-		Tools::writeLog('AMOUNT: ' . $amount);
 
 		//Start Internal Transaction
 		$this->db->begin_transaction();
@@ -2048,26 +2103,57 @@ class DB {
 
 		//Update Account FROM
 		if (!$error) {
-			if (strlen($wallet_from) > 0 && $wallet_from != 'J4F00000000000000000000000000000000000000000000000000000000') {
-				$sql_updateAccountFrom = "
-				INSERT INTO accounts_j4frc10 (hash,contract_hash,sended,received)
-				VALUES ('".$wallet_from."','".$contract_hash."','".$amount."',0)
-				ON DUPLICATE KEY UPDATE sended = sended + VALUES(sended);
-				";
-				if (!$this->db->query($sql_updateAccountFrom)) {
-					$error = true;
+
+			//Token TXN
+			$REGEX_Address = '/J4F[a-fA-F0-9]{56}/';
+			if (preg_match($REGEX_Address,$wallet_from)) {
+				if (strlen($wallet_from) > 0 && $wallet_from != 'J4F00000000000000000000000000000000000000000000000000000000') {
+					$sql_updateAccountFrom = "
+					INSERT INTO accounts_j4frc10 (hash,contract_hash,sended,received)
+					VALUES ('".$wallet_from."','".$contract_hash."','".$amount."',0)
+					ON DUPLICATE KEY UPDATE sended = sended + VALUES(sended);
+					";
+					if (!$this->db->query($sql_updateAccountFrom)) {
+						$error = true;
+					}
+				}
+				//Update Account TO
+				if (strlen($wallet_to) > 0) {
+					$sql_updateAccountTo = "
+					INSERT INTO accounts_j4frc10 (hash,contract_hash,sended,received)
+					VALUES ('".$wallet_to."','".$contract_hash."',0,'".$amount."')
+					ON DUPLICATE KEY UPDATE received = received + VALUES(received);
+					";
+
+					if (!$this->db->query($sql_updateAccountTo)) {
+						$error = true;
+					}
 				}
 			}
-			//Update Account TO
-			if (strlen($wallet_to) > 0) {
-				$sql_updateAccountTo = "
-				INSERT INTO accounts_j4frc10 (hash,contract_hash,sended,received)
-				VALUES ('".$wallet_to."','".$contract_hash."',0,'".$amount."')
-				ON DUPLICATE KEY UPDATE received = received + VALUES(received);
-				";
+			//J4F Txn (Withdraw from contract)
+			else {
+				//Update Account FROM
+				if (strlen($wallet_from) > 0 && $wallet_from != 'J4F00000000000000000000000000000000000000000000000000000000') {
+					$sql_updateAccountFrom = "
+					INSERT INTO accounts (hash,sended,received,mined)
+					VALUES ('".$wallet_from."','".$amount."',0,0)
+					ON DUPLICATE KEY UPDATE sended = sended + ".$amount.";
+					";
+					if (!$this->db->query($sql_updateAccountFrom)) {
+						$error = true;
+					}
+				}
+				//Update Account TO
+				if (strlen($transaction->to) > 0) {
+					$sql_updateAccountTo = "
+					INSERT INTO accounts (hash,sended,received,mined)
+					VALUES ('".$wallet_to."',0,'".$amount."',0)
+					ON DUPLICATE KEY UPDATE received = received + VALUES(received);
+					";
 
-				if (!$this->db->query($sql_updateAccountTo)) {
-					$error = true;
+					if (!$this->db->query($sql_updateAccountTo)) {
+						$error = true;
+					}
 				}
 			}
 		}

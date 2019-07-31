@@ -474,27 +474,69 @@ class J4FVMBase {
      */
 	public static function blockchain_transfer($sender,$receiver,$amount) {
 
-		//Parsing jsvars to phpvars
-		$sender = php_str($sender);
-		$receiver = php_str($receiver);
-		$amount = php_str($amount);
+		if (self::$contract_hash != null && strlen(self::$contract_hash) == 128) {
+			//Parsing jsvars to phpvars
+			$sender = php_str($sender);
+			$receiver = php_str($receiver);
+			$amount = php_str($amount);
 
-		//Check if have txn_hash for this J4VM
-		if (self::$txn_hash != '') {
+			//Check if have txn_hash for this J4VM
+			if (self::$txn_hash != '') {
 
-			//Instance DB
-			$db = new DB();
+				//Instance DB
+				$db = new DB();
 
-			if ($db != null) {
+				if ($db != null) {
 
-				//Check param formats
-				$REGEX_Address = '/J4F[a-fA-F0-9]{56}/';
-				if (preg_match($REGEX_Address,$sender) && preg_match($REGEX_Address,$receiver) && is_numeric($amount)) {
+					//Check param formats
+					$REGEX_Address = '/J4F[a-fA-F0-9]{56}/';
+					if (preg_match($REGEX_Address,$sender) && preg_match($REGEX_Address,$receiver) && is_numeric($amount)) {
 
-					//write Internal Transaction on blockchain (local)
-					$db->addInternalTransaction(self::$txn_hash,self::$contract_hash,$sender,$receiver,$amount);
-					return true;
+						//write Internal Transaction on blockchain (local)
+						$db->addInternalTransaction(self::$txn_hash,self::$contract_hash,$sender,$receiver,$amount);
+						return true;
+					}
 				}
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Contract Function (withdraw)
+     * Write Internal Transaction of contract
+     *
+     * @param string $receiver
+     * @param float $amount
+     * @return bool
+     */
+	public static function blockchain_transferWithdraw($receiver=null) {
+
+		if (self::$contract_hash != null && strlen(self::$contract_hash) == 128) {
+			if (self::$txn_hash != '' && strlen(self::$txn_hash) == 128) {
+
+				//Parsing jsvars to phpvars
+				if ($receiver != null && !is_string($receiver))
+					$receiver = php_str($receiver);
+
+				return SmartContract::Withdraw(self::$txn_hash,self::$contract_hash,$receiver);
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Destruct Function
+     */
+	public static function contract_destruct($receiver) {
+
+		if (self::$contract_hash != null && strlen(self::$contract_hash) == 128) {
+			if (self::$txn_hash != '' && strlen(self::$txn_hash) == 128) {
+				//Parsing jsvars to phpvars
+				if ($receiver != null && !is_string($receiver))
+					$receiver = php_str($receiver);
+
+				return SmartContract::Destruct(self::$txn_hash,self::$contract_hash,$receiver);
 			}
 		}
 		return false;
