@@ -122,31 +122,9 @@ class SmartContract {
 					if ($contract != null) {
 
 						//Parse txn::data (call code) to string
-						$call_code_hex = $transaction->data;
-						$call_code = Tools::hex2str($call_code_hex);
+						$call_code = Tools::hex2str($transaction->data);
 						if (strlen($call_code) == 0)
 							return;
-
-						//Magic self destruct
-						if ($call_code == 'M_SELFDESTRUCT') {
-							//Check if owner of this contract
-							$contractOwner = $chaindata->GetOwnerContractByHash($transaction->to);
-							if (Wallet::GetWalletAddressFromPubKey($transaction->from) == $contractOwner)
-								self::Destruct($transaction->hash,$contract['contract_hash'],$contractOwner);
-							continue;
-						}
-
-						//Magic self withdraw
-						if ($call_code == 'M_WITHDRAW') {
-							//Check if owner of this contract
-							$contractOwner = $chaindata->GetOwnerContractByHash($transaction->to);
-							if (Wallet::GetWalletAddressFromPubKey($transaction->from) == $contractOwner)
-								self::Withdraw($transaction->hash,$contract['contract_hash'],$contractOwner);
-							continue;
-						}
-
-						//Parse CALL Code
-						$code_call_info = J4FVM::_parseCall($call_code);
 
 						//Parse contract code to string
 						$code_contract = Tools::hex2str($contract['code']);
@@ -154,7 +132,7 @@ class SmartContract {
 							return;
 
 						//Parse code Funity::Call_Contract
-						$code_parsed = J4FVM::call($code_contract,$code_call_info['func'],$code_call_info['func_params']);
+						$code_parsed = J4FVM::call($code_contract,$transaction->data);
 
 						//Define msg sender Object
 						js::define("msg",
