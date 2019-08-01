@@ -40,8 +40,8 @@ class Blockchain {
             return [1,1];
 
         // Limit of last blocks to check time
-        $limit = 20;
-        if ($currentBlock['height'] < 20)
+        $limit = 2880;
+        if ($currentBlock['height'] < 2880)
             $limit = $currentBlock['height'] - 1;
 
         // Get limit check block
@@ -54,14 +54,14 @@ class Blockchain {
         // Default same difficulty
         $difficulty = $currentBlock['difficulty'];
 
-        // Max 60s - Min 45s
-        $minAvg = 45;
-        $maxAvg = 60;
+        // Max 31s - Min 29s
+        $minAvg = 29;
+        $maxAvg = 31;
 
-		// If testnet Max 60s - Min 45s
+		// If testnet Max 35s - Min 25s
         if ($isTestNet) {
-            $minAvg = 45;
-            $maxAvg = 60;
+            $minAvg = 25;
+            $maxAvg = 35;
 		}
 
         // if lower than min, increase by 5%
