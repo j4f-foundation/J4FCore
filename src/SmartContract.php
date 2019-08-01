@@ -221,7 +221,7 @@ class SmartContract {
 				return 'Error reading source code of Smart Contract';
 
 			//Parse code Funity::Call_Contract
-			$code_parsed = J4FVM::readCall($code_contract,$callInfo['func'],$callInfo['func_params'],true);
+			$code_parsed = J4FVM::readCall($code_contract,$callFunctionHex,true);
 
 			//Define msg sender Object
 			js::define("msg",

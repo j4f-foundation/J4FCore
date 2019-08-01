@@ -46,8 +46,7 @@ class J4FVM extends J4FVMBase {
      * Function that parse code and call contract
      *
      * @param string $code
-	 * @param string $function
-	 * @param array $params
+	 * @param string $callCode
 	 * @param bool $debug
      *
      * @return string
@@ -94,32 +93,45 @@ class J4FVM extends J4FVMBase {
      * Function that parse code and call contract
      *
      * @param string $code
-	 * @param string $function
-	 * @param array $params
+	 * @param string $callCode
 	 * @param bool $debug
      *
      * @return string
      */
-	public static function readCall($code,$function,$params=array(),$debug=false) {
+	public static function readCall($code,$callCode,$debug=false) {
+
+		//Decrypt/parse call code
+		$callCode = @json_decode(Tools::hex2str($callCode),true);
 
 		//Parse code
 		$code_parsed = self::_parse($code,$debug);
 
-		//Check if have Contract define struct
-		$contractName = self::GetContractName($code);
+		if (is_array($callCode)) {
+			//Check if have Contract define struct
+			$contractName = self::GetContractName($code);
+			if (strlen($contractName) > 0) {
+				if (isset($callCode['Method'])) {
+					if (self::canCallThisFunction($code,$callCode['Method'])) {
 
-		if (J4FVM::canCallThisFunction($code,$function)) {
-			//Add all params
-			$param = '';
-			foreach ($params as $p) {
-				if (strlen($param) > 0) $param .= ',';
-				$param .= "'".$p."'";
+						$function = self::getFunctionFromMethod($code,$callCode['Method']);
+						if (strlen($function) > 0) {
+
+							//Set params
+							$param = '';
+							if (count($callCode['Params']) > 0) {
+								foreach ($callCode['Params'] as $p) {
+									if (strlen($param) > 0) $param .= ',';
+									$param .= "'".str_replace("'","`",Tools::hex2str($p))."'";
+								}
+							}
+
+							//Set run function of contract
+							$code_parsed .= $contractName.'.'.$function.'('.$param.');';
+						}
+					}
+				}
 			}
-
-			//Add run function of contract
-			$code_parsed .= $contractName.'.'.$function.'('.$param.');';
 		}
-
 		//Replace Contract Keyword to var (Javascript dont accept Contract type var)
 		return $code_parsed;
 	}
