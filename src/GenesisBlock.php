@@ -96,7 +96,7 @@ class GenesisBlock {
 		$chaindata->addBlock(0,$genesisBlock);
 
 		//Display message
-		Display::NewBlockMined($genesisBlock);
+		Display::NewBlockMined(0,$genesisBlock);
 
 		//We show the information of the mined block
 		Display::_printer("New Block mined with hash: %G%".$genesisBlock->hash);
@@ -146,7 +146,7 @@ class GenesisBlock {
 				$chaindata->addBlock(0,$genesisBlock);
 
 				//Display message
-				Display::NewBlockMined($genesisBlock);
+				Display::NewBlockMined(0,$genesisBlock);
 
 				//Stop minning subprocess
 				Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);

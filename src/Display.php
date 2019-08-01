@@ -57,10 +57,16 @@ class Display {
      */
     public static function _printer($string) {
         $date = new DateTime();
-        $formatted_string = "%G%INFO%W% [".$date->format("m-d|H:i:s")."] ".$string."%W%".PHP_EOL;
-        $colored_string = self::_replaceColors($formatted_string);
-        echo $colored_string;
+        echo self::_replaceColors("%G%INFO%W% [".$date->format("m-d|H:i:s")."] ".$string."%W%").self::_br();
         ob_flush();
+    }
+
+	/**
+     * Alias of self::_printer
+     * @param $string
+     */
+    public static function print($string) {
+        self::_printer($string);
     }
 
     /**
@@ -68,11 +74,11 @@ class Display {
      * @param $string
      */
     public static function _debug($string) {
-        $date = new DateTime();
-        $formatted_string = "%Y%DEBUG%W% [".$date->format("m-d|H:i:s")."] ".$string."%W%".PHP_EOL;
-        $colored_string = self::_replaceColors($formatted_string);
-        echo $colored_string;
-        ob_flush();
+		if (DISPLAY_DEBUG) {
+			$date = new DateTime();
+			echo self::_replaceColors("%Y%DEBUG%W% [".$date->format("m-d|H:i:s")."] ".$string."%W%").self::_br();
+			ob_flush();
+		}
     }
 
     /**
@@ -81,9 +87,7 @@ class Display {
      */
     public static function _error($string) {
         $date = new DateTime();
-        $formatted_string = "%LR%ERROR%W% [".$date->format("m-d|H:i:s")."] ".$string."%W%".PHP_EOL;
-        $colored_string = self::_replaceColors($formatted_string);
-        echo $colored_string;
+        echo self::_replaceColors("%LR%ERROR%W% [".$date->format("m-d|H:i:s")."] ".$string."%W%").self::_br();
         ob_flush();
     }
 
@@ -93,9 +97,7 @@ class Display {
      */
     public static function _warning($string) {
         $date = new DateTime();
-        $formatted_string = "%LR%WARN%W% [".$date->format("m-d|H:i:s")."] ".$string."%W%".PHP_EOL;
-        $colored_string = self::_replaceColors($formatted_string);
-        echo $colored_string;
+        echo self::_replaceColors("%LR%WARN%W% [".$date->format("m-d|H:i:s")."] ".$string."%W%").self::_br();
         ob_flush();
     }
 
@@ -110,7 +112,7 @@ class Display {
      * Write a message of the mined block
      * @param Block $blockMined
      */
-    public static function NewBlockMined($blockMined) {
+    public static function NewBlockMined($height,$blockMined) {
 
         $mini_hash = substr($blockMined->hash,-12);
         $mini_hash_previous = substr($blockMined->previous,-12);
@@ -122,7 +124,7 @@ class Display {
         );
         $blockMinedInSeconds = $minedTime->format('%im%ss');
 
-        self::_printer("%Y%Mined%W% new block     		%G%nonce%W%=" . $blockMined->nonce . " %G%elapsed%W%=" . $blockMinedInSeconds . " %G%previous%W%=" . $mini_hash_previous . " %G%hash%W%=" . $mini_hash);
+        self::print("%Y%Mined%W% new block	     	%G%nonce%W%=" . $blockMined->nonce . " %G%elapsed%W%=" . $blockMinedInSeconds . " %G%previous%W%=" . $mini_hash_previous . " %G%hash%W%=" . $mini_hash . " %G%number%W%=" . ($height+1)." %G%size%W%=".Tools::GetBlockSize($blockMined));
     }
 
     /**

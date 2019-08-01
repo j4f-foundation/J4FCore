@@ -63,7 +63,7 @@ class Gossip {
 		Display::ClearScreen();
 
 		//Init Display message
-		Display::_printer("Welcome to the %G%MXC node - Version: " . VERSION);
+		Display::_printer("Welcome to the %G%J4F node - Version: " . VERSION);
 		Display::_printer("Maximum peer count                       %G%value%W%=".PEERS_MAX);
 		Display::_printer("PeerID %G%".Tools::GetIdFromIpAndPort($ip,$port));
 
@@ -175,7 +175,7 @@ class Gossip {
 	        //WE GENERATE THE GENESIS BLOCK
 	        if ($gossip->make_genesis) {
 	            if(!$gossip->isTestNet)
-	                GenesisBlock::make($gossip->chaindata,$gossip->coinbase,$gossip->key->privKey,$gossip->isTestNet,bcadd("50","0",18));
+	                GenesisBlock::make($gossip->chaindata,$gossip->coinbase,$gossip->key->privKey,$gossip->isTestNet,bcadd("2","0",18));
 	            else
 	                GenesisBlock::make($gossip->chaindata,$gossip->coinbase,$gossip->key->privKey,$gossip->isTestNet,bcadd("99999999999999999999999999999999","0",18));
 	        }
@@ -478,7 +478,7 @@ class Gossip {
 		    )
 		));
 
-		Display::_printer("Listening on {$gossip->ip}:{$gossip->port}");
+		Display::_printer("Listening on %G%{$gossip->ip}%W%:%G%{$gossip->port}%W%");
 
 		//Gossip
 		$socket->on('connection', function(ConnectionInterface $connection) use (&$gossip) {
@@ -681,9 +681,13 @@ class Gossip {
 										$return['error'] = 'Block old';
 										$return['result'] = 'sanity';
 									}
-									else {
+									else if (($msgFromPeer['height'] - $lastBlock['height']) > 100) {
 										$return['status'] = true;
 										$return['error'] = 'Block out of sync';
+									}
+									else {
+										$return['status'] = true;
+										$return['error'] = 'Block out of sync, sync with you';
 
 										// Start microsanity with this peer
 										if (strlen($msgFromPeer['node_ip'] > 0) && strlen($msgFromPeer['node_port']) > 0)
@@ -701,7 +705,7 @@ class Gossip {
 									);
 									if (Socket::isAlive($msgFromPeer['client_ip'],$msgFromPeer['client_port'])) {
 										$gossip->chaindata->addPeer($msgFromPeer['client_ip'],$msgFromPeer['client_port']);
-										Display::_printer('Connected to new peer -> '.$msgFromPeer['client_ip'].':'.$msgFromPeer['client_port']);
+										Display::_printer('Connected to peer -> %G%'.Tools::GetIdFromIpAndPort($msgFromPeer['client_ip'],$msgFromPeer['client_port']).'%W%');
 										$return['result'] = "p2p_on";
 									}
 									else
@@ -712,7 +716,7 @@ class Gossip {
 								if (isset($msgFromPeer['client_ip']) && isset($msgFromPeer['client_port'])) {
 									$return['status'] = true;
 									$gossip->chaindata->addPeer($msgFromPeer['client_ip'],$msgFromPeer['client_port']);
-									Display::_printer('Connected to new peer -> '.$msgFromPeer['client_ip'].':'.$msgFromPeer['client_port']);
+									Display::_printer('Connected to peer -> %G%'.Tools::GetIdFromIpAndPort($msgFromPeer['client_ip'],$msgFromPeer['client_port']).'%W%');
 								} else {
 									$return['message'] = "No ClientIP or ClientPort defined";
 								}
@@ -840,7 +844,7 @@ class Gossip {
             }
             else {
                 if ($displayMessage)
-                    Display::_error("Can't connect to peer %G%". Tools::GetIdFromIpAndPort($ip,$port));
+                    Display::_warning("Can't connect to peer %G%". Tools::GetIdFromIpAndPort($ip,$port));
                 return false;
             }
         }
@@ -964,7 +968,7 @@ class Gossip {
                             Display::NewBlockCancelled();
                         }
                     }
-                    Display::_printer("%Y%Imported%W% new block headers     	%G%nonce%W%=" . $blockPending['nonce'] . " %G%elapsed%W%=" . $blockMinedInSeconds . " %G%previous%W%=" . $mini_hash_previous . " %G%hash%W%=" . $mini_hash . " %G%number%W%=" . $numBlock." %G%size%W%=".Tools::GetBlockSize($lastBlock));
+                    Display::_printer("%Y%Imported%W% new block     	%G%nonce%W%=" . $blockPending['nonce'] . " %G%elapsed%W%=" . $blockMinedInSeconds . " %G%previous%W%=" . $mini_hash_previous . " %G%hash%W%=" . $mini_hash . " %G%number%W%=" . $numBlock." %G%size%W%=".Tools::GetBlockSize($lastBlock));
                 }
             }
             //Block validated, same height
@@ -980,7 +984,7 @@ class Gossip {
                         Display::NewBlockCancelled();
                     }
                 }
-                Display::_printer("%Y%Sanity%W% block headers	     	%G%nonce%W%=" . $blockPending['nonce'] . " %G%elapsed%W%=" . $blockMinedInSeconds . " %G%previous%W%=" . $mini_hash_previous . " %G%hash%W%=" . $mini_hash . " %G%number%W%=" . $numBlock." %G%size%W%=".Tools::GetBlockSize($lastBlock));
+                Display::_printer("%Y%Sanity%W% block	     	%G%nonce%W%=" . $blockPending['nonce'] . " %G%elapsed%W%=" . $blockMinedInSeconds . " %G%previous%W%=" . $mini_hash_previous . " %G%hash%W%=" . $mini_hash . " %G%number%W%=" . $numBlock." %G%size%W%=".Tools::GetBlockSize($lastBlock));
             }
 
             //Block validated, reward
@@ -1007,13 +1011,13 @@ class Gossip {
             else {
 
                 if ($blockPending['status'] == "0x00000001" || $blockPending['status'] == "1x00000001") {
-                    Display::_printer("%LR%Ignored%W% new block headers     Reward Block not valid  %G%previous%W%=" . $mini_hash_previous . "  %G%hash%W%=" . $mini_hash);
+                    Display::_printer("%LR%Ignored%W% new block     %G%error%W%=Reward Block not valid  %G%previous%W%=" . $mini_hash_previous . "  %G%hash%W%=" . $mini_hash);
                 }
                 else if ($blockPending['status'] == "0x00000002") {
-                    Display::_printer("%LR%Ignored%W% new block headers     Block not valid  %G%previous%W%=" . $mini_hash_previous . "  %G%hash%W%=" . $mini_hash);
+                    Display::_printer("%LR%Ignored%W% new block     %G%error%W%=Block not valid  %G%previous%W%=" . $mini_hash_previous . "  %G%hash%W%=" . $mini_hash);
                 }
                 else if ($blockPending['status'] == "0x00000002") {
-                    Display::_printer("%LR%Ignored%W% new block headers     Previous block does not match  %G%previous%W%=" . $mini_hash_previous . "  %G%hash%W%=" . $mini_hash);
+                    Display::_printer("%LR%Ignored%W% new block     %G%error%W%=Previous block does not match  %G%previous%W%=" . $mini_hash_previous . "  %G%hash%W%=" . $mini_hash);
                 }
             }
 
@@ -1172,7 +1176,7 @@ class Gossip {
 				if ($blockMined->isValid($nextHeight,$this->isTestNet)) {
 					if ($blockMined->isValidReward($nextHeight,$this->isTestNet)) {
 						//Display new block mined
-						Display::NewBlockMined($blockMined);
+						Display::NewBlockMined($nextHeight,$blockMined);
 
 						//Propagate block on network
 						Tools::sendBlockMinedToNetworkWithSubprocess($this->chaindata,$blockMined);

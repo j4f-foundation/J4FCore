@@ -54,21 +54,21 @@ class Blockchain {
         // Default same difficulty
         $difficulty = $currentBlock['difficulty'];
 
-        // Max 9min - Min 7min
-        $minAvg = 420;
-        $maxAvg = 540;
+        // Max 60s - Min 45s
+        $minAvg = 45;
+        $maxAvg = 60;
 
-		// If testnet Max 30s - Min 15s
+		// If testnet Max 60s - Min 45s
         if ($isTestNet) {
-            $minAvg = 15;
-            $maxAvg = 30;
+            $minAvg = 45;
+            $maxAvg = 60;
 		}
 
-        // if lower than 1 min, increase by 5%
+        // if lower than min, increase by 5%
         if ($avgTime < $minAvg)
             $difficulty = bcmul(strval($currentBlock['difficulty']), "1.05",2);
 
-        // if bigger than 3 min, decrease by 5%
+        // if bigger than min, decrease by 5%
         elseif ($avgTime > $maxAvg)
             $difficulty = bcmul(strval($currentBlock['difficulty']), "0.95",2);
 
@@ -87,31 +87,8 @@ class Blockchain {
      * @return string
      */
     public static function getRewardByHeight($currentHeight,$isTestNet=false) {
-
-        //Testnet will always be 50
-        if ($isTestNet)
-            return bcadd("50","0",18);
-
-        // init reward Mainnet
-        $reward = bcadd("50","0",18);
-
-        //Get divisible num
-        $divisible = floor($currentHeight / 250000);
-        if ($divisible > 0) {
-
-            //Can't divide by 0
-            if ($divisible <= 0)
-                $divisible = 1;
-
-            // Get current reward
-            $reward = ($reward / $divisible) / 2;
-        }
-
-        //Reward can't be less than
-        if ($reward < 1)
-            $reward = 0;
-
-        return bcadd($reward, "0", 18);
+        // static reward
+        return bcadd("2","0",18);
     }
 
     /**
