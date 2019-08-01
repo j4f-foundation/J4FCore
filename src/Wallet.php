@@ -453,6 +453,25 @@ class Wallet {
         // If have wallet from info
         if ($wallet_from_info !== false) {
 
+			//Check walletFrom Format
+			$REGEX_Address = '/J4F[a-fA-F0-9]{56}/';
+			if (!@preg_match($REGEX_Address,$wallet_from)) {
+				if ($cli)
+                	return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." Wallet_from have bad format".PHP_EOL;
+				else
+					return "Error, Wallet_from have bad format".PHP_EOL;
+			}
+
+			//Check walletTo Format
+			$REGEX_Address = '/J4F[a-fA-F0-9]{56}/';
+			$REGEX_Contract = '/[a-fA-F0-9]{64}/';
+			if (!@preg_match($REGEX_Address,$wallet_to) && !@preg_match($REGEX_Contract,$wallet_to)) {
+				if ($cli)
+                	return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." Wallet_to have bad format".PHP_EOL;
+				else
+					return "Error, Wallet_to have bad format".PHP_EOL;
+			}
+
             // Get current balance of wallet
             $currentBalance = self::GetBalance($wallet_from,$isTestNet);
 
@@ -557,6 +576,26 @@ class Wallet {
 
         // If have wallet from info
         if ($wallet_from_info !== false) {
+
+			//Check walletFrom Format
+			$REGEX_Address = '/J4F[a-fA-F0-9]{56}/';
+			if (!@preg_match($REGEX_Address,$wallet_from)) {
+				if ($cli)
+                	return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." Wallet_from have bad format".PHP_EOL;
+				else
+					return "Error, Wallet_from have bad format".PHP_EOL;
+			}
+
+			//Check walletTo Format
+			$REGEX_Address = '/J4F[a-fA-F0-9]{56}/';
+			$REGEX_Contract = '/[a-fA-F0-9]{64}/';
+			if (!@preg_match($REGEX_Address,$wallet_to) && !@preg_match($REGEX_Contract,$wallet_to)) {
+				if ($cli)
+                	return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." Wallet_to have bad format".PHP_EOL;
+				else
+					return "Error, Wallet_to have bad format".PHP_EOL;
+			}
+
             // Get current balance of wallet
             $currentBalance = self::GetBalance($wallet_from,$isTestNet);
 

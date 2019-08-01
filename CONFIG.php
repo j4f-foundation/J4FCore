@@ -30,4 +30,5 @@ define('NODE_BOOSTRAP_PORT_TESTNET',    6969);
 
 //OS INFO
 define('IS_WIN',                        (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') ? true:false);
+define('EXPLORER_TESTNET', true);
 ?>
