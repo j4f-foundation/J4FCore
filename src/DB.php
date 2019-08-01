@@ -356,21 +356,6 @@ class DB {
     }
 
     /**
-     * Returns a pending transaction given a hash
-     *
-     * @param $hash
-     * @return mixed
-     */
-    public function GetPendingTransactionByHash($hash) {
-        $sql = "SELECT * FROM transactions_pending WHERE txn_hash = '".$hash."';";
-        $info_txn = $this->db->query($sql)->fetch_assoc();
-        if (!empty($info_txn)) {
-            return $info_txn;
-        }
-        return null;
-    }
-
-    /**
      * Returns the information of a wallet
      *
      * @param $wallet
@@ -543,124 +528,13 @@ class DB {
     }
 
     /**
-     * Add a pending transaction to the chaindata
-     *
-     * @param Object $transaction
-     * @return bool
-     */
-    public function addPendingTransactionObject($transaction) {
-        $into_tx_pending = $this->db->query("SELECT txn_hash FROM transactions_pending WHERE txn_hash = '".$transaction->hash."';")->fetch_assoc();
-        if (empty($into_tx_pending)) {
-
-            //Get current balance of WalletFrom and check if have money to send transaction
-            //This prevent hack transactions
-            $walletFromBalance = Wallet::GetBalanceWithChaindata($this,$transaction->wallet_from);
-
-
-            if ($walletFromBalance >= $transaction['amount']) {
-
-                //Start Transactions
-                $this->db->begin_transaction();
-
-                $sqlInsertTransaction = "INSERT INTO transactions_pending (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp)
-                    VALUES ('','" . $transaction->txn_hash . "','" . $transaction->wallet_from_key . "','" . $transaction->wallet_from . "','" . $transaction->wallet_to . "','" . $transaction->amount . "','" . $transaction->signature . "','" . $transaction->tx_fee . "','" . $transaction->data . "','" . $transaction->timestamp . "');";
-
-                //Commit transaction
-                if ($this->db->query($sqlInsertTransaction)) {
-                    $this->db->commit();
-                    return true;
-                }
-
-                //Rollback transaction
-                else
-                    $this->db->rollback();
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Add a pending transaction to the chaindata
-     *
-     * @param $transaction
-     * @return bool
-     */
-    public function addPendingTransaction($transaction) {
-        $into_tx_pending = $this->db->query("SELECT txn_hash FROM transactions_pending WHERE txn_hash = '".$transaction['txn_hash']."';")->fetch_assoc();
-        if (empty($into_tx_pending)) {
-
-            //Get current balance of WalletFrom and check if have money to send transaction
-            //This prevent hack transactions
-            $walletFromBalance = Wallet::GetBalanceWithChaindata($this,$transaction['wallet_from']);
-
-            if ($walletFromBalance >= $transaction['amount']) {
-
-                //Start Transactions
-                $this->db->begin_transaction();
-
-                $sqlInsertTransaction = "INSERT INTO transactions_pending (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp)
-                    VALUES ('','" . $transaction['txn_hash'] . "','" . $transaction['wallet_from_key'] . "','" . $transaction['wallet_from'] . "','" . $transaction['wallet_to'] . "','" . $transaction['amount'] . "','" . $transaction['signature'] . "','" . $transaction['tx_fee'] . "','" . $transaction['data'] . "','" . $transaction['timestamp'] . "');";
-
-                //Commit transaction
-                if ($this->db->query($sqlInsertTransaction)) {
-                    $this->db->commit();
-                    return true;
-                }
-
-                //Rollback transaction
-                else
-                    $this->db->rollback();
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Add a pending transaction to the chaindata
-     *
-     * @param $transaction
-     * @return bool
-     */
-    public function addPendingTransactionByBootstrap($transaction) {
-        if (isset($transaction['txn_hash']) && strlen($transaction['txn_hash']) > 0) {
-            $into_tx_pending = $this->db->query("SELECT txn_hash FROM transactions_pending WHERE txn_hash = '".$transaction->txn_hash."';")->fetch_assoc();
-            if (empty($into_tx_pending)) {
-
-                //Get current balance of WalletFrom and check if have money to send transaction
-                //This prevent hack transactions
-                $walletFromBalance = Wallet::GetBalanceWithChaindata($this,$transaction['wallet_from']);
-
-                if ($walletFromBalance >= $transaction['amount']) {
-
-                    //Start Transactions
-                    $this->db->begin_transaction();
-
-                    $sqlInsertTransaction = "INSERT INTO transactions_pending (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp)
-                    VALUES ('','".$transaction['txn_hash']."','".$transaction['wallet_from_key']."','".$transaction['wallet_from']."','".$transaction['wallet_to']."','".$transaction['amount']."','".$transaction['signature']."','".$transaction['tx_fee']."','".$transaction['data']."','".$transaction['timestamp']."');";
-
-                    //Commit transaction
-                    if ($this->db->query($sqlInsertTransaction)) {
-                        $this->db->commit();
-                        return true;
-                    }
-
-                    //Rollback transaction
-                    else
-                        $this->db->rollback();
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * We obtain all pending transactions that the address_from is different from address_to
+     * We obtain all transactions that the address_from is different from address_to
      *
      * @return array
      */
-    public function GetAllPendingTransactions($limit=511) {
+    public function GetTxnFromPool($limit=511) {
         $txs = array();
-        $txs_chaindata = $this->db->query("SELECT * FROM transactions_pending WHERE wallet_from <> wallet_to ORDER BY tx_fee DESC, timestamp DESC LIMIT " . $limit);
+        $txs_chaindata = $this->db->query("SELECT * FROM txnpool WHERE wallet_from <> wallet_to ORDER BY tx_fee DESC, timestamp DESC LIMIT " . $limit);
         if (!empty($txs_chaindata)) {
             while ($tx_chaindata = $txs_chaindata->fetch_array(MYSQLI_ASSOC)) {
                 if ($tx_chaindata['txn_hash'] != null && strlen($tx_chaindata['txn_hash']) > 0)
@@ -676,7 +550,7 @@ class DB {
      * @param $transactionsByPeer
      * @return bool
      */
-    public function addPendingTransactionsByPeer($transactionsByPeer) {
+    public function addTxnsToPoolByPeer($transactionsByPeer) {
 
         foreach ($transactionsByPeer as $tx) {
 
@@ -688,65 +562,87 @@ class DB {
             if ($tx['wallet_from'] == $tx['wallet_to'])
                 continue;
 
-            $this->addPendingTransaction($tx);
+            $this->addTxnToPoolByPeer($tx['txn_hash'],$tx);
         }
 
         return true;
     }
 
+	/**
+	 * Add a pending transaction received by a peer
+	 *
+	 * @param $txHash
+	 * @param $transaction
+	 * @return bool
+	 */
+	public function addTxnToPoolByPeer($txHash,$transaction) {
+		$infoTxnPool = $this->db->query("SELECT txn_hash FROM txnpool WHERE txn_hash = '".$txHash."' ORDER BY tx_fee DESC, timestamp DESC;")->fetch_assoc();
+		if (empty($infoTxnPool)) {
+
+			//Start Transactions
+			$this->db->begin_transaction();
+
+			$sqlAddTxnToPool = "
+			INSERT INTO txnpool (txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp)
+			VALUES ('".$txHash."','".$transaction['wallet_from_key']."','".$transaction['wallet_from']."','".$transaction['wallet_to']."','".$transaction['amount']."','".$transaction['signature']."','".$transaction['tx_fee']."','".$transaction['data']."','".$transaction['timestamp']."');";
+
+			//Commit transaction
+			if ($this->db->query($sqlAddTxnToPool)) {
+				$this->db->commit();
+				return true;
+			}
+
+			//Rollback transaction
+			else
+				$this->db->rollback();
+		}
+		return false;
+	}
+
+	/**
+	 * Add a pending transaction
+	 *
+	 * @param $txHash
+	 * @param $transaction
+	 * @return bool
+	 */
+	public function addTxnToPool($txHash,$transaction) {
+		$infoTxnPool = $this->db->query("SELECT txn_hash FROM txnpool WHERE txn_hash = '".$txHash."' ORDER BY tx_fee DESC, timestamp DESC;")->fetch_assoc();
+		if (empty($infoTxnPool)) {
+
+			$wallet_from_pubkey = "";
+			$wallet_from = "";
+			if ($transaction->from != null) {
+				$wallet_from_pubkey = $transaction->from;
+				$wallet_from = Wallet::GetWalletAddressFromPubKey($transaction->from);
+			}
+
+			//Start Transactions
+			$this->db->begin_transaction();
+
+			$sqlAddTxnToPool = "INSERT INTO txnpool (txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp)
+					VALUES ('".$transaction->message()."','".$wallet_from_pubkey."','".$wallet_from."','".$transaction->to."','".$transaction->amount."','".$transaction->signature."','".$transaction->tx_fee."','".$transaction->data."','".$transaction->timestamp."');";
+
+			//Commit transaction
+			if ($this->db->query($sqlAddTxnToPool)) {
+				$this->db->commit();
+				return true;
+			}
+
+			//Rollback transaction
+			else
+				$this->db->rollback();
+		}
+		return false;
+	}
+
     /**
-     * Add a pending transaction to send to the chaindata
+     * Delete a transaction from pool
      *
      * @param $txHash
-     * @param $transaction
-     * @return bool
      */
-    public function addPendingTransactionToSend($txHash,$transaction) {
-        $into_tx_pending = $this->db->query("SELECT txn_hash FROM transactions_pending_to_send WHERE txn_hash = '".$txHash."' ORDER BY tx_fee DESC, timestamp DESC;")->fetch_assoc();
-        if (empty($into_tx_pending)) {
-
-            $wallet_from_pubkey = "";
-            $wallet_from = "";
-            if ($transaction->from != null) {
-                $wallet_from_pubkey = $transaction->from;
-                $wallet_from = Wallet::GetWalletAddressFromPubKey($transaction->from);
-            }
-
-            //Start Transactions
-            $this->db->begin_transaction();
-
-            $sqlInsertPendingTransactionToSend = "INSERT INTO transactions_pending_to_send (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp)
-                    VALUES ('','".$transaction->message()."','".$wallet_from_pubkey."','".$wallet_from."','".$transaction->to."','".$transaction->amount."','".$transaction->signature."','".$transaction->tx_fee."','".$transaction->data."','".$transaction->timestamp."');";
-
-            //Commit transaction
-            if ($this->db->query($sqlInsertPendingTransactionToSend)) {
-                $this->db->commit();
-                return true;
-            }
-
-            //Rollback transaction
-            else
-                $this->db->rollback();
-        }
-        return false;
-    }
-
-    /**
-     * Delete a pending transaction
-     *
-     * @param $txHash
-     */
-    public function removePendingTransaction($txHash) {
-        $this->db->query("DELETE FROM transactions_pending WHERE txn_hash='".$txHash."';");
-    }
-
-    /**
-     * Delete a pending transaction to send
-     *
-     * @param $txHash
-     */
-    public function removePendingTransactionToSend($txHash) {
-        $this->db->query("DELETE FROM transactions_pending_to_send WHERE txn_hash='".$txHash."';");
+    public function removeTxnFromPool($txHash) {
+        $this->db->query("DELETE FROM txnpool WHERE txn_hash='".$txHash."';");
     }
 
     /**
@@ -754,15 +650,30 @@ class DB {
      *
      * @return array
      */
-    public function GetAllPendingTransactionsToSend() {
+    public function GetAllTxnFromPool() {
         $txs = array();
-        $txs_chaindata = $this->db->query("SELECT * FROM transactions_pending_to_send ORDER BY tx_fee DESC, timestamp DESC");
+        $txs_chaindata = $this->db->query("SELECT * FROM txnpool ORDER BY tx_fee DESC, timestamp DESC");
         if (!empty($txs_chaindata)) {
             while ($tx_chaindata = $txs_chaindata->fetch_array(MYSQLI_ASSOC)) {
                 $txs[] = $tx_chaindata;
             }
         }
         return $txs;
+    }
+
+	/**
+     * Return array with all pending transactions to send
+     *
+	 * @param $txHash
+	 *
+     * @return mixed
+     */
+    public function GetTxnFromPoolByHash($txHash) {
+        $txnInfo = $this->db->query("SELECT * FROM txnpool WHERE txn_hash = '".$txHash."'")->fetch_assoc();
+        if (!empty($txnInfo)) {
+            return $txnInfo;
+        }
+        return null;
     }
 
     /**
@@ -847,8 +758,7 @@ class DB {
 					}
 
                     //We eliminated the pending transaction
-                    $this->removePendingTransaction($transaction->message());
-                    $this->removePendingTransactionToSend($transaction->message());
+                    $this->removeTxnFromPool($transaction->message());
                 }
             }
             else {
@@ -867,99 +777,6 @@ class DB {
             $this->db->commit();
             return true;
         }
-    }
-
-    /**
-     * Add a block in the chaindata
-     *
-     * @param int $blockNum
-     * @param array $blockInfo
-     * @return bool
-     */
-    public function addBlockFromArray($blockNum,$blockInfo) {
-
-        $error = false;
-
-        $info_block_chaindata = $this->db->query("SELECT block_hash FROM blocks WHERE block_hash = '".$blockInfo['block_hash']."';")->fetch_assoc();
-        if (empty($info_block_chaindata)) {
-
-            //Start Transactions
-            $this->db->begin_transaction();
-
-            //SQL Insert Block
-            $sqlInsertBlock = "INSERT INTO blocks (height,block_previous,block_hash,root_merkle,nonce,timestamp_start_miner,timestamp_end_miner,difficulty,version,info)
-            VALUES (".$blockNum.",'".$blockInfo['block_previous']."','".$blockInfo['block_hash']."','".$blockInfo['root_merkle']."','".$blockInfo['nonce']."','".$blockInfo['timestamp_start_miner']."','".$blockInfo['timestamp_end_miner']."','".$blockInfo['difficulty']."','".$blockInfo['version']."','".$blockInfo['info']."');";
-
-            //Add block into blockchain
-            if ($this->db->query($sqlInsertBlock)) {
-
-                foreach ($blockInfo['transactions'] as $transaction) {
-
-                    $sqlInsertTransaction = "INSERT INTO transactions (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp)
-                    VALUES ('".$blockInfo['block_hash']."','".$transaction['txn_hash']."','".$transaction['wallet_from_key']."','".$transaction['wallet_from']."','".$transaction['wallet_to']."','".$transaction['amount']."','".$transaction['signature']."','".$transaction['tx_fee']."','".$transaction['data']."','".$transaction['timestamp']."');";
-                    if (!$this->db->query($sqlInsertTransaction)) {
-                        $error = true;
-                        break;
-                    }
-
-					//Update Account FROM
-					if (strlen($wallet_from) > 0 && $wallet_from != 'J4F00000000000000000000000000000000000000000000000000000000') {
-						$sql_updateAccountFrom = "
-						INSERT INTO accounts (hash,sended,received,mined)
-						VALUES ('".$wallet_from."','".$transaction['amount']."' + '".$transaction['tx_fee']."',0,0)
-						ON DUPLICATE KEY UPDATE sended = sended + VALUES(sended) + '".$transaction['tx_fee']."';
-						";
-	                    if (!$this->db->query($sql_updateAccountFrom)) {
-	                        $error = true;
-	                        break;
-	                    }
-					}
-					//Update Account TO
-					if (strlen($transaction['wallet_to']) > 0) {
-						// MINED BLOCK
-						if (strlen($wallet_from) == 0) {
-							$sql_updateAccountTo = "
-							INSERT INTO accounts (hash,sended,received,mined)
-							VALUES ('".$transaction['wallet_to']."',0,0,'".$transaction['amount']."')
-							ON DUPLICATE KEY UPDATE mined = mined + VALUES(mined);
-							";
-						}
-						else {
-							$sql_updateAccountTo = "
-							INSERT INTO accounts (hash,sended,received,mined)
-							VALUES ('".$transaction['wallet_to']."',0,'".$transaction['amount']."',0)
-							ON DUPLICATE KEY UPDATE received = received + VALUES(received);
-							";
-						}
-
-						if (!$this->db->query($sql_updateAccountTo)) {
-							$error = true;
-							break;
-						}
-					}
-
-                    //We eliminated the pending transaction
-                    $this->removePendingTransaction($transaction['txn_hash']);
-                    $this->removePendingTransactionToSend($transaction['txn_hash']);
-                }
-            }
-            else {
-                $error = true;
-            }
-        }
-
-        //If have error, rollback action
-        if ($error) {
-            $this->db->rollback();
-            return false;
-        }
-
-        //No errors, block added
-        else {
-            $this->db->commit();
-            return true;
-        }
-
     }
 
     /**
@@ -1730,9 +1547,10 @@ class DB {
             //Start Transactions
             $this->db->begin_transaction();
 
-            //SQL Insert Block
-            $sql_insert_block = "INSERT INTO blocks_pending_to_display (status,block_previous,block_hash,root_merkle,nonce,timestamp_start_miner,timestamp_end_miner,difficulty,version,info)
-            VALUES ('".$status."','".$minedBlock->previous."','".$minedBlock->hash."','".$minedBlock->merkle."','".$minedBlock->nonce."','".$minedBlock->timestamp."','".$minedBlock->timestamp_end."','".$minedBlock->difficulty."','".$this->GetConfig('node_version')."','".$this->db->real_escape_string(@serialize($minedBlock->info))."');";
+			//SQL Insert Block
+			$sql_insert_block = "
+			INSERT INTO blocks_pending_to_display (status,block_previous,block_hash,root_merkle,nonce,timestamp_start_miner,timestamp_end_miner,difficulty,version,info)
+			VALUES ('".$status."','".$minedBlock->previous."','".$minedBlock->hash."','".$minedBlock->merkle."','".$minedBlock->nonce."','".$minedBlock->timestamp."','".$minedBlock->timestamp_end."','".$minedBlock->difficulty."','".$this->GetConfig('node_version')."','".$this->db->real_escape_string(@serialize($minedBlock->info))."');";
 
             if ($this->db->query($sql_insert_block)) {
                 $this->db->commit();

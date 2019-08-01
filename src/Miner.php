@@ -42,7 +42,7 @@ class Miner {
         $lastBlock = $gossip->chaindata->GetLastBlock();
 
         //Get Pending transactions
-        $transactions_pending = $gossip->chaindata->GetAllPendingTransactions();
+        $transactions_pending = $gossip->chaindata->GetTxnFromPool();
 
         $total_amount_to_miner = "0";
 

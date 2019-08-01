@@ -371,9 +371,6 @@ class Gossip {
 			//If we are not synchronizing
 			if (!$gossip->syncing) {
 
-				//We send all transactions_pending_to_send to the network
-				$gossip->sendPendingTransactionsToNetwork();
-
 				//We have miner, start miner process
 				if ($gossip->enable_mine) {
 					$gossip->mineProcess();
@@ -423,8 +420,7 @@ class Gossip {
 						$gossip->difficulty = Blockchain::checkDifficulty($gossip->chaindata, null, $gossip->isTestNet)[0];
 
 						//We clean the table of blocks mined by the peers
-						$gossip->chaindata->truncate("transactions_pending_to_send");
-						$gossip->chaindata->truncate("transactions_pending");
+						$gossip->chaindata->truncate("txnpool");
 						$gossip->chaindata->truncate("blocks_pending_to_display");
 						$gossip->chaindata->truncate("blocks_announced");
 					}
@@ -508,12 +504,12 @@ class Gossip {
 						switch (strtoupper($msgFromPeer['action'])) {
 							case 'GETPENDINGTRANSACTIONS':
 								$return['status'] = true;
-								$return['result'] = $gossip->chaindata->GetAllPendingTransactions();
+								$return['result'] = $gossip->chaindata->GetTxnFromPool();
 							break;
 							case 'ADDPENDINGTRANSACTIONS':
 								if (isset($msgFromPeer['txs'])) {
 									$return['status'] = true;
-									$return['result'] = $gossip->chaindata->addPendingTransactionsByPeer(@unserialize($msgFromPeer['txs']));
+									$return['result'] = $gossip->chaindata->addTxnsToPoolByPeer(@unserialize($msgFromPeer['txs']));
 								}
 							break;
 							case 'GETBLOCKBYHASH':
@@ -908,20 +904,8 @@ class Gossip {
             $transactionsByPeer = BootstrapNode::GetPendingTransactions($this->chaindata,$this->isTestNet);
 
             //Check if have transactions by peer
-            if ($transactionsByPeer != null && is_array($transactionsByPeer)) {
-                foreach ($transactionsByPeer as $transactionByPeer) {
-
-                    // Date of the transaction can not be longer than the local date
-                    if ($transactionByPeer['timestamp'] > Tools::GetGlobalTime())
-                        continue;
-
-                    //We check not sending money to itself
-                    if ($transactionByPeer['wallet_from'] == $transactionByPeer['wallet_to'])
-                        continue;
-
-                    //We check that the date of the transaction is less than or equal to the current date
-                    $this->chaindata->addPendingTransactionByBootstrap($transactionByPeer);
-                }
+            if ($transactionsByPeer != null && is_array($transactionsByPeer) && !empty($transactionsByPeer)) {
+				$this->chaindata->addTxnsToPoolByPeer($transactionsByPeer);
             }
         }
     }
@@ -1217,40 +1201,5 @@ class Gossip {
 		Blockchain::SanityFromBlockHeight($this->chaindata,$numBlocksToRemove);
 		Display::_printer("%LR%SANITY Finished %W%- Restart your client");
 	}
-
-    /**
-     * We send all pending transactions to our peers
-     */
-    public function sendPendingTransactionsToNetwork() {
-
-        //We obtain all pending transactions to send
-        $pending_tx = $this->chaindata->GetAllPendingTransactionsToSend();
-
-		if (!empty($pending_tx)) {
-			//We add the pending transaction to the chaindata
-			foreach ($pending_tx as $tx)
-				$this->chaindata->addPendingTransaction($tx);
-
-			//We get all the peers and send the pending transactions to all
-			$peers = $this->chaindata->GetAllPeers();
-			foreach ($peers as $peer) {
-
-				$myPeerID = Tools::GetIdFromIpAndPort($this->ip,$this->port);
-				$peerID = Tools::GetIdFromIpAndPort($peer['ip'],$peer['port']);
-
-				if ($myPeerID != $peerID) {
-					$infoToSend = array(
-						'action' => 'ADDPENDINGTRANSACTIONS',
-						'txs' => @serialize($pending_tx)
-					);
-					Socket::sendMessage($peer['ip'],$peer['port'],$infoToSend);
-				}
-			}
-
-			//We delete transactions sent from transactions_pending_to_send
-			foreach ($pending_tx as $tx)
-				$this->chaindata->removePendingTransactionToSend($tx['txn_hash']);
-		}
-    }
 }
 ?>

@@ -221,16 +221,9 @@ class Wallet {
         //Obtenemos lo que ha recibido el usuario en esta cartera
         $totalReceived = "0";
 
-        $totalReceivedPending_tmp = $chaindata->db->query("SELECT amount FROM transactions_pending WHERE wallet_to = '".$address."';");
+        $totalReceivedPending_tmp = $chaindata->db->query("SELECT amount FROM txnpool WHERE wallet_to = '".$address."';");
         if (!empty($totalReceivedPending_tmp)) {
             while ($txnInfo = $totalReceivedPending_tmp->fetch_array(MYSQLI_ASSOC)) {
-                $totalReceived = @bcadd($totalReceived, $txnInfo['amount'], 18);
-            }
-        }
-
-        $totalReceivedPendingToSend_tmp = $chaindata->db->query("SELECT amount FROM transactions_pending_to_send WHERE wallet_to = '".$address."';");
-        if (!empty($totalReceivedPendingToSend_tmp)) {
-            while ($txnInfo = $totalReceivedPendingToSend_tmp->fetch_array(MYSQLI_ASSOC)) {
                 $totalReceived = @bcadd($totalReceived, $txnInfo['amount'], 18);
             }
         }
@@ -333,16 +326,9 @@ class Wallet {
         $totalPendingSended = "0";
         $totalTransactions = 0;
 
-        $totalSendedPending_tmp = $chaindata->db->query("SELECT amount FROM transactions_pending WHERE wallet_from = '".$wallet."';");
+        $totalSendedPending_tmp = $chaindata->db->query("SELECT amount FROM txnpool WHERE wallet_from = '".$wallet."';");
         if (!empty($totalSendedPending_tmp)) {
             while ($txnInfo = $totalSendedPending_tmp->fetch_array(MYSQLI_ASSOC)) {
-                $totalPendingSended = bcadd($totalPendingSended, $txnInfo['amount'], 18);
-            }
-        }
-
-        $totalSendedPendingToSend_tmp = $chaindata->db->query("SELECT amount FROM transactions_pending_to_send WHERE wallet_from = '".$wallet."';");
-        if (!empty($totalSendedPendingToSend_tmp)) {
-            while ($txnInfo = $totalSendedPendingToSend_tmp->fetch_array(MYSQLI_ASSOC)) {
                 $totalPendingSended = bcadd($totalPendingSended, $txnInfo['amount'], 18);
             }
         }
@@ -495,22 +481,28 @@ class Wallet {
                 // Check if transaction is valid
                 if ($transaction->isValid()) {
 
-                    //Instance the pointer to the chaindata
-                    $chaindata = new DB();
-
                     //We add the pending transaction to send into our chaindata
-                    $chaindata->addPendingTransactionToSend($transaction->message(),$transaction);
+                    if ($chaindata->addTxnToPool($transaction->message(),$transaction)) {
 
-                    $return_message = "";
-                    if ($cli) {
-                        $return_message = "Transaction created successfully".PHP_EOL;
-                        $return_message .= "TX: ".ColorsCLI::$FG_GREEN. $transaction->message().ColorsCLI::$FG_WHITE.PHP_EOL;
-                    }
-                    else {
-                        $return_message = $transaction->message();
-                    }
-                    return $return_message;
+						//Send transaction to network
+						self::sendTxnToNetwork($chaindata,$transaction);
 
+						//Close DB Instance
+						$chaindata->db->close();
+
+	                    $return_message = "";
+	                    if ($cli) {
+	                        $return_message = "Transaction created successfully".PHP_EOL;
+	                        $return_message .= "TX: ".ColorsCLI::$FG_GREEN. $transaction->message().ColorsCLI::$FG_WHITE.PHP_EOL;
+	                    }
+	                    else {
+	                        $return_message = $transaction->message();
+	                    }
+	                    return $return_message;
+					}
+					else {
+						return "Error, An error occurred while trying to create the transaction. Try again";
+					}
                 } else {
                     return "An error occurred while trying to create the transaction".PHP_EOL."The wallet_from password may be incorrect".PHP_EOL;
                 }
@@ -618,13 +610,21 @@ class Wallet {
 
                 // Check if transaction is valid
                 if ($transaction->isValid()) {
-                    //We add the pending transaction to send into our chaindata
-                    if ($chaindata->addPendingTransactionToSend($transaction->message(),$transaction)) {
-                        return $transaction->message();
-                    }
-                    else {
-                        return "Error, An error occurred while saving transaction to propagate";
-                    }
+
+					//We add the pending transaction to send into our chaindata
+                    if ($chaindata->addTxnToPool($transaction->message(),$transaction)) {
+
+						//Send transaction to network
+						self::sendTxnToNetwork($chaindata,$transaction);
+
+						//Close DB Instance
+						$chaindata->db->close();
+
+	                    return $transaction->message();
+					}
+					else {
+						return "Error, An error occurred while trying to create the transaction. Try again";
+					}
                 }
                 else {
                     return "Error, An error occurred while trying to create the transaction. The wallet_from password may be incorrect";
@@ -639,6 +639,32 @@ class Wallet {
             return $return_message;
         }
     }
+
+	/**
+     * Propagate txn to network
+     *
+     * @param DB $chaindata
+     * @param Transaction $transaction
+     */
+	public static function sendTxnToNetwork(&$chaindata,$transaction) {
+		$peers = $chaindata->GetAllPeers();
+		$config = $chaindata->GetAllConfig();
+		foreach ($peers as $peer) {
+
+			$myPeerID = Tools::GetIdFromIpAndPort($config['node_ip'],$config['node_port']);
+			$peerID = Tools::GetIdFromIpAndPort($peer['ip'],$peer['port']);
+
+			$txnFromPool = $chaindata->GetTxnFromPoolByHash($transaction->hash);
+
+			if ($myPeerID != $peerID && is_array($txnFromPool)) {
+				$infoToSend = array(
+					'action' => 'ADDPENDINGTRANSACTIONS',
+					'txs' => @serialize(array($txnFromPool))
+				);
+				Socket::sendMessage($peer['ip'],$peer['port'],$infoToSend);
+			}
+		}
+	}
 
 }
 ?>

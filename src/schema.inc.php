@@ -344,6 +344,33 @@ if ($dbversion == 9) {
     $dbversion++;
 }
 
+if ($dbversion == 10) {
+
+    $db->db->query("
+	CREATE TABLE `txnpool` (
+	  `txn_hash` varchar(128) NOT NULL,
+	  `wallet_from_key` longtext,
+	  `wallet_from` varchar(128) DEFAULT NULL,
+	  `wallet_to` varchar(128) NOT NULL,
+	  `amount` decimal(65,18) NOT NULL,
+	  `signature` longtext NOT NULL,
+	  `tx_fee` decimal(65,18) NOT NULL,
+	  `data` longblob NOT NULL,
+	  `timestamp` varchar(12) NOT NULL,
+	  PRIMARY KEY (`txn_hash`),
+	  UNIQUE KEY `txn` (`txn_hash`) USING BTREE,
+	  KEY `wallet_from_to` (`wallet_from`,`wallet_to`) USING BTREE
+	) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+	");
+
+	$db->db->query("DROP TABLE transactions_pending;");
+	$db->db->query("DROP TABLE transactions_pending_to_send;");
+
+    Display::_printer("Updating DB Schema #".$dbversion);
+
+    //Increment version to next stage
+    $dbversion++;
+}
 
 
 // update dbversion

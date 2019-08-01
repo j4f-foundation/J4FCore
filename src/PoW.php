@@ -143,8 +143,9 @@ class PoW {
      */
     public static function isValidNonce($message,$nonce,$difficulty,$maxDifficulty) {
 
+		$difficulty = ($difficulty < 0) ? 1:$difficulty;
 		$hash = PoW::hash($message.$nonce);
-        $targetHash = bcdiv(Tools::hex2dec($maxDifficulty),$difficulty);
+        $targetHash = @bcdiv(Tools::hex2dec($maxDifficulty),$difficulty);
 		$hashValue = Tools::hex2dec(strtoupper($hash));
 
         $result = bccomp($targetHash,$hashValue);
