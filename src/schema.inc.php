@@ -372,6 +372,16 @@ if ($dbversion == 10) {
     $dbversion++;
 }
 
+if ($dbversion == 11) {
+
+	$db->db->query("DROP TABLE blocks_announced;");
+	$db->db->query("DROP TABLE blocks_pending_to_display;");
+
+    Display::print("Updating DB Schema #".$dbversion);
+
+    //Increment version to next stage
+    $dbversion++;
+}
 
 // update dbversion
 if ($dbversion != $_CONFIG['dbversion']) {
