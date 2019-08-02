@@ -719,7 +719,7 @@ class Gossip {
 										$return['status'] = true;
 										$return['error'] = 'Block old';
 										$return['result'] = 'sanity';
-										Display::_warning('Peer '.Tools::GetIdFromIpAndPort($msgFromPeer['node_ip'],$msgFromPeer['node_port']).' need to be sync with me');
+										//Display::_warning('Peer '.Tools::GetIdFromIpAndPort($msgFromPeer['node_ip'],$msgFromPeer['node_port']).' need to be sync with me');
 									}
 									else if (($msgFromPeer['height'] - $lastBlock['height']) > 100) {
 

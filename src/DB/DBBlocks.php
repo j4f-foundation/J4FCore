@@ -967,7 +967,7 @@ class DBBlocks extends DBContracts {
 
 		//Rollback transaction
 		if ($error)
-		$this->db->rollback();
+			$this->db->rollback();
 		else {
 			$this->db->commit();
 			return true;

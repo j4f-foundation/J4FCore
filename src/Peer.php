@@ -87,30 +87,30 @@ class Peer {
                     //Define new height for next block
                     $nextHeight = $lastBlock['height']+1;
 
-					//Display::print(print_r($blockToImport,true));
+					//Check if difficulty its ok
+					$currentDifficulty = Blockchain::checkDifficulty($gossip->chaindata,null,$isTestNet);
+					if ($currentDifficulty[0] != $blockToImport->difficulty) {
+						Display::ShowMessageNewBlock('diffko',$lastBlock['height'],$blockToImport);
+						break;
+					}
 
                     //If block is valid
                     if ($blockToImport->isValid($nextHeight,$isTestnet)) {
-
                         //Check if rewarded transaction is valid, prevent hack money
                         if ($blockToImport->isValidReward($nextHeight,$gossip->isTestNet)) {
-
                             //We add block to blockchain
                             if ($gossip->chaindata->addBlock($nextHeight,$blockToImport)) {
-
 								//Make SmartContracts on local blockchain
 								SmartContract::Make($gossip->chaindata,$blockToImport);
 
 								//Call Functions of SmartContracts on local blockchain
 								SmartContract::CallFunction($gossip->chaindata,$blockToImport);
 
-								//Display::_debug('PASO 1');
+								//Save block pointer
+	                            $blockSynced = $blockToImport;
+
+	                            $blocksSynced++;
 							}
-
-                            //Save block pointer
-                            $blockSynced = $blockToImport;
-
-                            $blocksSynced++;
                         } else {
                             Display::_warning("Peer ".$ipAndPort." added to blacklist       %G%reason%W%=Reward transaction not valid");
                             $gossip->chaindata->addPeerToBlackList($ipAndPort);
@@ -123,7 +123,28 @@ class Peer {
                     }
 
                 //Check if my last block is the same height of the block to import
-                } else if ($lastBlock['block_previous'] == $blockToImport->previous && $lastBlock['block_hash'] != $blockToImport->hash) {
+                }
+				else if ($lastBlock['block_previous'] == $blockToImport->previous && $lastBlock['block_hash'] != $blockToImport->hash) {
+
+					//Check if difficulty its ok
+					$currentDifficulty = Blockchain::checkDifficulty($gossip->chaindata,($lastBlock['height']-1),$isTestNet);
+					if ($currentDifficulty[0] != $blockToImport->difficulty) {
+						Display::ShowMessageNewBlock('novalid',$lastBlock['height'],$blockToImport);
+						break;
+					}
+
+					// We check if the time difference is equal orgreater than 2s
+					$diffTimeBlocks = date_diff(
+						date_create(date('Y-m-d H:i:s', $lastBlock['timestamp_end_miner'])),
+						date_create(date('Y-m-d H:i:s', $blockToImport->timestamp_end))
+					);
+					$diffTimeSeconds = ($diffTimeBlocks->format('%i') * 60) + $diffTimeBlocks->format('%s');
+					$diffTimeSeconds = ($diffTimeSeconds < 0) ? ($diffTimeSeconds * -1):$diffTimeSeconds;
+					if ($diffTimeSeconds >= 2) {
+						Display::ShowMessageNewBlock('novalid',$lastBlock['height'],$blockToImport);
+						break;
+					}
+
                     //Valid new block in same hiehgt to add in Blockchain
                     $returnCode = Blockchain::isValidBlockMinedByPeerInSameHeight($gossip->chaindata,$lastBlock,$blockToImport);
                     if ($returnCode == "0x00000000") {
@@ -132,26 +153,42 @@ class Peer {
 
                         $blocksSynced++;
                     }
+					else {
+						if ($returnCode == "0x00000001") {
+							Display::ShowMessageNewBlock('novalid',$lastBlock['height'],$blockToImport);
+						}
+						else if ($returnCode == "0x00000002") {
+							Display::ShowMessageNewBlock('rewardko',$lastBlock['height'],$blockToImport);
+						}
+						else if ($returnCode == "0x00000003") {
+							Display::ShowMessageNewBlock('previousko',$lastBlock['height'],$blockToImport);
+						}
+						else if ($returnCode == "0x00000004") {
+							Display::ShowMessageNewBlock('malformed',$lastBlock['height'],$blockToImport);
+						}
+						else if ($returnCode == "0x00000005") {
+							Display::ShowMessageNewBlock('noaccepted',$lastBlock['height'],$blockToImport);
+						}
+						break;
+					}
                 } else if ($lastBlock['block_previous'] == $object['block_previous'] && $lastBlock['block_hash'] == $object['block_hash']) {
                     continue;
-                } else {
-
-					$numBlocksSanity = 5;
-					if ($lastBlock['height'] <= 5) {
+                }
+				else {
+					$numBlocksSanity = 5 + $blocksSynced;
+					if ($lastBlock['height'] <= $numBlocksSanity)
 						$numBlocksSanity = 1;
-					}
 					$heightBlockFromRemove = $lastBlock['height'] - $numBlocksSanity;
 
                     //Micro-Sanity last block and resync
 					$gossip->chaindata->RemoveLastBlocksFrom($heightBlockFromRemove);
-					Display::_warning("Started Micr-Sanity And re-sync       %G%height%W%=".$lastBlock['height']."	%G%newHeight%W%=".$heightBlockFromRemove);
+					Display::_warning("Started Micr-Sanity And re-sync with peer       %G%height%W%=".$lastBlock['height']."	%G%newHeight%W%=".$heightBlockFromRemove);
 
 					Tools::clearTmpFolder();
-
 					@unlink(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer");
 
                     //Display::_warning("Peer ".$ipAndPort." added to blacklist       %G%reason%W%=Peer Previous block doesnt match with local last block");
-                    $gossip->chaindata->addPeerToBlackList($ipAndPort);
+                    //$gossip->chaindata->addPeerToBlackList($ipAndPort);
                     return null;
                 }
             }

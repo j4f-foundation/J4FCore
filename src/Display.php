@@ -140,6 +140,9 @@ class Display {
 		else if (strtolower($type) == 'noacepted') {
 	        Display::print("%LR%Ignored%W% new block     	%G%error%W%=Block in same height not accepted  	%G%previous%W%=" . $mini_hash_previous . "  %G%hash%W%=" . $mini_hash);
 		}
+		else if (strtolower($type) == 'diffko') {
+	        Display::print("%LR%Ignored%W% new block     	%G%error%W%=Difficulty hacked?  	%G%previous%W%=" . $mini_hash_previous . "  %G%hash%W%=" . $mini_hash);
+		}
 		else if (strtolower($type) == 'malformed') {
 	        Display::print("%LR%Ignored%W% new block     	%G%error%W%=Block malformed");
 		}
