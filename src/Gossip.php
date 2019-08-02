@@ -573,7 +573,6 @@ class Gossip {
 
 									//Check if difficulty its ok
 									$currentDifficulty = Blockchain::checkDifficulty($gossip->chaindata,($lastBlock['height']-1),$isTestNet);
-
 									if ($currentDifficulty[0] != $blockMinedByPeer->difficulty) {
 										$return['status'] = true;
 										$return['error'] = "4x00000000";
@@ -615,10 +614,8 @@ class Gossip {
 									}
 
 									//If have miner enabled, stop all miners
-									if (@file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MINERS_STARTED)) {
-										Tools::clearTmpFolder();
-										Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
-									}
+									Tools::clearTmpFolder();
+									Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
 
 									break;
 								}
@@ -659,10 +656,8 @@ class Gossip {
 										Display::ShowMessageNewBlock('imported',$lastBlock['height'],$blockMinedByPeer);
 
 										//If have miner enabled, stop all miners
-										if (@file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MINERS_STARTED)) {
-											Tools::clearTmpFolder();
-											Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
-										}
+										Tools::clearTmpFolder();
+										Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
 
 										if ( isset( $msgFromPeer['node_ip'] ) && isset($msgFromPeer['node_port']) ) {
 											Tools::sendBlockMinedToNetworkWithSubprocess($gossip->chaindata,$blockMinedByPeer,array(
@@ -710,11 +705,22 @@ class Gossip {
 										Display::warning('Peer '.Tools::GetIdFromIpAndPort($msgFromPeer['node_ip'],$msgFromPeer['node_port']).' need to be sync with me');
 									}
 									else if (($msgFromPeer['height'] - $lastBlock['height']) > 100) {
+
+										//If have miner enabled, stop all miners
+										Tools::clearTmpFolder();
+										Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
+
 										$return['status'] = true;
 										$return['error'] = 'Block out of sync';
+
 										Display::warning('Peer '.Tools::GetIdFromIpAndPort($msgFromPeer['node_ip'],$msgFromPeer['node_port']).' have more blocks than me		PeerHeight: '.$msgFromPeer['height']. '		MyHeight:'.$lastBlock['height']);
 									}
 									else {
+
+										//If have miner enabled, stop all miners
+										Tools::clearTmpFolder();
+										Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
+
 										$return['status'] = true;
 										$return['error'] = 'Block out of sync, sync with you';
 
