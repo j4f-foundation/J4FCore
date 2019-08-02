@@ -17,7 +17,11 @@
 // along with the J4FCore library. If not, see <http://www.gnu.org/licenses/>.
 
 include('../CONFIG.php');
-include('../src/DB.php');
+include('../src/DB/DBTransactions.php');
+include('../src/DB/DBContracts.php');
+include('../src/DB/DBBlocks.php');
+include('../src/DB/DBBase.php');
+include('../src/DB/DB.php');
 include('../src/ColorsCLI.php');
 include('../src/Display.php');
 include('../src/Subprocess.php');

@@ -87,7 +87,7 @@ class Peer {
                     //Define new height for next block
                     $nextHeight = $lastBlock['height']+1;
 
-					//DISPLAY::_printer(print_r($blockToImport,true));
+					//Display::print(print_r($blockToImport,true));
 
                     //If block is valid
                     if ($blockToImport->isValid($nextHeight,$isTestnet)) {
@@ -171,12 +171,12 @@ class Peer {
             $blockMinedInSeconds = $minedTime->format('%im%ss');
 
             if ($transactionsSynced[0]->to == $gossip->coinbase) {
-                Display::_printer("%Y%Rewarded%W% new block headers               %G%nonce%W%=".$blockSynced->nonce."      %G%elapsed%W%=".$blockMinedInSeconds."     %G%previous%W%=".$mini_hash_previous."   %G%hash%W%=".$mini_hash."      %G%number%W%=".$numBlock."");
+                Display::print("%Y%Rewarded%W% new block headers               %G%nonce%W%=".$blockSynced->nonce."      %G%elapsed%W%=".$blockMinedInSeconds."     %G%previous%W%=".$mini_hash_previous."   %G%hash%W%=".$mini_hash."      %G%number%W%=".$numBlock."");
             } else {
-                Display::_printer("%Y%Imported%W% new block headers               %G%nonce%W%=".$blockSynced->nonce."      %G%elapsed%W%=".$blockMinedInSeconds."     %G%previous%W%=".$mini_hash_previous."   %G%hash%W%=".$mini_hash."      %G%number%W%=".$numBlock."");
+                Display::print("%Y%Imported%W% new block headers               %G%nonce%W%=".$blockSynced->nonce."      %G%elapsed%W%=".$blockMinedInSeconds."     %G%previous%W%=".$mini_hash_previous."   %G%hash%W%=".$mini_hash."      %G%number%W%=".$numBlock."");
             }
         } else if ($blocksSynced > 0) {
-            Display::_printer("%Y%Imported%W% new blocks headers              %G%count%W%=".$blocksSynced."             %G%current%W%=".$currentBlocks."   %G%total%W%=".$totalBlocks);
+            Display::print("%Y%Imported%W% new blocks headers              %G%count%W%=".$blocksSynced."             %G%current%W%=".$currentBlocks."   %G%total%W%=".$totalBlocks);
         }
 
         return null;
@@ -190,7 +190,7 @@ class Peer {
 		//Run subprocess peerAlive per peer
 		$peers = $chaindata->GetAllPeersWithoutBootstrap();
 		if (count($peers) > 0) {
-			Display::_printer('Selecting peer to sync			%G%count%W%='.count($peers));
+			Display::print('Selecting peer to sync			%G%count%W%='.count($peers));
 			Tools::writeLog('Selecting peer to sync			%G%count%W%='.count($peers));
 
 			//Run subprocess propagation

@@ -205,7 +205,7 @@ class SmartContract {
 		//Obteemos todas las transacciones del bloque
 		//Si alguna transaccion va dirigida a 00000
 		if ($contract != null) {
-			//Display::_printer('CONTRACT HASH: ' . $contract->contract_hash);
+			//Display::print('CONTRACT HASH: ' . $contract->contract_hash);
 
 			//Parse txn::data (call code) to string
 			$callCode = Tools::hex2str($callFunctionHex);

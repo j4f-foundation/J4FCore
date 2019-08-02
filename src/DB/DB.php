@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the J4FCore library. If not, see <http://www.gnu.org/licenses/>.
 
-class DB {
+class DB extends DBBase {
 
     public $db;
 
@@ -1489,112 +1489,6 @@ class DB {
 			return true;
 		}
 		return false;
-    }
-
-    /**
-     * Check if announced this block
-     *
-     * @param $blockHash
-     * @return bool
-     */
-    public function BlockHasBeenAnnounced($blockHash) {
-        $infoBlockAnnounced = $this->db->query("SELECT id FROM blocks_announced WHERE block_hash = '".$blockHash."';")->fetch_assoc();
-        if (empty($infoBlockAnnounced))
-            return false;
-        return true;
-    }
-
-    /**
-     * Add block hash to announced blocks
-     *
-     * @param $blockHash
-     * @return bool
-     */
-    public function AddBlockAnnounced($blockHash) {
-        $infoBlockAnnounced = $this->db->query("SELECT id FROM blocks_announced WHERE block_hash = '".$blockHash."';")->fetch_assoc();
-        if (empty($infoBlockAnnounced))
-            $this->db->query("INSERT INTO blocks_announced (block_hash) VALUES ('".$blockHash."');");
-        return true;
-    }
-
-    /**
-     * Remove block hash from announced blocks
-     *
-     * @param $blockHash
-     * @return bool
-     */
-    public function RemoveBlockAnnounced($blockHash) {
-        if ($this->db->query("DELETE FROM blocks_announced WHERE block_hash = '".$blockHash."';"))
-            return true;
-        return false;
-    }
-
-    /**
-     * Add a block mined by a peer
-     * this block will be added from the main process
-     *
-     * @param Block $minedBlock
-     * @param string $status
-     * @return bool
-     */
-    public function AddBlockToDisplay($minedBlock,$status) {
-
-        $error = false;
-
-        $info_block_chaindata = $this->db->query("SELECT block_hash FROM blocks_pending_to_display WHERE block_hash = '".$minedBlock->hash."';")->fetch_assoc();
-        if (empty($info_block_chaindata)) {
-
-            //Start Transactions
-            $this->db->begin_transaction();
-
-			//SQL Insert Block
-			$sql_insert_block = "
-			INSERT INTO blocks_pending_to_display (status,block_previous,block_hash,root_merkle,nonce,timestamp_start_miner,timestamp_end_miner,difficulty,version,info)
-			VALUES ('".$status."','".$minedBlock->previous."','".$minedBlock->hash."','".$minedBlock->merkle."','".$minedBlock->nonce."','".$minedBlock->timestamp."','".$minedBlock->timestamp_end."','".$minedBlock->difficulty."','".$this->GetConfig('node_version')."','".$this->db->real_escape_string(@serialize($minedBlock->info))."');";
-
-            if ($this->db->query($sql_insert_block)) {
-                $this->db->commit();
-                return true;
-            }
-            else
-                $error = true;
-        }
-        if ($error)
-            $this->db->rollback();
-        return false;
-    }
-
-    /**
-     * Return array of mined blocks by peers
-     *
-     * @return array
-     */
-    public function GetBlockPendingToDisplay() {
-        $sql = "SELECT * FROM blocks_pending_to_display ORDER BY height ASC LIMIT 1";
-        $firstBlockInDisplayTable = $this->db->query($sql)->fetch_assoc();
-        return $firstBlockInDisplayTable;
-    }
-
-    /**
-     * Delete block from temp table
-     *
-     * @param $blockHash
-     */
-    public function RemoveBlockToDisplay($blockHash) {
-        $this->db->query("DELETE FROM blocks_pending_to_display WHERE block_hash='".$blockHash."';");
-    }
-
-    /**
-     * Return array of mined blocks by peers by hash param
-     *
-     * @param $hash
-     *
-     * @return array
-     */
-    public function GetBlockPendingToDisplayByHash($hash) {
-        $sql = "SELECT * FROM blocks_pending_to_display WHERE block_hash = '".$hash."'ORDER BY height ASC LIMIT 1";
-        $blockPendingByPeer = $this->db->query($sql)->fetch_assoc();
-        return $blockPendingByPeer;
     }
 
     /**

@@ -102,13 +102,13 @@ class Blockchain {
      */
     public static function isValidBlockMinedByPeer(&$chaindata,$lastBlock, $blockMinedByPeer) {
 
+		//If dont have new block
         if ($blockMinedByPeer == null)
             return "0x00000004";
 
         //If the previous block received by network refer to the last block of my blockchain
-        if ($blockMinedByPeer->previous != $lastBlock['block_hash']) {
+        if ($blockMinedByPeer->previous != $lastBlock['block_hash'])
             return "0x00000003";
-        }
 
         //Get next block height
         $heightNewBlock = $chaindata->GetNextBlockNum();
@@ -116,7 +116,7 @@ class Blockchain {
 
         //If the block is valid
         if (!$blockMinedByPeer->isValid($heightNewBlock,$isTestnet)) {
-            return "0x00000002";
+            return "0x00000001";
         }
 
         $isTestnet = false;
@@ -125,38 +125,25 @@ class Blockchain {
 
         //Check if rewarded transaction is valid, prevent hack money
         if ($blockMinedByPeer->isValidReward($heightNewBlock,$isTestnet)) {
+            //Add Block to blockchain
+            if ($chaindata->addBlock($heightNewBlock,$blockMinedByPeer)) {
 
-            //Check if block is waiting to display
-            $blockPendingToDisplay = $chaindata->GetBlockPendingToDisplayByHash($blockMinedByPeer->hash);
-            if (empty($blockPendingToDisplay)) {
+				//Make SmartContracts on local blockchain
+				SmartContract::Make($chaindata,$blockMinedByPeer);
 
-                //Add this block in pending block (DISPLAY)
-                $chaindata->AddBlockToDisplay($blockMinedByPeer,"0x00000000");
+				//Call Functions of SmartContracts on local blockchain
+				SmartContract::CallFunction($chaindata,$blockMinedByPeer);
 
-                //Add Block to blockchain
-                if ($chaindata->addBlock($heightNewBlock,$blockMinedByPeer)) {
+                if ($chaindata->GetConfig('isBootstrap') == 'on')
+                    Tools::SendMessageToDiscord($heightNewBlock,$blockMinedByPeer);
 
-					//Make SmartContracts on local blockchain
-					SmartContract::Make($chaindata,$blockMinedByPeer);
-
-					//Call Functions of SmartContracts on local blockchain
-					SmartContract::CallFunction($chaindata,$blockMinedByPeer);
-
-                    if ($chaindata->GetConfig('isBootstrap') == 'on')
-                        Tools::SendMessageToDiscord($heightNewBlock,$blockMinedByPeer);
-
-                    return "0x00000000";
-
-                } else {
-                    return "Error, can't add block ".$heightNewBlock;
-                }
+                return "0x00000000";
 
             } else {
-                return "Block added previously, reject block" .$heightNewBlock;
+                return "Error, can't add block ".$heightNewBlock;
             }
         } else {
-            $chaindata->AddBlockToDisplay($blockMinedByPeer,"0x00000001");
-            return "0x00000001";
+            return "0x00000002";
         }
     }
 
@@ -193,14 +180,16 @@ class Blockchain {
         if ($blockMinedByPeer == null)
             return "0x00000004";
 
+		//If the previous block received by network refer to the last block of my blockchain
+        if ($blockMinedByPeer->previous != $lastBlock['block_previous'])
+            return "0x00000003";
+
         //Check if node is connected on testnet or mainnet
         $isTestnet = ($chaindata->GetNetwork() == "testnet") ? true:false;
 
         //Check if new block is valid
-        if (!$blockMinedByPeer->isValid($lastBlock['height'],$isTestnet)) {
-            $chaindata->AddBlockToDisplay($blockMinedByPeer,"1x00000002");
-            return "0x00000002";
-        }
+        if (!$blockMinedByPeer->isValid($lastBlock['height'],$isTestnet))
+            return "0x00000001";
 
         //Default, no accept new block
         $acceptNewBlock = false;
@@ -212,14 +201,8 @@ class Blockchain {
         if (bccomp($numLastBlock, $numNewBlock) == 1)
             $acceptNewBlock = true;
 
-
-        if ($acceptNewBlock)
-            Tools::writeLog('ACCEPTED NEW BLOC');
-
         //Check if rewarded transaction is valid, prevent hack money
         if ($blockMinedByPeer->isValidReward($lastBlock['height'],$isTestnet)) {
-
-            Tools::writeLog('REWARD VALIDATED');
 
             if ($acceptNewBlock) {
 
@@ -235,27 +218,19 @@ class Blockchain {
 						//Call Functions of SmartContracts on local blockchain
 						SmartContract::CallFunction($chaindata,$blockMinedByPeer);
 
-						//Add this block in pending block (DISPLAY)
-						$chaindata->AddBlockToDisplay($blockMinedByPeer,"1x00000000");
-
-						Tools::writeLog('ADD NEW BLOCK in same height');
-
 						//Propagate mined block to network
 						Tools::sendBlockMinedToNetworkWithSubprocess($chaindata,$blockMinedByPeer);
 
-						Tools::writeLog('Propagated new block in same height');
+						return "0x00000000";
 					}
-
-                    return "0x00000000";
                 } else
-                    return "0x00000001";
+                    return "0x00000006";
             }
 			else {
-				return "0x00000003";
+				return "0x00000005";
 			}
         } else {
-            $chaindata->AddBlockToDisplay($blockMinedByPeer,"1x00000001");
-            return "0x00000001";
+            return "0x00000002";
         }
 	}
 

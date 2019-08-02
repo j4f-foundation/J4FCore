@@ -97,7 +97,7 @@ class Block {
         $transactions = array(new Transaction(null,$coinbase,$amount,$privKey,"","","If you want different results, do not do the same things"));
         //$genesisBlock = new Block("",1, $transactions);
 
-        Display::_printer("Start minning GENESIS block with " . count($transactions) . " txns - SubProcess: " . MINER_MAX_SUBPROCESS);
+        Display::print("Start minning GENESIS block with " . count($transactions) . " txns - SubProcess: " . MINER_MAX_SUBPROCESS);
 
         //Save transactions for this block
         Tools::writeFile(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR.Subprocess::$FILE_TX_INFO,Tools::str2hex(@serialize($transactions)));

@@ -123,7 +123,7 @@ if ($dbversion == 0) {
 
     $db->db->query("INSERT INTO config SET cfg='dbversion', val='1';");
 
-    Display::_printer("Updating DB Schema #".$dbversion);
+    Display::print("Updating DB Schema #".$dbversion);
 
     //Increment version to next stage
     $dbversion++;
@@ -142,7 +142,7 @@ if ($dbversion == 1) {
 	ADD COLUMN `data`  longblob NOT NULL AFTER `tx_fee`;
 	");
 
-    Display::_printer("Updating DB Schema #".$dbversion);
+    Display::print("Updating DB Schema #".$dbversion);
 
     //Increment version to next stage
     $dbversion++;
@@ -162,7 +162,7 @@ if ($dbversion == 2) {
 	) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 	");
 
-    Display::_printer("Updating DB Schema #".$dbversion);
+    Display::print("Updating DB Schema #".$dbversion);
 
     //Increment version to next stage
     $dbversion++;
@@ -190,7 +190,7 @@ if ($dbversion == 3) {
 	MODIFY COLUMN `wallet_from`  varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL AFTER `wallet_from_key`;
 	");
 
-    Display::_printer("Updating DB Schema #".$dbversion);
+    Display::print("Updating DB Schema #".$dbversion);
 
     //Increment version to next stage
     $dbversion++;
@@ -227,7 +227,7 @@ if ($dbversion == 4) {
 	MODIFY COLUMN `blocks_pending_to_display`  varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `height`;
 	");
 
-    Display::_printer("Updating DB Schema #".$dbversion);
+    Display::print("Updating DB Schema #".$dbversion);
 
     //Increment version to next stage
     $dbversion++;
@@ -250,7 +250,7 @@ if ($dbversion == 5) {
 	) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 	");
 
-    Display::_printer("Updating DB Schema #".$dbversion);
+    Display::print("Updating DB Schema #".$dbversion);
 
     //Increment version to next stage
     $dbversion++;
@@ -260,7 +260,7 @@ if ($dbversion == 6) {
 
     $db->db->query("ALTER TABLE `smart_contracts` DROP COLUMN `data`;");
 
-    Display::_printer("Updating DB Schema #".$dbversion);
+    Display::print("Updating DB Schema #".$dbversion);
 
     //Increment version to next stage
     $dbversion++;
@@ -304,7 +304,7 @@ if ($dbversion == 7) {
 
 	");
 
-    Display::_printer("Updating DB Schema #".$dbversion);
+    Display::print("Updating DB Schema #".$dbversion);
 
     //Increment version to next stage
     $dbversion++;
@@ -324,7 +324,7 @@ if ($dbversion == 8) {
 	ADD INDEX `bHash` (`block_hash`) USING HASH;
 	");
 
-    Display::_printer("Updating DB Schema #".$dbversion);
+    Display::print("Updating DB Schema #".$dbversion);
 
     //Increment version to next stage
     $dbversion++;
@@ -338,7 +338,7 @@ if ($dbversion == 9) {
 	ADD PRIMARY KEY (`hash`, `contract_hash`);
 	");
 
-    Display::_printer("Updating DB Schema #".$dbversion);
+    Display::print("Updating DB Schema #".$dbversion);
 
     //Increment version to next stage
     $dbversion++;
@@ -366,7 +366,7 @@ if ($dbversion == 10) {
 	$db->db->query("DROP TABLE transactions_pending;");
 	$db->db->query("DROP TABLE transactions_pending_to_send;");
 
-    Display::_printer("Updating DB Schema #".$dbversion);
+    Display::print("Updating DB Schema #".$dbversion);
 
     //Increment version to next stage
     $dbversion++;
@@ -378,6 +378,6 @@ if ($dbversion != $_CONFIG['dbversion']) {
     $db->SetConfig('dbversion',$dbversion);
 }
 
-Display::_printer("DB Schema updated");
+Display::print("DB Schema updated");
 
 ?>

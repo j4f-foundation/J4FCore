@@ -55,18 +55,10 @@ class Display {
      * Write a line in the CMD
      * @param $string
      */
-    public static function _printer($string) {
-        $date = new DateTime();
+    public static function print($string) {
+		$date = new DateTime();
         echo self::_replaceColors("%G%INFO%W% [".$date->format("m-d|H:i:s")."] ".$string."%W%").self::_br();
         ob_flush();
-    }
-
-	/**
-     * Alias of self::_printer
-     * @param $string
-     */
-    public static function print($string) {
-        self::_printer($string);
     }
 
     /**
@@ -108,11 +100,14 @@ class Display {
         echo PHP_EOL;
     }
 
-    /**
-     * Write a message of the mined block
+	/**
+     * Display a message of new block
+	 *
+	 * @param string $type
+	 * @param int $height
      * @param Block $blockMined
      */
-    public static function NewBlockMined($height,$blockMined) {
+    public static function ShowMessageNewBlock($type,$height,$blockMined) {
 
         $mini_hash = substr($blockMined->hash,-12);
         $mini_hash_previous = substr($blockMined->previous,-12);
@@ -124,16 +119,30 @@ class Display {
         );
         $blockMinedInSeconds = $minedTime->format('%im%ss');
 
-        self::print("%Y%Mined%W% new block	     	%G%nonce%W%=" . $blockMined->nonce . " %G%elapsed%W%=" . $blockMinedInSeconds . " %G%previous%W%=" . $mini_hash_previous . " %G%hash%W%=" . $mini_hash . " %G%number%W%=" . ($height+1)." %G%size%W%=".Tools::GetBlockSize($blockMined));
-    }
-
-    /**
-     * Write a canceled block message
-     * @param $gossip
-     */
-    public static function NewBlockCancelled() {
-		if (SHOW_INFO_SUBPROCESS)
-        	self::_printer("%Y%Miner work cancelled, another miner found block before");
+		if (strtolower($type) == 'imported') {
+	        self::print("%Y%Imported%W% new block	    	%G%nonce%W%=" . $blockMined->nonce . " %G%elapsed%W%=" . $blockMinedInSeconds . " %G%previous%W%=" . $mini_hash_previous . " %G%hash%W%=" . $mini_hash . " %G%number%W%=" . ($height+1)." %G%size%W%=".Tools::GetBlockSize($blockMined));
+		}
+		else if (strtolower($type) == 'sanity') {
+	        self::print("%Y%Sanity%W% new block	     		%G%nonce%W%=" . $blockMined->nonce . " %G%elapsed%W%=" . $blockMinedInSeconds . " %G%previous%W%=" . $mini_hash_previous . " %G%hash%W%=" . $mini_hash . " %G%number%W%=" . ($height)." %G%size%W%=".Tools::GetBlockSize($blockMined));
+		}
+		else if (strtolower($type) == 'mined') {
+	        self::print("%Y%Mined%W% new block	     		%G%nonce%W%=" . $blockMined->nonce . " %G%elapsed%W%=" . $blockMinedInSeconds . " %G%previous%W%=" . $mini_hash_previous . " %G%hash%W%=" . $mini_hash . " %G%number%W%=" . ($height)." %G%size%W%=".Tools::GetBlockSize($blockMined));
+		}
+		else if (strtolower($type) == 'rewardko') {
+	        Display::print("%LR%Ignored%W% new block     	%G%error%W%=Reward Block not valid  			%G%previous%W%=" . $mini_hash_previous . "  %G%hash%W%=" . $mini_hash);
+		}
+		else if (strtolower($type) == 'novalid') {
+	        Display::print("%LR%Ignored%W% new block     	%G%error%W%=Block not valid  					%G%previous%W%=" . $mini_hash_previous . "  %G%hash%W%=" . $mini_hash);
+		}
+		else if (strtolower($type) == 'previousko') {
+	        Display::print("%LR%Ignored%W% new block     	%G%error%W%=Previous block does not match  		%G%previous%W%=" . $mini_hash_previous . "  %G%hash%W%=" . $mini_hash);
+		}
+		else if (strtolower($type) == 'noacepted') {
+	        Display::print("%LR%Ignored%W% new block     	%G%error%W%=Block in same height not accepted  	%G%previous%W%=" . $mini_hash_previous . "  %G%hash%W%=" . $mini_hash);
+		}
+		else if (strtolower($type) == 'malformed') {
+	        Display::print("%LR%Ignored%W% new block     	%G%error%W%=Block malformed");
+		}
     }
 }
 ?>

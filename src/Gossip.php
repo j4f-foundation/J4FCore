@@ -63,9 +63,9 @@ class Gossip {
 		Display::ClearScreen();
 
 		//Init Display message
-		Display::_printer("Welcome to the %G%J4F node - Version: " . VERSION);
-		Display::_printer("Maximum peer count                       %G%value%W%=".PEERS_MAX);
-		Display::_printer("PeerID %G%".Tools::GetIdFromIpAndPort($ip,$port));
+		Display::print("Welcome to the %G%J4F node - Version: " . VERSION);
+		Display::print("Maximum peer count                       %G%value%W%=".PEERS_MAX);
+		Display::print("PeerID %G%".Tools::GetIdFromIpAndPort($ip,$port));
 
 		$this->make_genesis = $make_genesis_block;
 		$this->bootstrap_node = $bootstrap_node;
@@ -137,7 +137,7 @@ class Gossip {
 			exit();
 		}
 		$this->coinbase = Wallet::GetWalletAddressFromPubKey($this->key->pubKey);
-		Display::_printer("Coinbase detected: %LG%".$this->coinbase);
+		Display::print("Coinbase detected: %LG%".$this->coinbase);
 
 		//We cleaned the table of peers
 		if (!$this->bootstrap_node)
@@ -183,19 +183,19 @@ class Gossip {
 	        //We are a BOOTSTRAP node
 	        else if ($gossip->bootstrap_node) {
 	            if ($gossip->isTestNet)
-	                Display::_printer("%Y%BOOTSTRAP NODE %W%(%G%TESTNET%W%) loaded successfully");
+	                Display::print("%Y%BOOTSTRAP NODE %W%(%G%TESTNET%W%) loaded successfully");
 	            else
-	                Display::_printer("%Y%BOOTSTRAP NODE %W%loaded successfully");
+	                Display::print("%Y%BOOTSTRAP NODE %W%loaded successfully");
 
 	            $lastBlock = $gossip->chaindata->GetLastBlock(false);
 
-	            Display::_printer("Height: %G%".$lastBlock['height']);
+	            Display::print("Height: %G%".$lastBlock['height']);
 
 	            $gossip->difficulty = Blockchain::checkDifficulty($gossip->chaindata,null, $gossip->isTestNet)[0];
 
-	            Display::_printer("LastBlock: %G%".$lastBlock['block_hash']);
-	            Display::_printer("Difficulty: %G%".$gossip->difficulty);
-	            Display::_printer("Current peers: %G%".count($gossip->chaindata->GetAllPeers()));
+	            Display::print("LastBlock: %G%".$lastBlock['block_hash']);
+	            Display::print("Difficulty: %G%".$gossip->difficulty);
+	            Display::print("Current peers: %G%".count($gossip->chaindata->GetAllPeers()));
 
 	            //Check peers status
 	            $gossip->CheckConnectionWithPeers($gossip);
@@ -257,7 +257,7 @@ class Gossip {
 
                 //We check if we need to synchronize or not
                 if ($lastBlock_LocalNode < $lastBlock_BootstrapNode) {
-                    Display::_printer("%LR%DeSync detected %W%- Downloading blocks (%G%".$lastBlock_LocalNode."%W%/%Y%".$lastBlock_BootstrapNode.")");
+                    Display::print("%LR%DeSync detected %W%- Downloading blocks (%G%".$lastBlock_LocalNode."%W%/%Y%".$lastBlock_BootstrapNode.")");
 
 					//We declare that we are synchronizing
                     $gossip->syncing = true;
@@ -274,7 +274,7 @@ class Gossip {
 						$ipAndPort = @file_get_contents(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sync_with_peer");
 
 					$ipPort = explode(':',$ipAndPort);
-					Display::_printer("Selected peer to sync -> %G%".Tools::GetIdFromIpAndPort($ipPort[0],$ipPort[1]));
+					Display::print("Selected peer to sync -> %G%".Tools::GetIdFromIpAndPort($ipPort[0],$ipPort[1]));
 					Tools::writeLog('Selected peer to sync			%G%'.Tools::GetIdFromIpAndPort($ipPort[0],$ipPort[1]));
 					@unlink(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."highest_chain");
 				}
@@ -286,7 +286,7 @@ class Gossip {
 					$genesisMakeBlockStatus = GenesisBlock::makeFromPeer($genesis_block_peer,$gossip->chaindata);
 
 					if ($genesisMakeBlockStatus)
-						Display::_printer("%Y%Imported%W% GENESIS block header               %G%count%W%=1");
+						Display::print("%Y%Imported%W% GENESIS block header               %G%count%W%=1");
 					else {
 						Display::_error("Can't make GENESIS block");
 						if (IS_WIN)
@@ -297,13 +297,13 @@ class Gossip {
 				else {
 					$lastBlock = $gossip->chaindata->GetLastBlock(false);
 
-		            Display::_printer("Height: %G%".$lastBlock['height']);
+		            Display::print("Height: %G%".$lastBlock['height']);
 
 					$gossip->difficulty = Blockchain::checkDifficulty($gossip->chaindata,null,$gossip->isTestNet)[0];
 
-		            Display::_printer("LastBlock: %G%".$lastBlock['block_hash']);
-		            Display::_printer("Difficulty: %G%".$gossip->difficulty);
-		            Display::_printer("Current peers: %G%".count($gossip->chaindata->GetAllPeers()));
+		            Display::print("LastBlock: %G%".$lastBlock['block_hash']);
+		            Display::print("Difficulty: %G%".$gossip->difficulty);
+		            Display::print("Current peers: %G%".count($gossip->chaindata->GetAllPeers()));
 				}
 
                 //Check if have same GENESIS block from BootstrapNode
@@ -375,9 +375,6 @@ class Gossip {
 				if ($gossip->enable_mine) {
 					$gossip->mineProcess();
 				}
-
-				//We check if there are new blocks to be display
-				$gossip->CheckIfNeedShowNewBlocks();
 			}
 
 			//If we are synchronizing and we are connected with the bootstrap
@@ -421,8 +418,6 @@ class Gossip {
 
 						//We clean the table of blocks mined by the peers
 						$gossip->chaindata->truncate("txnpool");
-						$gossip->chaindata->truncate("blocks_pending_to_display");
-						$gossip->chaindata->truncate("blocks_announced");
 					}
 				}
 			}
@@ -435,13 +430,13 @@ class Gossip {
 
 				//We check if we need to synchronize or not
 				if ($lastBlock_LocalNode < $gossip->lastBlock_BootstrapNode) {
-					//Display::_printer("%LR%DeSync detected %W%- Downloading blocks (%G%" . $lastBlock_LocalNode . "%W%/%Y%" . $lastBlock_BootstrapNode . ")");
+					//Display::print("%LR%DeSync detected %W%- Downloading blocks (%G%" . $lastBlock_LocalNode . "%W%/%Y%" . $lastBlock_BootstrapNode . ")");
 
 					if ($gossip->enable_mine && @file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MINERS_STARTED)) {
 						//Stop minning subprocess
 						Tools::clearTmpFolder();
 						Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
-						Display::_printer("%Y%Miner work cancelled%W%     Imported new headers");
+						Display::print("%Y%Miner work cancelled%W%     Imported new headers");
 					}
 
 					//We declare that we are synchronizing
@@ -474,7 +469,7 @@ class Gossip {
 		    )
 		));
 
-		Display::_printer("Listening on %G%{$gossip->ip}%W%:%G%{$gossip->port}%W%");
+		Display::print("Listening on %G%{$gossip->ip}%W%:%G%{$gossip->port}%W%");
 
 		//Gossip
 		$socket->on('connection', function(ConnectionInterface $connection) use (&$gossip) {
@@ -483,7 +478,10 @@ class Gossip {
 
 			$connection->on('data', function($data) use (&$connection, &$dataFromPeer, &$gossip){
 				if (strlen($data) > 0) {
+					//Concatenate data from peer
 					$dataFromPeer .= $data;
+
+					//Check if msgFromPeer have a correct format
 					$msgFromPeer = @json_decode($dataFromPeer,true);
 					if (@is_array($msgFromPeer)) {
 
@@ -498,7 +496,7 @@ class Gossip {
 						$address = str_replace('tcp://','',$address);
 
 						if (DISPLAY_DEBUG && DISPLAY_DEBUG_LEVEL >= 2)
-							Display::_printer('%Y%GOSSIP%W% Message from client		%G%Address%W%='.$address.'	%G%msg%W%=' . substr($dataFromPeer,0,32).'...');
+							Display::print('%Y%GOSSIP%W% Message from client		%G%Address%W%='.$address.'	%G%msg%W%=' . substr($dataFromPeer,0,32).'...');
 
 
 						switch (strtoupper($msgFromPeer['action'])) {
@@ -567,9 +565,6 @@ class Gossip {
 								if ($lastBlock['block_hash'] == $blockMinedByPeer->hash) {
 									$return['status'] = true;
 									$return['error'] = "0x00000000";
-
-									//Its same block i have in my blockchain but i not announced on main thread
-									$gossip->chaindata->AddBlockToDisplay($blockMinedByPeer,"2x00000000");
 									break;
 								}
 
@@ -589,12 +584,31 @@ class Gossip {
 									//Valid new block in same hiehgt to add in Blockchain
 									$returnCode = Blockchain::isValidBlockMinedByPeerInSameHeight($gossip->chaindata,$lastBlock,$blockMinedByPeer);
 									if ($returnCode == "0x00000000") {
+
+										Display::ShowMessageNewBlock('sanity',$lastBlock['height'],$blockMinedByPeer);
+
 										$return['status'] = true;
 										$return['error'] = $returnCode;
 
 									}
 									//Block no accepted, suggest microsanity
 									else {
+										if ($returnCode == "0x00000001") {
+											Display::ShowMessageNewBlock('novalid',$lastBlock['height'],$blockMinedByPeer);
+										}
+										else if ($returnCode == "0x00000002") {
+											Display::ShowMessageNewBlock('rewardko',$lastBlock['height'],$blockMinedByPeer);
+										}
+										else if ($returnCode == "0x00000003") {
+											Display::ShowMessageNewBlock('previousko',$lastBlock['height'],$blockMinedByPeer);
+										}
+										else if ($returnCode == "0x00000004") {
+											Display::ShowMessageNewBlock('malformed',$lastBlock['height'],$blockMinedByPeer);
+										}
+										else if ($returnCode == "0x00000005") {
+											Display::ShowMessageNewBlock('noaccepted',$lastBlock['height'],$blockMinedByPeer);
+										}
+
 										$return['status'] = true;
 										$return['error'] = $returnCode;
 										$return['result'] = 'sanity';
@@ -642,6 +656,8 @@ class Gossip {
 									$returnCode = Blockchain::isValidBlockMinedByPeer($gossip->chaindata,$lastBlock,$blockMinedByPeer);
 									if ($returnCode == "0x00000000") {
 
+										Display::ShowMessageNewBlock('imported',$lastBlock['height'],$blockMinedByPeer);
+
 										//If have miner enabled, stop all miners
 										if (@file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MINERS_STARTED)) {
 											Tools::clearTmpFolder();
@@ -663,6 +679,21 @@ class Gossip {
 										$return['message'] = "Block added";
 									}
 									else {
+										if ($returnCode == "0x00000001") {
+											Display::ShowMessageNewBlock('novalid',$lastBlock['height'],$blockMinedByPeer);
+										}
+										else if ($returnCode == "0x00000002") {
+											Display::ShowMessageNewBlock('rewardko',$lastBlock['height'],$blockMinedByPeer);
+										}
+										else if ($returnCode == "0x00000003") {
+											Display::ShowMessageNewBlock('previousko',$lastBlock['height'],$blockMinedByPeer);
+										}
+										else if ($returnCode == "0x00000004") {
+											Display::ShowMessageNewBlock('malformed',$lastBlock['height'],$blockMinedByPeer);
+										}
+										else {
+											Display::ShowMessageNewBlock('unkown',$lastBlock['height'],$blockMinedByPeer);
+										}
 										$return['status'] = true;
 										$return['error'] = $returnCode;
 									}
@@ -676,14 +707,19 @@ class Gossip {
 										$return['status'] = true;
 										$return['error'] = 'Block old';
 										$return['result'] = 'sanity';
+										Display::warning('Peer '.Tools::GetIdFromIpAndPort($msgFromPeer['node_ip'],$msgFromPeer['node_port']).' need to be sync with me');
 									}
 									else if (($msgFromPeer['height'] - $lastBlock['height']) > 100) {
 										$return['status'] = true;
 										$return['error'] = 'Block out of sync';
+										Display::warning('Peer '.Tools::GetIdFromIpAndPort($msgFromPeer['node_ip'],$msgFromPeer['node_port']).' have more blocks than me		PeerHeight: '.$msgFromPeer['height']. '		MyHeight:'.$lastBlock['height']);
 									}
 									else {
 										$return['status'] = true;
 										$return['error'] = 'Block out of sync, sync with you';
+
+										Display::warning('Peer '.Tools::GetIdFromIpAndPort($msgFromPeer['node_ip'],$msgFromPeer['node_port']).' have more blocks than me		PeerHeight: '.$msgFromPeer['height']. '		MyHeight:'.$lastBlock['height']);
+										Display::warning('Starting sync with '.Tools::GetIdFromIpAndPort($msgFromPeer['node_ip'],$msgFromPeer['node_port']));
 
 										// Start microsanity with this peer
 										if (strlen($msgFromPeer['node_ip'] > 0) && strlen($msgFromPeer['node_port']) > 0)
@@ -701,7 +737,7 @@ class Gossip {
 									);
 									if (Socket::isAlive($msgFromPeer['client_ip'],$msgFromPeer['client_port'])) {
 										$gossip->chaindata->addPeer($msgFromPeer['client_ip'],$msgFromPeer['client_port']);
-										Display::_printer('Connected to peer -> %G%'.Tools::GetIdFromIpAndPort($msgFromPeer['client_ip'],$msgFromPeer['client_port']).'%W%');
+										Display::print('Connected to peer -> %G%'.Tools::GetIdFromIpAndPort($msgFromPeer['client_ip'],$msgFromPeer['client_port']).'%W%');
 										$return['result'] = "p2p_on";
 									}
 									else
@@ -712,7 +748,7 @@ class Gossip {
 								if (isset($msgFromPeer['client_ip']) && isset($msgFromPeer['client_port'])) {
 									$return['status'] = true;
 									$gossip->chaindata->addPeer($msgFromPeer['client_ip'],$msgFromPeer['client_port']);
-									Display::_printer('Connected to peer -> %G%'.Tools::GetIdFromIpAndPort($msgFromPeer['client_ip'],$msgFromPeer['client_port']).'%W%');
+									Display::print('Connected to peer -> %G%'.Tools::GetIdFromIpAndPort($msgFromPeer['client_ip'],$msgFromPeer['client_port']).'%W%');
 								} else {
 									$return['message'] = "No ClientIP or ClientPort defined";
 								}
@@ -791,9 +827,9 @@ class Gossip {
 			$gossip->peers[] = array($ip.':'.$port => $ip,$port);
 
 			if ($gossip->isTestNet)
-				Display::_printer("Connected to BootstrapNode (TESTNET) -> %G%" . Tools::GetIdFromIpAndPort($ip,$port));
+				Display::print("Connected to BootstrapNode (TESTNET) -> %G%" . Tools::GetIdFromIpAndPort($ip,$port));
 			else
-				Display::_printer("Connected to BootstrapNode -> %G%" . Tools::GetIdFromIpAndPort($ip,$port));
+				Display::print("Connected to BootstrapNode -> %G%" . Tools::GetIdFromIpAndPort($ip,$port));
 
 			$gossip->openned_ports = true;
 			$gossip->connected_to_bootstrap = true;
@@ -834,7 +870,7 @@ class Gossip {
                     $this->chaindata->addPeer($ip, $port);
                     $this->peers[] = array($ip.':'.$port => $ip,$port);
                     if ($displayMessage)
-                        Display::_printer("Connected to peer -> %G%" . Tools::GetIdFromIpAndPort($ip,$port));
+                        Display::print("Connected to peer -> %G%" . Tools::GetIdFromIpAndPort($ip,$port));
                 }
                 return true;
             }
@@ -911,106 +947,6 @@ class Gossip {
     }
 
     /**
-     * Check if need show new block
-     *
-     */
-    public function CheckIfNeedShowNewBlocks() {
-
-        //Get next block by last hash
-        $blockPending = $this->chaindata->GetBlockPendingToDisplay();
-        if (is_array($blockPending) && !empty($blockPending)) {
-
-            $numBlock = $this->chaindata->GetNextBlockNum();
-            $lastBlock = $this->chaindata->GetLastBlock();
-
-            //$numBlock = $lastBlock['height'];
-
-            $mini_hash = substr($blockPending['block_hash'],-12);
-            $mini_hash_previous = substr($blockPending['block_previous'],-12);
-
-            //We obtain the difference between the creation of the block and the completion of the mining
-            $minedTime = date_diff(
-                date_create(date('Y-m-d H:i:s', $blockPending['timestamp_start_miner'])),
-                date_create(date('Y-m-d H:i:s', $blockPending['timestamp_end_miner']))
-            );
-            $blockMinedInSeconds = $minedTime->format('%im%ss');
-
-            //Block validated new block
-            if ($blockPending['status'] == "0x00000000") {
-
-                //Check if i displayed this block
-                if (!$this->chaindata->BlockHasBeenAnnounced($blockPending['block_hash'])) {
-
-                    //Mark this block has announced
-                    $this->chaindata->AddBlockAnnounced($blockPending['block_hash']);
-
-                    //If have miner enabled, stop all miners
-                    if ($this->enable_mine) {
-                        if (@file_exists(Tools::GetBaseDir() . 'tmp' . DIRECTORY_SEPARATOR . Subprocess::$FILE_MINERS_STARTED)) {
-                            Tools::clearTmpFolder();
-                            Tools::writeFile(Tools::GetBaseDir() . 'tmp' . DIRECTORY_SEPARATOR . Subprocess::$FILE_STOP_MINING);
-                            Display::NewBlockCancelled();
-                        }
-                    }
-                    Display::_printer("%Y%Imported%W% new block     	%G%nonce%W%=" . $blockPending['nonce'] . " %G%elapsed%W%=" . $blockMinedInSeconds . " %G%previous%W%=" . $mini_hash_previous . " %G%hash%W%=" . $mini_hash . " %G%number%W%=" . $numBlock." %G%size%W%=".Tools::GetBlockSize($lastBlock));
-                }
-            }
-            //Block validated, same height
-            else if ($blockPending['status'] == "1x00000000") {
-                //Mark this block has announced
-                $this->chaindata->AddBlockAnnounced($blockPending['block_hash']);
-
-                //If have miner enabled, stop all miners
-                if ($this->enable_mine) {
-                    if (@file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MINERS_STARTED)) {
-                        Tools::clearTmpFolder();
-                        Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
-                        Display::NewBlockCancelled();
-                    }
-                }
-                Display::_printer("%Y%Sanity%W% block	     	%G%nonce%W%=" . $blockPending['nonce'] . " %G%elapsed%W%=" . $blockMinedInSeconds . " %G%previous%W%=" . $mini_hash_previous . " %G%hash%W%=" . $mini_hash . " %G%number%W%=" . $numBlock." %G%size%W%=".Tools::GetBlockSize($lastBlock));
-            }
-
-            //Block validated, reward
-            else if ($blockPending['status'] == "2x00000000") {
-
-				/*
-                //Check if i displayed this block
-                if (!$this->chaindata->BlockHasBeenAnnounced($blockPending['block_hash'])) {
-
-                    //Mark this block has announced
-                    $this->chaindata->AddBlockAnnounced($blockPending['block_hash']);
-
-                    $typeMessage = "Imported";
-                    //Check if i mined this block
-                    if ($lastBlock['transactions'][0]['wallet_to'] == $this->coinbase)
-                        $typeMessage = "Rewarded";
-
-                    Display::_printer("%Y%".$typeMessage."%W% new block headers     %G%nonce%W%=" . $blockPending['nonce'] . " %G%elapsed%W%=" . $blockMinedInSeconds . " %G%previous%W%=" . $mini_hash_previous . " %G%hash%W%=" . $mini_hash . " %G%number%W%=" . $numBlock." %G%size%W%=".Tools::GetBlockSize($lastBlock));
-				}
-				*/
-            }
-
-            //Block error
-            else {
-
-                if ($blockPending['status'] == "0x00000001" || $blockPending['status'] == "1x00000001") {
-                    Display::_printer("%LR%Ignored%W% new block     %G%error%W%=Reward Block not valid  %G%previous%W%=" . $mini_hash_previous . "  %G%hash%W%=" . $mini_hash);
-                }
-                else if ($blockPending['status'] == "0x00000002") {
-                    Display::_printer("%LR%Ignored%W% new block     %G%error%W%=Block not valid  %G%previous%W%=" . $mini_hash_previous . "  %G%hash%W%=" . $mini_hash);
-                }
-                else if ($blockPending['status'] == "0x00000002") {
-                    Display::_printer("%LR%Ignored%W% new block     %G%error%W%=Previous block does not match  %G%previous%W%=" . $mini_hash_previous . "  %G%hash%W%=" . $mini_hash);
-                }
-            }
-
-            //Remove block from tmp table
-            $this->chaindata->RemoveBlockToDisplay($blockPending['block_hash']);
-        }
-    }
-
-    /**
      * Show subprocess miners log
      */
     public function ShowInfoSubprocessMiners() {
@@ -1054,7 +990,7 @@ class Gossip {
         }
         if ($hashRateMiner != null) {
             $this->chaindata->SetConfig('hashrate',$hashRateMiner);
-            Display::_printer("Miners Threads Status                    %G%count%W%=".$multiplyNonce."            %G%hashRate%W%=" . $hashRateMiner);
+            Display::print("Miners Threads Status                    %G%count%W%=".$multiplyNonce."            %G%hashRate%W%=" . $hashRateMiner);
         }
     }
 
@@ -1068,7 +1004,7 @@ class Gossip {
             if (!empty($currentLog)) {
                 @unlink($logFile);
                 foreach ($currentLog as $line) {
-                    Display::_printer(trim($line));
+                    Display::print(trim($line));
                 }
             }
         }
@@ -1100,7 +1036,7 @@ class Gossip {
 					break;
 
 				if (@!file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MINERS_THREAD_CLOCK."_".$i)) {
-					Display::_printer("The miner thread #".$i." do not seem to respond. Restarting Thread");
+					Display::print("The miner thread #".$i." do not seem to respond. Restarting Thread");
 
 					//Get info to pass miner
 					$lastBlock = $this->chaindata->GetLastBlock();
@@ -1126,7 +1062,7 @@ class Gossip {
 							Display::_debug("CurrentTimer: " . time());
 						}
 
-						Display::_printer("The miner thread #".$i." do not seem to respond (Timeout ".$seconds."s). Restarting Thread");
+						Display::print("The miner thread #".$i." do not seem to respond (Timeout ".$seconds."s). Restarting Thread");
 
 						//Get info to pass miner
 						$lastBlock = $this->chaindata->GetLastBlock();
@@ -1160,7 +1096,7 @@ class Gossip {
 				if ($blockMined->isValid($nextHeight,$this->isTestNet)) {
 					if ($blockMined->isValidReward($nextHeight,$this->isTestNet)) {
 						//Display new block mined
-						Display::NewBlockMined($nextHeight,$blockMined);
+						Display::ShowMessageNewBlock('mined',$nextHeight,$blockMined);
 
 						//Propagate block on network
 						Tools::sendBlockMinedToNetworkWithSubprocess($this->chaindata,$blockMined);
@@ -1197,9 +1133,9 @@ class Gossip {
      * @param   int    $numBlocksToRemove
      */
 	public function SanityFromBlockHeight($numBlocksToRemove=1) {
-		Display::_printer("%LR%SANITY Started %W%- Removing blocks (%G%" . $numBlocksToRemove . "%W%)");
+		Display::print("%LR%SANITY Started %W%- Removing blocks (%G%" . $numBlocksToRemove . "%W%)");
 		Blockchain::SanityFromBlockHeight($this->chaindata,$numBlocksToRemove);
-		Display::_printer("%LR%SANITY Finished %W%- Restart your client");
+		Display::print("%LR%SANITY Finished %W%- Restart your client");
 	}
 }
 ?>

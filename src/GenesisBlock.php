@@ -37,8 +37,8 @@ class GenesisBlock {
         $GENESIS_block_chaindata = $chaindata->db->query("SELECT height, block_hash FROM blocks WHERE height = 0")->fetch_assoc();
         if (empty($GENESIS_block_chaindata)) {
             //we show the message that we generated the GENESIS block
-            Display::_printer("Generating %G%GENESIS%W% - Block %G%#0");
-            Display::_printer("Minning Block %G%#0");
+            Display::print("Generating %G%GENESIS%W% - Block %G%#0");
+            Display::print("Minning Block %G%#0");
 
 			//We created the GENESIS block by MainThread
 			if (MINER_MAX_SUBPROCESS <= 1)
@@ -50,9 +50,9 @@ class GenesisBlock {
 
         } else {
             //we show the message that there is already a block genesis
-            Display::_printer("%LR%ERROR");
-            Display::_printer("There is alrady exist a %G%GENESIS%W% Block");
-            Display::_printer("Block #0 -> Hash: %LG%".$GENESIS_block_chaindata['block_hash']);
+            Display::print("%LR%ERROR");
+            Display::print("There is alrady exist a %G%GENESIS%W% Block");
+            Display::print("Block #0 -> Hash: %LG%".$GENESIS_block_chaindata['block_hash']);
             if (IS_WIN)
                 readline("Press any key to close close window");
             exit();
@@ -96,14 +96,14 @@ class GenesisBlock {
 		$chaindata->addBlock(0,$genesisBlock);
 
 		//Display message
-		Display::NewBlockMined(0,$genesisBlock);
+		Display::ShowMessageNewBlock('mined',0,$genesisBlock);
 
 		//We show the information of the mined block
-		Display::_printer("New Block mined with hash: %G%".$genesisBlock->hash);
-		Display::_printer("Nonce of Block: %G%".$genesisBlock->nonce);
-		Display::_printer("Transactions in Block: %LG%".count($genesisBlock->transactions));
+		Display::print("New Block mined with hash: %G%".$genesisBlock->hash);
+		Display::print("Nonce of Block: %G%".$genesisBlock->nonce);
+		Display::print("Transactions in Block: %LG%".count($genesisBlock->transactions));
 
-		Display::_printer("%G%GENESIS%W% Block was successfully generated");
+		Display::print("%G%GENESIS%W% Block was successfully generated");
 		Display::_br();
 		if (IS_WIN)
 			readline("Press any Enter to close close window");
@@ -146,7 +146,7 @@ class GenesisBlock {
 				$chaindata->addBlock(0,$genesisBlock);
 
 				//Display message
-				Display::NewBlockMined(0,$genesisBlock);
+				Display::ShowMessageNewBlock('mined',0,$genesisBlock);
 
 				//Stop minning subprocess
 				Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
@@ -154,11 +154,11 @@ class GenesisBlock {
 				//@unlink(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.'NEW_BLOCK');
 
 				//We show the information of the mined block
-				Display::_printer("New Block mined with hash: %G%".$genesisBlock->hash);
-				Display::_printer("Nonce of Block: %G%".$genesisBlock->nonce);
-				Display::_printer("Transactions in Block: %LG%".count($genesisBlock->transactions));
+				Display::print("New Block mined with hash: %G%".$genesisBlock->hash);
+				Display::print("Nonce of Block: %G%".$genesisBlock->nonce);
+				Display::print("Transactions in Block: %LG%".count($genesisBlock->transactions));
 
-				Display::_printer("%G%GENESIS%W% Block was successfully generated");
+				Display::print("%G%GENESIS%W% Block was successfully generated");
 				Display::_br();
 				if (IS_WIN)
 					readline("Press any Enter to close close window");

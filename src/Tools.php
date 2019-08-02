@@ -323,7 +323,7 @@ class Tools {
      */
     public static function MakeDataDirectory() {
 
-        Display::_printer("Data directory: %G%".Tools::GetBaseDir()."data".DIRECTORY_SEPARATOR);
+        Display::print("Data directory: %G%".Tools::GetBaseDir()."data".DIRECTORY_SEPARATOR);
 
         if (!@file_exists(Tools::GetBaseDir().DIRECTORY_SEPARATOR."data".DIRECTORY_SEPARATOR."wallets"))
             @mkdir(Tools::GetBaseDir().DIRECTORY_SEPARATOR."data".DIRECTORY_SEPARATOR."wallets",755, true);

@@ -17,7 +17,11 @@
 // along with the J4FCore library. If not, see <http://www.gnu.org/licenses/>.
 
 include(__DIR__.'/../CONFIG.php');
-include(__DIR__.'/DB.php');
+include(__DIR__.'/DB/DBTransactions.php');
+include(__DIR__.'/DB/DBContracts.php');
+include(__DIR__.'/DB/DBBlocks.php');
+include(__DIR__.'/DB/DBBase.php');
+include(__DIR__.'/DB/DB.php');
 include(__DIR__.'/ColorsCLI.php');
 include(__DIR__.'/Display.php');
 include(__DIR__.'/Subprocess.php');
@@ -53,7 +57,7 @@ ob_start();
 Display::ClearScreen();
 
 //Init Display message
-Display::_printer("Welcome to the %G%J4F node - Version: " . VERSION);
+Display::print("Welcome to the %G%J4F node - Version: " . VERSION);
 
 //Setting timezone to UTC
 date_default_timezone_set("UTC");
@@ -65,7 +69,7 @@ error_reporting(E_ALL & ~E_NOTICE);
 //ini_set('display_errors', "off");
 
 if (DB_PASS == "DEFINE_YOUR_PASSWORD") {
-    Display::_printer("%LR%ERROR%W%    Database password not defined");
+    Display::print("%LR%ERROR%W%    Database password not defined");
     if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN')
         readline("Press any Enter to close close window");
     exit();
@@ -120,7 +124,7 @@ $_CONFIG = $db->GetAllConfig();
 if (@file_exists("tmp".DIRECTORY_SEPARATOR."db.update")) {
     $res = @unlink("tmp".DIRECTORY_SEPARATOR."db.update");
     if ($res) {
-        Display::_printer("Updating DB Schema");
+        Display::print("Updating DB Schema");
         require_once __DIR__.'/schema.inc.php';
         exit();
     }
