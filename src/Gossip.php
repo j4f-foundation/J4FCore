@@ -63,7 +63,7 @@ class Gossip {
 		Display::ClearScreen();
 
 		//Init Display message
-		Display::print("Welcome to the %G%J4F node - Version: " . VERSION);
+		Display::print("Welcome to the %G%J4F node%W% - %G%Version%W%: " . VERSION);
 		Display::print("Maximum peer count                       %G%value%W%=".PEERS_MAX);
 		Display::print("PeerID %G%".Tools::GetIdFromIpAndPort($ip,$port));
 
@@ -368,6 +368,10 @@ class Gossip {
 			if (DISPLAY_DEBUG && DISPLAY_DEBUG_LEVEL >= 3)
 				$gossip->ShowLogSubprocess();
 
+			//Check if need to sync with any peer
+			if (@file_exists(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sync_with_peer"))
+				$gossip->syncing = true;
+
 			//If we are not synchronizing
 			if (!$gossip->syncing) {
 
@@ -469,7 +473,7 @@ class Gossip {
 		    )
 		));
 
-		Display::print("Listening on %G%{$gossip->ip}%W%:%G%{$gossip->port}%W%");
+		Display::print("%LP%Network%W% Listening on		%G%{$gossip->ip}%W%:%G%{$gossip->port}%W%");
 
 		//Gossip
 		$socket->on('connection', function(ConnectionInterface $connection) use (&$gossip) {
@@ -496,8 +500,7 @@ class Gossip {
 						$address = str_replace('tcp://','',$address);
 
 						if (DISPLAY_DEBUG && DISPLAY_DEBUG_LEVEL >= 2)
-							Display::print('%Y%GOSSIP%W% Message from client		%G%Address%W%='.$address.'	%G%msg%W%=' . substr($dataFromPeer,0,32).'...');
-
+							Display::print("%LP%Network%W% Message from client		%G%Address%W%=".$address."	%G%msg%W%=" . substr($dataFromPeer,0,32)."...");
 
 						switch (strtoupper($msgFromPeer['action'])) {
 							case 'GETPENDINGTRANSACTIONS':
@@ -585,7 +588,7 @@ class Gossip {
 							            date_create(date('Y-m-d H:i:s', $lastBlock['timestamp_end_miner'])),
 							            date_create(date('Y-m-d H:i:s', $blockMinedByPeer->timestamp_end))
 							        );
-									$diffTimeSeconds = ($minedTime->format('%i') * 60) + $minedTime->format('%s');
+									$diffTimeSeconds = ($diffTimeBlocks->format('%i') * 60) + $diffTimeBlocks->format('%s');
 									$diffTimeSeconds = ($diffTimeSeconds < 0) ? ($diffTimeSeconds * -1):$diffTimeSeconds;
 									if ($diffTimeSeconds >= 2) {
 										$return['status'] = true;
@@ -716,7 +719,7 @@ class Gossip {
 										$return['status'] = true;
 										$return['error'] = 'Block old';
 										$return['result'] = 'sanity';
-										Display::warning('Peer '.Tools::GetIdFromIpAndPort($msgFromPeer['node_ip'],$msgFromPeer['node_port']).' need to be sync with me');
+										Display::_warning('Peer '.Tools::GetIdFromIpAndPort($msgFromPeer['node_ip'],$msgFromPeer['node_port']).' need to be sync with me');
 									}
 									else if (($msgFromPeer['height'] - $lastBlock['height']) > 100) {
 
@@ -727,9 +730,9 @@ class Gossip {
 										$return['status'] = true;
 										$return['error'] = 'Block out of sync';
 
-										Display::warning('Peer '.Tools::GetIdFromIpAndPort($msgFromPeer['node_ip'],$msgFromPeer['node_port']).' have more blocks than me		PeerHeight: '.$msgFromPeer['height']. '		MyHeight:'.$lastBlock['height']);
+										Display::_warning('Peer '.Tools::GetIdFromIpAndPort($msgFromPeer['node_ip'],$msgFromPeer['node_port']).' have more blocks than me		PeerHeight: '.$msgFromPeer['height']. '		MyHeight:'.$lastBlock['height']);
 									}
-									else {
+									else if (($msgFromPeer['height'] - $lastBlock['height']) < 100 && ($msgFromPeer['height'] - $lastBlock['height']) > 0) {
 
 										//If have miner enabled, stop all miners
 										Tools::clearTmpFolder();
@@ -738,8 +741,8 @@ class Gossip {
 										$return['status'] = true;
 										$return['error'] = 'Block out of sync, sync with you';
 
-										Display::warning('Peer '.Tools::GetIdFromIpAndPort($msgFromPeer['node_ip'],$msgFromPeer['node_port']).' have more blocks than me		PeerHeight: '.$msgFromPeer['height']. '		MyHeight:'.$lastBlock['height']);
-										Display::warning('Starting sync with '.Tools::GetIdFromIpAndPort($msgFromPeer['node_ip'],$msgFromPeer['node_port']));
+										Display::_warning('Peer '.Tools::GetIdFromIpAndPort($msgFromPeer['node_ip'],$msgFromPeer['node_port']).' have more blocks than me		PeerHeight: '.$msgFromPeer['height']. '		MyHeight:'.$lastBlock['height']);
+										Display::_warning('Starting sync with '.Tools::GetIdFromIpAndPort($msgFromPeer['node_ip'],$msgFromPeer['node_port']));
 
 										// Start microsanity with this peer
 										if (strlen($msgFromPeer['node_ip'] > 0) && strlen($msgFromPeer['node_port']) > 0)
@@ -757,7 +760,7 @@ class Gossip {
 									);
 									if (Socket::isAlive($msgFromPeer['client_ip'],$msgFromPeer['client_port'])) {
 										$gossip->chaindata->addPeer($msgFromPeer['client_ip'],$msgFromPeer['client_port']);
-										Display::print('Connected to peer -> %G%'.Tools::GetIdFromIpAndPort($msgFromPeer['client_ip'],$msgFromPeer['client_port']).'%W%');
+										Display::print('%LP%Network%W% Connected to peer		%G%peerId%W%='.Tools::GetIdFromIpAndPort($msgFromPeer['client_ip'],$msgFromPeer['client_port']));
 										$return['result'] = "p2p_on";
 									}
 									else
@@ -768,7 +771,7 @@ class Gossip {
 								if (isset($msgFromPeer['client_ip']) && isset($msgFromPeer['client_port'])) {
 									$return['status'] = true;
 									$gossip->chaindata->addPeer($msgFromPeer['client_ip'],$msgFromPeer['client_port']);
-									Display::print('Connected to peer -> %G%'.Tools::GetIdFromIpAndPort($msgFromPeer['client_ip'],$msgFromPeer['client_port']).'%W%');
+									Display::print('%LP%Network%W% Connected to peer		%G%peerId%W%='.Tools::GetIdFromIpAndPort($msgFromPeer['client_ip'],$msgFromPeer['client_port']));
 								} else {
 									$return['message'] = "No ClientIP or ClientPort defined";
 								}
@@ -847,9 +850,9 @@ class Gossip {
 			$gossip->peers[] = array($ip.':'.$port => $ip,$port);
 
 			if ($gossip->isTestNet)
-				Display::print("Connected to BootstrapNode (TESTNET) -> %G%" . Tools::GetIdFromIpAndPort($ip,$port));
+				Display::print("%LP%Network%W% Connected to BootstrapNode		%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
 			else
-				Display::print("Connected to BootstrapNode -> %G%" . Tools::GetIdFromIpAndPort($ip,$port));
+				Display::print("%LP%Network%W% Connected to BootstrapNode		%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
 
 			$gossip->openned_ports = true;
 			$gossip->connected_to_bootstrap = true;
@@ -859,10 +862,9 @@ class Gossip {
 			$gossip->connected_to_bootstrap = false;
 
 			if ($gossip->isTestNet)
-				//Display::_error("Can't connect to BootstrapNode (TESTNET) %G%". Tools::GetIdFromIpAndPort($ip,$port));
-				Display::_error("Can't connect to BootstrapNode (TESTNET) %G%". $ip.':'.$port);
+				Display::_error("%LP%Network%W% Can't connect to BootstrapNode		%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
 			else
-				Display::_error("Can't connect to BootstrapNode %G%". Tools::GetIdFromIpAndPort($ip,$port));
+				Display::_error("%LP%Network%W% Can't connect to BootstrapNode		%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
 		}
     }
 
@@ -890,13 +892,13 @@ class Gossip {
                     $this->chaindata->addPeer($ip, $port);
                     $this->peers[] = array($ip.':'.$port => $ip,$port);
                     if ($displayMessage)
-                        Display::print("Connected to peer -> %G%" . Tools::GetIdFromIpAndPort($ip,$port));
+						Display::print('%LP%Network%W% Connected to peer		%G%peerId%W%='.Tools::GetIdFromIpAndPort($msgFromPeer['client_ip'],$msgFromPeer['client_port']));
                 }
                 return true;
             }
             else {
                 if ($displayMessage)
-                    Display::_warning("Can't connect to peer %G%". Tools::GetIdFromIpAndPort($ip,$port));
+					Display::_warning("%LP%Network%W% Can't connect to peer		%G%peerId%W%=".Tools::GetIdFromIpAndPort($msgFromPeer['client_ip'],$msgFromPeer['client_port']));
                 return false;
             }
         }
@@ -926,7 +928,7 @@ class Gossip {
      * Set the title of the process with useful information
      */
     public function SetTitleProcess() {
-        $title = "PhpMX client";
+        $title = "J4F Node";
         $title .= " | PeerID: " . substr(PoW::hash($this->ip . $this->port), 0, 18);
         if ($this->connected_to_bootstrap || $this->bootstrap_node)
             $title .= " | BootstrapNode: Connected";
