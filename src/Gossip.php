@@ -580,6 +580,20 @@ class Gossip {
 										break;
 									}
 
+									// We check if the time difference is equal orgreater than 2s
+									$diffTimeBlocks = date_diff(
+							            date_create(date('Y-m-d H:i:s', $lastBlock['timestamp_end_miner'])),
+							            date_create(date('Y-m-d H:i:s', $blockMinedByPeer->timestamp_end))
+							        );
+									$diffTimeSeconds = ($minedTime->format('%i') * 60) + $minedTime->format('%s');
+									$diffTimeSeconds = ($diffTimeSeconds < 0) ? ($diffTimeSeconds * -1):$diffTimeSeconds;
+									if ($diffTimeSeconds >= 2) {
+										$return['status'] = true;
+										$return['error'] = "5x00000000";
+										$return['result'] = 'sanity';
+										break;
+									}
+
 									//Valid new block in same hiehgt to add in Blockchain
 									$returnCode = Blockchain::isValidBlockMinedByPeerInSameHeight($gossip->chaindata,$lastBlock,$blockMinedByPeer);
 									if ($returnCode == "0x00000000") {
