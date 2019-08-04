@@ -742,7 +742,6 @@ class Gossip {
 										$return['result'] = 'sanity';
 										//Display::_warning('Peer '.Tools::GetIdFromIpAndPort($msgFromPeer['node_ip'],$msgFromPeer['node_port']).' need to be sync with me');
 									}
-									/*
 									else if (($msgFromPeer['height'] - $lastBlock['height']) > 100) {
 
 										//If have miner enabled, stop all miners
@@ -770,7 +769,6 @@ class Gossip {
 										if (strlen($msgFromPeer['node_ip'] > 0) && strlen($msgFromPeer['node_port']) > 0)
 											Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$msgFromPeer['node_ip'].":".$msgFromPeer['node_port']);
 									}
-									*/
 									break;
 								}
 							break;
