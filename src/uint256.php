@@ -31,6 +31,10 @@ Class uint256 {
 		$numParsed = $matches[1][0];
 		if ($numParsed == '0.0')
 			return '0';
+
+		if (preg_match("/\.\d$/",$numParsed))
+			$numParsed = str_replace('.0','',$numParsed);
+
 		return $numParsed;
 	}
 

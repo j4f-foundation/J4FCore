@@ -37,7 +37,7 @@ class PoW {
      * @return mixed
      */
     public static function findNonce($idMiner,$message,$difficulty,$startNonce,$incrementNonce,$isMultiThread=true) {
-        $max_difficulty = "0000FFFFF00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+        $max_difficulty = "000FFFFFF00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
 
 		$nonce = "0";
         $nonce = bcadd($nonce,strval($startNonce));
@@ -49,7 +49,8 @@ class PoW {
         if ($isMultiThread && !file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MAIN_THREAD_CLOCK))
             die('MAINTHREAD NOT FOUND');
 
-        $countIdle = 0;
+		$countIdle = 0;
+        $countIdleCheck = 0;
         $countIdleLog = 0;
         $limitCount = 1000;
 
@@ -57,6 +58,7 @@ class PoW {
 
             $countIdle++;
             $countIdleLog++;
+			$countIdleCheck++;
 
             if ($countIdleLog == $limitCount) {
                 $countIdleLog = 0;
@@ -88,7 +90,8 @@ class PoW {
 
             }
 
-			if ($countIdle % 100 == 0 && $isMultiThread) {
+			if ($countIdleCheck == 100) {
+				$countIdleCheck = 0;
                 //Quit-Files
                 if (@file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING)) {
                     //Delete "pid" file

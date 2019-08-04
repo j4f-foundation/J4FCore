@@ -175,21 +175,27 @@ class Peer {
                     continue;
                 }
 				else {
+					//Improve peer system with autoSanity
+					/*
 					$numBlocksSanity = 5 + $blocksSynced;
 					if ($lastBlock['height'] <= $numBlocksSanity)
 						$numBlocksSanity = 1;
 					$heightBlockFromRemove = $lastBlock['height'] - $numBlocksSanity;
 
+					//Display::_warning("Sync with peer ELSE");
+
                     //Micro-Sanity last block and resync
-					$gossip->chaindata->RemoveLastBlocksFrom($heightBlockFromRemove);
-					Display::_warning("Started Micr-Sanity And re-sync with peer       %G%height%W%=".$lastBlock['height']."	%G%newHeight%W%=".$heightBlockFromRemove);
+					//$gossip->chaindata->RemoveLastBlocksFrom($heightBlockFromRemove);
+					//Display::_warning("Started Micr-Sanity And re-sync with peer       %G%height%W%=".$lastBlock['height']."	%G%newHeight%W%=".$heightBlockFromRemove);
 
 					Tools::clearTmpFolder();
 					@unlink(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer");
 
-                    //Display::_warning("Peer ".$ipAndPort." added to blacklist       %G%reason%W%=Peer Previous block doesnt match with local last block");
-                    //$gossip->chaindata->addPeerToBlackList($ipAndPort);
-                    return null;
+                    ///Display::_warning("Peer ".$ipAndPort." added to blacklist       %G%reason%W%=Peer Previous block doesnt match with local last block");
+                    $gossip->chaindata->addPeerToBlackList($ipAndPort);
+					//exit();
+					return null;
+					*/
                 }
             }
         }

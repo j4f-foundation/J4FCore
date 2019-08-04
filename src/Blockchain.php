@@ -60,8 +60,10 @@ class Blockchain {
 
 		// If testnet Max 35s - Min 25s
         if ($isTestNet) {
-            $minAvg = 29;
-            $maxAvg = 31;
+            //$minAvg = 29;
+			$minAvg = 9;
+			//$maxAvg = 31;
+            $maxAvg = 11;
 		}
 
         // if lower than min, increase by 5%

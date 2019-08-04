@@ -18,7 +18,7 @@
 
 class J4FVMBase {
 
-	public static $var_types = array('address','uint256','int','uint','string');
+	public static $var_types = array('address','uint256','int','uint','string','tokenId');
 	public static $data = [];
 	public static $txn_hash = '';
 	public static $contract_hash = '';

@@ -45,6 +45,8 @@ class Gossip {
 	private $loop_x10 = 0;
 	private $loop_x15 = 0;
 
+	public $isBusy = false;
+
     /**
      * Gossip constructor
      *
@@ -529,6 +531,22 @@ class Gossip {
 							break;
 							case 'MINEDBLOCK':
 
+								//Check if blockchain is syncing
+								if ($gossip->syncing) {
+									$return['status'] = true;
+									$return['error'] = "3x00000000";
+									$return['message'] = "Blockchain syncing";
+									break;
+								}
+
+								//Check if im busy
+								if ($gossip->isBusy) {
+									$return['status'] = true;
+									$return['error'] = "0x10000003";
+									$return['message'] = "Busy";
+									break;
+								}
+
 								//Get current network
 								$isTestNet = ($gossip->chaindata->GetConfig('network') == 'testnet') ? true:false;
 
@@ -545,6 +563,9 @@ class Gossip {
 
 								/** @var Block $blockMinedByPeer */
 								$blockMinedByPeer = Tools::objectToObject(unserialize($msgFromPeer['block']),"Block");
+
+								//Determine isBusy
+								$gossip->isBusy = true;
 
 								//Check if block received its OK
 								if (!is_object($blockMinedByPeer) || ( is_object($blockMinedByPeer) && !isset($blockMinedByPeer->hash) )) {
@@ -638,7 +659,7 @@ class Gossip {
 								}
 
 								//Check if is a next block
-								if ($lastBlock['block_hash'] == $blockMinedByPeer->previous) {
+								else if ($lastBlock['block_hash'] == $blockMinedByPeer->previous) {
 
 									//We check that date of new block is not less than the last block
 									if ($blockMinedByPeer->timestamp_end <= $lastBlock['timestamp_end_miner']) {
@@ -721,6 +742,7 @@ class Gossip {
 										$return['result'] = 'sanity';
 										//Display::_warning('Peer '.Tools::GetIdFromIpAndPort($msgFromPeer['node_ip'],$msgFromPeer['node_port']).' need to be sync with me');
 									}
+									/*
 									else if (($msgFromPeer['height'] - $lastBlock['height']) > 100) {
 
 										//If have miner enabled, stop all miners
@@ -732,7 +754,7 @@ class Gossip {
 
 										Display::_warning('Peer '.Tools::GetIdFromIpAndPort($msgFromPeer['node_ip'],$msgFromPeer['node_port']).' have more blocks than me		PeerHeight: '.$msgFromPeer['height']. '		MyHeight:'.$lastBlock['height']);
 									}
-									else if (($msgFromPeer['height'] - $lastBlock['height']) < 100 && ($msgFromPeer['height'] - $lastBlock['height']) > 0) {
+									else if (($msgFromPeer['height'] - $lastBlock['height']) < 100 && ($msgFromPeer['height'] - $lastBlock['height']) >= 20) {
 
 										//If have miner enabled, stop all miners
 										Tools::clearTmpFolder();
@@ -748,6 +770,7 @@ class Gossip {
 										if (strlen($msgFromPeer['node_ip'] > 0) && strlen($msgFromPeer['node_port']) > 0)
 											Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$msgFromPeer['node_ip'].":".$msgFromPeer['node_port']);
 									}
+									*/
 									break;
 								}
 							break;
@@ -808,6 +831,10 @@ class Gossip {
 								$return['status'] = true;
 							break;
 						}
+
+						//Determine isBusy
+						if (strtoupper($msgFromPeer['action']) == 'MINEDBLOCK')
+							$gossip->isBusy = false;
 
 						$connection->write(@json_encode($return));
 						$connection->end();
@@ -1103,6 +1130,9 @@ class Gossip {
 		//Check If i found new block
 		if (@file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_NEW_BLOCK)) {
 
+			//Determine isBusy
+			$this->isBusy = true;
+
 			/** @var Block $blockMined */
 			$blockMined = Tools::objectToObject(@unserialize(Tools::hex2str(file_get_contents(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_NEW_BLOCK))),'Block');
 
@@ -1120,11 +1150,6 @@ class Gossip {
 						//Display new block mined
 						Display::ShowMessageNewBlock('mined',$nextHeight,$blockMined);
 
-						//Propagate block on network
-						Tools::sendBlockMinedToNetworkWithSubprocess($this->chaindata,$blockMined);
-
-						Tools::writeLog('MINER (MINED NEW BLOCK)');
-
 						//Add this block on local blockchain
 						if ($this->chaindata->addBlock($nextHeight,$blockMined)) {
 							//Make SmartContracts on local blockchain
@@ -1133,6 +1158,11 @@ class Gossip {
 							//Call Functions of SmartContracts on local blockchain
 							SmartContract::CallFunction($this->chaindata,$blockMined);
 						}
+
+						//Propagate block on network
+						Tools::sendBlockMinedToNetworkWithSubprocess($this->chaindata,$blockMined);
+
+						Tools::writeLog('MINER (MINED NEW BLOCK)');
 					} else {
 						Display::_error("Block reward not valid");
 					}
@@ -1145,8 +1175,10 @@ class Gossip {
 			}
 
 			//Wait 2-2.5s
-			usleep(rand(2000000,2500000));
+			//usleep(rand(2000000,2500000));
 		}
+		//Determine isBusy
+		$this->isBusy = false;
 	}
 
     /**

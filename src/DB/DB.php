@@ -148,7 +148,6 @@ class DB extends DBBase {
      * @param $ipAndPort
      */
     public function addPeerToBlackList($ipAndPort) {
-
 		/*
         //Get IP and Port
         $tmp = explode(':',$ipAndPort);

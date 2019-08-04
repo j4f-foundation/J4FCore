@@ -119,6 +119,9 @@ class Display {
         );
         $blockMinedInSeconds = $minedTime->format('%im%ss');
 
+		//Force Stop minning
+		Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
+
 		if (strtolower($type) == 'imported') {
 	        self::print("%Y%Imported%W% new block	    	%G%nonce%W%=" . $blockMined->nonce . " %G%elapsed%W%=" . $blockMinedInSeconds . " %G%previous%W%=" . $mini_hash_previous . " %G%hash%W%=" . $mini_hash . " %G%number%W%=" . ($height+1)." %G%size%W%=".Tools::GetBlockSize($blockMined));
 		}
