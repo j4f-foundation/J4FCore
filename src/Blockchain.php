@@ -236,6 +236,112 @@ class Blockchain {
         }
 	}
 
+
+	/**
+	 * Transform Block Array Structure into Block Object Structure
+	 *
+	 * @param array $blockArray
+	 *
+	 * @return bool
+	 */
+	public static function BlockArrayToObject($blockArray) {
+		if (is_array($blockArray) && !empty($blockArray)) {
+			$infoBlock = @unserialize($blockArray['info']);
+
+			$transactions = array();
+			foreach ($blockArray['transactions'] as $transactionInfo) {
+				$transactions[] = new Transaction(
+					$transactionInfo['wallet_from_key'],
+					$transactionInfo['wallet_to'],
+					$transactionInfo['amount'],
+					null,
+					null,
+					(isset($transactionInfo['tx_fee'])) ? $transactionInfo['tx_fee']:'',
+					$transactionInfo['data'],
+					true,
+					$transactionInfo['txn_hash'],
+					$transactionInfo['signature'],
+					$transactionInfo['timestamp']
+				);
+			}
+			$transactionsSynced = $transactions;
+
+			$blockObject = new Block(
+				$blockArray['height'],
+				$blockArray['block_previous'],
+				$blockArray['difficulty'],
+				$transactions,
+				'',
+				'',
+				'',
+				'',
+				true,
+				$blockArray['block_hash'],
+				$blockArray['nonce'],
+				$blockArray['timestamp_start_miner'],
+				$blockArray['timestamp_end_miner'],
+				$blockArray['root_merkle'],
+				$infoBlock
+			);
+
+			return $blockObject;
+		}
+		return null;
+	}
+
+	/**
+	 * Check integrity of blocks
+	 *
+	 * @param DB $chaindata
+	 * @param int $heightToStart
+	 * @param int $blocksToCheck
+	 *
+	 * @return bool
+	 */
+	public static function checkIntegrity(&$chaindata,$heightToStart=null,$blocksToCheck=20) {
+
+		$isTestNet = ($chaindata->GetNetwork() == "testnet") ? true:false;
+
+		if ($heightToStart == null)
+			$heightToStart = $chaindata->GetNextBlockNum()-1;
+
+		for ($i = $heightToStart ; $i > ($heightToStart-$blocksToCheck); $i--) {
+			$currentBlock = $chaindata->GetBlockByHeight($i);
+			$previousBlock = $chaindata->GetBlockByHeight(($i-1));
+
+			if ((is_array($currentBlock) && !empty($currentBlock)) && (is_array($previousBlock) && !empty($previousBlock))) {
+
+				if ($currentBlock['block_previous'] != $previousBlock['block_hash']) {
+					Display::print('CheckIntegrity -> PASO 1');
+					Display::print('Sanity from: ' . (($heightToStart-$i)-1));
+
+					self::SanityFromBlockHeight($chaindata,(($heightToStart-$i)-1));
+					return false;
+				}
+
+				//Transform blockArray into blockObject
+				$blockToCheck = BlockChain::BlockArrayToObject($currentBlock);
+				if ($blockToCheck != null) {
+					//Check if rewarded transaction is valid, prevent hack money
+					if (!$blockToCheck->isValidReward($currentBlock['height'],$isTestnet)) {
+						Display::print('CheckIntegrity -> PASO 2');
+						self::SanityFromBlockHeight($chaindata,(($heightToStart-$i)-1));
+						return false;
+					}
+
+					//AddBlock to blockchain
+					if (!$blockToCheck->isValid($currentBlock['height'],$isTestnet)) {
+						Display::print('CheckIntegrity -> PASO 3');
+						self::SanityFromBlockHeight($chaindata,(($heightToStart-$i)-1));
+						return false;
+					}
+				}
+			}
+		}
+
+		return true;
+	}
+
     /**
      * Check if block received by peer is valid
      * if it is valid, add the block to the temporary table so that the main process adds it to the blockchain

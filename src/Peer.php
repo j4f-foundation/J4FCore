@@ -41,43 +41,8 @@ class Peer {
 			$gossip->isBusy = true;
             foreach ($nextBlocksToSyncFromPeer as $object) {
 
-                $infoBlock = @unserialize($object['info']);
-
-                $transactions = array();
-                foreach ($object['transactions'] as $transactionInfo) {
-                    $transactions[] = new Transaction(
-                        $transactionInfo['wallet_from_key'],
-                        $transactionInfo['wallet_to'],
-                        $transactionInfo['amount'],
-                        null,
-                        null,
-						(isset($transactionInfo['tx_fee'])) ? $transactionInfo['tx_fee']:'',
-						$transactionInfo['data'],
-                        true,
-                        $transactionInfo['txn_hash'],
-                        $transactionInfo['signature'],
-                        $transactionInfo['timestamp']
-                    );
-                }
-                $transactionsSynced = $transactions;
-
-                $blockToImport = new Block(
-                    $object['height'],
-                    $object['block_previous'],
-                    $object['difficulty'],
-                    $transactions,
-                    '',
-                    '',
-                    '',
-                    '',
-                    true,
-                    $object['block_hash'],
-                    $object['nonce'],
-                    $object['timestamp_start_miner'],
-                    $object['timestamp_end_miner'],
-                    $object['root_merkle'],
-                    $infoBlock
-                );
+				//Transform blockArray into blockObject
+				$blockToImport = BlockChain::BlockArrayToObject($object);
 
                 //Get last local block
                 $lastBlock = $gossip->chaindata->GetLastBlock();
@@ -177,7 +142,7 @@ class Peer {
                 }
 				else {
 					//Improve peer system with autoSanity
-					$numBlocksSanity = 5 + $blocksSynced;
+					$numBlocksSanity = 10 + $blocksSynced;
 					if ($lastBlock['height'] <= $numBlocksSanity)
 						$numBlocksSanity = 1;
 					$heightBlockFromRemove = $lastBlock['height'] - $numBlocksSanity;
@@ -188,13 +153,17 @@ class Peer {
 					Display::_warning("Started Micr-Sanity And re-sync with peer       %G%height%W%=".$lastBlock['height']."	%G%newHeight%W%=".$heightBlockFromRemove);
 					$gossip->chaindata->RemoveLastBlocksFrom($heightBlockFromRemove);
 					Display::_warning("Finished Micro-Sanity");
+					$lastBlock = $gossip->chaindata->GetLastBlock();
+					Display::_warning("CurrentLastBlock: " . $lastBlock["block_hash"]);
+					//Get last local block
 
-					Tools::clearTmpFolder();
-					@unlink(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer");
+					//Tools::clearTmpFolder();
+					//@unlink(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer");
 
                     ///Display::_warning("Peer ".$ipAndPort." added to blacklist       %G%reason%W%=Peer Previous block doesnt match with local last block");
                     //$gossip->chaindata->addPeerToBlackList($ipAndPort);
 					//exit();
+					$gossip->syncing = true;
 					$gossip->isBusy = false;
 					return null;
                 }
@@ -231,17 +200,62 @@ class Peer {
 	/**
 	 * Select peer to sync with it
 	 */
-	public static function SelectPeerToSync(&$chaindata) {
+	public static function SelectPeerToSync(&$gossip) {
+
+		$highestChain = -1;
+
+		if ($gossip->isTestNet)
+			$ipAndPort = NODE_BOOTSTRAP_TESTNET.':'.NODE_BOOSTRAP_PORT_TESTNET;
+		else
+			$ipAndPort = NODE_BOOTSTRAP.':'.NODE_BOOSTRAP_PORT;
 
 		//Run subprocess peerAlive per peer
-		$peers = $chaindata->GetAllPeersWithoutBootstrap();
+		$peers = $gossip->chaindata->GetAllPeersWithoutBootstrap();
 		if (count($peers) > 0) {
-			Display::print('Selecting peer to sync			%G%count%W%='.count($peers));
-			Tools::writeLog('Selecting peer to sync			%G%count%W%='.count($peers));
+			foreach ($peers as $peer) {
+				$infoToSend = array(
+					'action' => 'STATUSNODE'
+				);
 
-			//Run subprocess propagation
-			Subprocess::newProcess(Tools::GetBaseDir()."subprocess".DIRECTORY_SEPARATOR,'getHighestChain',"",-1);
+				$response = Socket::sendMessageWithReturn($peer['ip'],$peer['port'],$infoToSend,2);
+
+				//Check if response as ok
+				if ($response != null && isset($response['status'])) {
+
+					//Check if peer have same height block
+					if ($response['result']['lastBlock'] > ($lastBlockHeight+1)) {
+
+						Tools::writeLog('SUBPROCESS::This peer '.$peer['ip'].':'.$peer['port'].' have more blocks than me');
+
+						//Check if have same GENESIS block from peer
+						$peerGenesisBlock = Peer::GetGenesisBlock($peer['ip'].':'.$peer['port']);
+						$localGenesisBlock = $gossip->chaindata->GetGenesisBlock();
+
+						//Check if i have genesis block (local blockchain)
+						if ($localGenesisBlock != null) {
+							if ($localGenesisBlock['block_hash'] == $peerGenesisBlock['block_hash']) {
+
+								Tools::writeLog('SUBPROCESS::Selected peer '.$peer['ip'].':'.$peer['port'].' for sync');
+
+								//Sync with peer (have more blocks)
+								if ($response['result']['lastBlock'] > $highestChain) {
+									$highestChain = $response['result']['lastBlock'];
+									$ipAndPort = $peer['ip'].':'.$peer['port'];
+								}
+							}
+						}
+						else {
+							//Init sync
+							if ($response['result']['lastBlock'] > $highestChain) {
+								$ipAndPort = $peer['ip'].':'.$peer['port'];
+							}
+						}
+					}
+				}
+			}
 		}
+
+		return $ipAndPort;
 	}
 
     /**

@@ -158,6 +158,9 @@ class Gossip {
 		//Save pointer of Gossip
 		$gossip = $this;
 
+		//Check integrity of last 20 blocks
+		Blockchain::checkIntegrity($gossip->chaindata,null,20);
+
 		if ($sanityBlockchain > 0) {
 			$gossip->SanityFromBlockHeight($sanityBlockchain);
 			exit();
@@ -249,11 +252,6 @@ class Gossip {
                     exit();
                 }
 
-				if ($gossip->isTestNet)
-					$ipAndPort = NODE_BOOTSTRAP_TESTNET.':'.NODE_BOOSTRAP_PORT_TESTNET;
-				else
-					$ipAndPort = NODE_BOOTSTRAP.':'.NODE_BOOSTRAP_PORT;
-
 				$lastBlock_BootstrapNode = BootstrapNode::GetLastBlockNum($gossip->chaindata,$gossip->isTestNet);
                 $lastBlock_LocalNode = $this->chaindata->GetNextBlockNum();
 
@@ -266,19 +264,11 @@ class Gossip {
 
                     $gossip->chaindata->SetConfig('syncing','on');
 
-					//We get the last block from the BootstrapNode
-					Peer::SelectPeerToSync($gossip->chaindata);
-
-					//Wait 5seg
-					usleep(5000000);
-
-					if (@file_exists(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sync_with_peer"))
-						$ipAndPort = @file_get_contents(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sync_with_peer");
-
+					//Select a peer to sync
+					$ipAndPort = Peer::SelectPeerToSync($gossip);
 					$ipPort = explode(':',$ipAndPort);
 					Display::print("Selected peer to sync -> %G%".Tools::GetIdFromIpAndPort($ipPort[0],$ipPort[1]));
 					Tools::writeLog('Selected peer to sync			%G%'.Tools::GetIdFromIpAndPort($ipPort[0],$ipPort[1]));
-					@unlink(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."highest_chain");
 				}
 
 				//If we do not have the GENESIS block, we download it from Peer (HighestChain)
@@ -386,13 +376,12 @@ class Gossip {
 			//If we are synchronizing and we are connected with the bootstrap
 			else if ($gossip->syncing) {
 
-				if ($gossip->isTestNet)
-					$ipAndPort = NODE_BOOTSTRAP_TESTNET.':'.NODE_BOOSTRAP_PORT_TESTNET;
-				else
-					$ipAndPort = NODE_BOOTSTRAP.':'.NODE_BOOSTRAP_PORT;
-
 				if (@file_exists(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sync_with_peer")) {
 					$ipAndPort = file_get_contents(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sync_with_peer");
+				}
+				else {
+					//Select a peer to sync
+					$ipAndPort = Peer::SelectPeerToSync($gossip);
 				}
 
 				//Check if have ip and port
@@ -655,6 +644,9 @@ class Gossip {
 									Tools::clearTmpFolder();
 									Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
 
+									//Check integrity of my blockchain
+									Blockchain::checkIntegrity($gossip->chaindata,null,50);
+
 									break;
 								}
 
@@ -742,32 +734,17 @@ class Gossip {
 										$return['result'] = 'sanity';
 										//Display::_warning('Peer '.Tools::GetIdFromIpAndPort($msgFromPeer['node_ip'],$msgFromPeer['node_port']).' need to be sync with me');
 									}
-									else if (($msgFromPeer['height'] - $lastBlock['height']) > 100) {
+									else if (($msgFromPeer['height'] - $lastBlock['height']) > 10) {
 
-										//If have miner enabled, stop all miners
+										//Check integrity of my blockchain
+										Blockchain::checkIntegrity($gossip->chaindata,null,50);
+
 										Tools::clearTmpFolder();
-										Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
-
-										$return['status'] = true;
-										$return['error'] = 'Block out of sync';
-
-										Display::_warning('Peer '.Tools::GetIdFromIpAndPort($msgFromPeer['node_ip'],$msgFromPeer['node_port']).' have more blocks than me		PeerHeight: '.$msgFromPeer['height']. '		MyHeight:'.$lastBlock['height']);
-									}
-									else if (($msgFromPeer['height'] - $lastBlock['height']) < 100 && ($msgFromPeer['height'] - $lastBlock['height']) >= 20) {
-
-										//If have miner enabled, stop all miners
-										Tools::clearTmpFolder();
-										Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
-
-										$return['status'] = true;
-										$return['error'] = 'Block out of sync, sync with you';
-
-										Display::_warning('Peer '.Tools::GetIdFromIpAndPort($msgFromPeer['node_ip'],$msgFromPeer['node_port']).' have more blocks than me		PeerHeight: '.$msgFromPeer['height']. '		MyHeight:'.$lastBlock['height']);
-										Display::_warning('Starting sync with '.Tools::GetIdFromIpAndPort($msgFromPeer['node_ip'],$msgFromPeer['node_port']));
 
 										// Start microsanity with this peer
 										if (strlen($msgFromPeer['node_ip'] > 0) && strlen($msgFromPeer['node_port']) > 0)
 											Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$msgFromPeer['node_ip'].":".$msgFromPeer['node_port']);
+										Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
 									}
 									break;
 								}
@@ -821,8 +798,19 @@ class Gossip {
 							break;
 							case 'SYNCBLOCKS':
 								if (isset($msgFromPeer['from'])) {
-									$return['status'] = true;
-									$return['result'] = $gossip->chaindata->SyncBlocks($msgFromPeer['from']);
+
+									//Check integrity of my blockchain
+									$integrityOk = Blockchain::checkIntegrity($gossip->chaindata,($msgFromPeer['from']+100),150);
+
+									if ($integrityOk) {
+										$return['status'] = true;
+										$return['result'] = $gossip->chaindata->SyncBlocks($msgFromPeer['from']);
+									}
+									else {
+										$return['status'] = true;
+										$return['result'] = null;
+										$return['error'] = 'IntegrityKO';
+									}
 								}
 							break;
 							case 'HELLO_PONG':

@@ -110,11 +110,7 @@ if ($argv[1] == -1) {
             $peerGenesisBlock = Peer::GetGenesisBlock($peerIP.':'.$peerPORT);
             $localGenesisBlock = $chaindata->GetGenesisBlock();
             if ($localGenesisBlock['block_hash'] == $peerGenesisBlock['block_hash']) {
-
-                Tools::writeLog('SUBPROCESS::Selected peer '.$peerIP.':'.$peerPORT.' for sync');
-
-                //Write sync_with_peer
-                Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$peerIP.":".$peerPORT);
+                //Tools::writeLog('SUBPROCESS::Selected peer '.$peerIP.':'.$peerPORT.' for sync');
             } else {
                 Tools::writeLog('SUBPROCESS::This peer '.$peerIP.':'.$peerPORT.' have diferent GENESIS block');
             }
