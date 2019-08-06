@@ -383,6 +383,40 @@ if ($dbversion == 11) {
     $dbversion++;
 }
 
+if ($dbversion == 12) {
+
+	$db->db->query("
+	CREATE TABLE `accounts_j4frc20` (
+	  `hash` varchar(128) NOT NULL,
+	  `contract_hash` varchar(128) NOT NULL,
+	  `tokenId` bigint(11) unsigned NOT NULL,
+	  PRIMARY KEY (`hash`,`contract_hash`,`tokenId`)
+	) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+	");
+
+	$db->db->query("
+	CREATE TABLE `smart_contracts_txn_token` (
+	  `txn_hash` varchar(128) NOT NULL,
+	  `contract_hash` varchar(128) NOT NULL,
+	  `wallet_from` varchar(128) NOT NULL,
+	  `wallet_to` varchar(128) NOT NULL,
+	  `tokenId` bigint(11) NOT NULL,
+	  `timestamp` varchar(12) NOT NULL,
+	  PRIMARY KEY (`txn_hash`),
+	  UNIQUE KEY `txn` (`txn_hash`) USING HASH,
+	  KEY `wallet_from_to` (`wallet_from`,`wallet_to`) USING HASH,
+	  KEY `contract` (`contract_hash`) USING HASH
+	) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+	");
+
+    Display::print("Updating DB Schema #".$dbversion);
+
+    //Increment version to next stage
+    $dbversion++;
+}
+
+
+
 // update dbversion
 if ($dbversion != $_CONFIG['dbversion']) {
     $db->SetConfig('dbversion',$dbversion);

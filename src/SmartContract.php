@@ -239,8 +239,6 @@ class SmartContract {
 			//Contract status - Default not created
 			$output = '';
 
-			//echo $code_parsed;
-
 			//Check if parsedCode have COMPILER_ERROR
 			if (strpos($code_parsed,'J4FVM_COMPILER_ERROR') === false) {
 				try {
@@ -260,14 +258,9 @@ class SmartContract {
 					ob_end_clean();
 
 				} catch (Exception $e) {
-
-					$output = $code_parsed;
+					$output = 'undefined';
 				}
 			}
-
-			//echo '<pre>'.print_r($code_parsed,true).'</pre>';
-
-
 			return Tools::str2hex($output);
 		}
 	}

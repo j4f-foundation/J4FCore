@@ -354,6 +354,23 @@ class DBContracts extends DBTransactions {
         }
         return null;
 	}
+
+	/**
+     * Returns a internal transaction token given a txn hash and contract hash
+     *
+	 * @param string $contract_hash
+     * @param string $txn_hash
+     * @return mixed
+     */
+    public function GetInternalTransactionTokenByTxnHash($contract_hash,$txn_hash) {
+
+        $sql = "SELECT * FROM smart_contracts_txn_token WHERE txn_hash = '".$txn_hash."' AND contract_hash = '".$contract_hash."';";
+        $info_internalTxn = $this->db->query($sql)->fetch_assoc();
+        if (!empty($info_internalTxn)) {
+            return $info_internalTxn;
+        }
+        return null;
+	}
 }
 
 ?>
