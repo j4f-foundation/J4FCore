@@ -147,22 +147,11 @@ class Peer {
 						$numBlocksSanity = 1;
 					$heightBlockFromRemove = $lastBlock['height'] - $numBlocksSanity;
 
-					//Display::_warning("Sync with peer ELSE");
-
-                    //Micro-Sanity last block and resync
-					Display::_warning("Started Micr-Sanity And re-sync with peer       %G%height%W%=".$lastBlock['height']."	%G%newHeight%W%=".$heightBlockFromRemove);
+                    //Micro-Sanity and resync
+					Display::_warning("Started Micro-Sanity       %G%height%W%=".$lastBlock['height']."	%G%newHeight%W%=".$heightBlockFromRemove);
 					$gossip->chaindata->RemoveLastBlocksFrom($heightBlockFromRemove);
-					Display::_warning("Finished Micro-Sanity");
-					$lastBlock = $gossip->chaindata->GetLastBlock();
-					Display::_warning("CurrentLastBlock: " . $lastBlock["block_hash"]);
-					//Get last local block
+					Display::_warning("Finished Micro-Sanity, re-sync with peer");
 
-					//Tools::clearTmpFolder();
-					//@unlink(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer");
-
-                    ///Display::_warning("Peer ".$ipAndPort." added to blacklist       %G%reason%W%=Peer Previous block doesnt match with local last block");
-                    //$gossip->chaindata->addPeerToBlackList($ipAndPort);
-					//exit();
 					$gossip->syncing = true;
 					$gossip->isBusy = false;
 					return null;
@@ -171,25 +160,9 @@ class Peer {
         }
 
         if ($blocksSynced == 1) {
-
-            $numBlock = $gossip->chaindata->GetNextBlockNum() - 1; //-1 because add this block before
-            $mini_hash = substr($blockSynced->hash,-12);
-            $mini_hash_previous = substr($blockSynced->previous,-12);
-
-            //We obtain the difference between the creation of the block and the completion of the mining
-            $minedTime = date_diff(
-                date_create(date('Y-m-d H:i:s', $blockSynced->timestamp)),
-                date_create(date('Y-m-d H:i:s', $blockSynced->timestamp_end))
-            );
-            $blockMinedInSeconds = $minedTime->format('%im%ss');
-
-            if ($transactionsSynced[0]->to == $gossip->coinbase) {
-                Display::print("%Y%Rewarded%W% new block headers               %G%nonce%W%=".$blockSynced->nonce."      %G%elapsed%W%=".$blockMinedInSeconds."     %G%previous%W%=".$mini_hash_previous."   %G%hash%W%=".$mini_hash."      %G%number%W%=".$numBlock."");
-            } else {
-                Display::print("%Y%Imported%W% new block headers               %G%nonce%W%=".$blockSynced->nonce."      %G%elapsed%W%=".$blockMinedInSeconds."     %G%previous%W%=".$mini_hash_previous."   %G%hash%W%=".$mini_hash."      %G%number%W%=".$numBlock."");
-            }
+			Display::ShowMessageNewBlock('imported',$lastBlock['height'],$blockSynced);
         } else if ($blocksSynced > 0) {
-            Display::print("%Y%Imported%W% new blocks headers              %G%count%W%=".$blocksSynced."             %G%current%W%=".$currentBlocks."   %G%total%W%=".$totalBlocks);
+            Display::print("%Y%Imported%W% new blocks              %G%count%W%=".$blocksSynced."             %G%current%W%=".$currentBlocks."   %G%total%W%=".$totalBlocks);
         }
 
 		$gossip->isBusy = false;
@@ -209,6 +182,7 @@ class Peer {
 		else
 			$ipAndPort = NODE_BOOTSTRAP.':'.NODE_BOOSTRAP_PORT;
 
+		$lastBlock = $gossip->chaindata->GetLastBlock();
 		//Run subprocess peerAlive per peer
 		$peers = $gossip->chaindata->GetAllPeersWithoutBootstrap();
 		if (count($peers) > 0) {
@@ -223,7 +197,7 @@ class Peer {
 				if ($response != null && isset($response['status'])) {
 
 					//Check if peer have same height block
-					if ($response['result']['lastBlock'] > ($lastBlockHeight+1)) {
+					if ($response['result']['lastBlock'] > ($lastBlock['height']+1)) {
 
 						Tools::writeLog('SUBPROCESS::This peer '.$peer['ip'].':'.$peer['port'].' have more blocks than me');
 

@@ -186,6 +186,7 @@ class SmartContract {
 							//Update StoredData of Smart Contract on blockchain (local)
 							$chaindata->updateStoredDataContract($contract['contract_hash'],$transaction->hash,$contractData);
 						}
+
 					}
 				}
 			}
@@ -338,6 +339,7 @@ class SmartContract {
 		js::define("blockchain",
 			array(
 				"Transfer" => "J4FVM::blockchain_transfer",
+				"TransferToken" => "J4FVM::blockchain_transfer_token",
 			),
 			array()
 		);
@@ -346,7 +348,7 @@ class SmartContract {
 		js::define("math",
 			array(
 				"parse" => "J4FVM::math_parse",
-				"toDec" => "J4FVM::math_parse",
+				"random" => "J4FVM::math_random",
 				"add" => "J4FVM::math_add",
 				"sub" => "J4FVM::math_sub",
 				"mul" => "J4FVM::math_mul",
@@ -364,7 +366,7 @@ class SmartContract {
 		js::define("uint256",
 			array(
 				"parse" => "J4FVM::math_parse",
-				"toDec" => "J4FVMJ4FVM::math_parse",
+				"toDec" => "J4FVM::math_parse",
 				"add" => "J4FVM::math_add",
 				"sub" => "J4FVM::math_sub",
 				"mul" => "J4FVM::math_mul",
@@ -404,6 +406,13 @@ class SmartContract {
 		js::define("self",
 			array(
 				"destruct" => "J4FVM::contract_destruct",
+			),
+			array()
+		);
+
+		js::define("utils",
+			array(
+				"sha3" => "J4FVM::js_sha3",
 			),
 			array()
 		);

@@ -70,11 +70,13 @@ class J4FVMBase {
      * Function that check special funity syntax
      *
      * @param string $code
-	 * @param bool $debug
      *
-     * @return string
+     * @return array
      */
 	public static function _checkSyntaxError($code) {
+
+		$errors = [];
+
 		$code_parsed = self::_parseComments($code);
 
 		if (strpos($code_parsed,'+') != false)
@@ -86,12 +88,31 @@ class J4FVMBase {
 		//Get functions of contract with all info (params, returns, code)
 		$functions = J4FVM::getFunctions($code,true);
 
-		//Check if contract its a Token and have J4FRC-10 Standard
-		$tokenInfo = J4FVM::getTokenDefine($code);
-		if ($tokenInfo != null) {
-			$isJ4FRC10Standard = J4FVM::CheckJ4FRC10Standard($code);
-			if (strlen($isJ4FRC10Standard) > 0)
-				$code_parsed .= $isJ4FRC10Standard;
+		//Check if is a J4FRC10
+		if (J4FVM::isJ4FRC10Standard($code)) {
+			//Check if contract its a Token and have J4FRC-10 Standard
+			$tokenInfo = J4FVM::getTokenDefine($code);
+			if ($tokenInfo != null) {
+				$isJ4FRC10Standard = J4FVM::CheckJ4FRC10Standard($code);
+				if (strlen($isJ4FRC10Standard) > 0)
+					$code_parsed .= $isJ4FRC10Standard;
+			}
+			else {
+				$errors[] = 'error("<strong class=\"text-danger\">COMPILER_ERROR</strong> Not defines of token J4FRC10<br>");';
+			}
+		}
+
+		if (J4FVM::isJ4FRC20Standard($code)) {
+			//Check if contract its a Token and have J4FRC-10 Standard
+			$tokenInfo = J4FVM::getTokenDefine($code);
+			if ($tokenInfo != null) {
+				$isJ4FRC20Standard = J4FVM::CheckJ4FRC20Standard($code);
+				if (strlen($isJ4FRC20Standard) > 0)
+					$code_parsed .= $isJ4FRC20Standard;
+			}
+			else {
+				$errors[] = 'error("<strong class=\"text-danger\">COMPILER_ERROR</strong> Not defines of token J4FRC20<br>");';
+			}
 		}
 
 		//Check if function have return definition but not have return code
@@ -102,13 +123,13 @@ class J4FVMBase {
 					$matches = [];
 					preg_match_all('/return\(.*\)/',$functionInfo['code'],$matches);
 					if (empty($matches[0])) {
-						$code_parsed .= 'print("<strong class=\"text-danger\">COMPILER_ERROR</strong> Function <strong>'.$function.'()</strong> defined with returns but not have return code");';
+						$errors[] = 'error("<strong class=\"text-danger\">COMPILER_ERROR</strong> Function <strong>'.$function.'()</strong> defined with returns but not have return code<br>");';
 					}
 				}
 			}
 		}
 
-		return $code_parsed;
+		return [$code_parsed,$errors];
 	}
 
 	/**
@@ -120,22 +141,26 @@ class J4FVMBase {
      */
 	public static function _parse($code,$debug=false) {
 
+		//Check Syntax Error
+		$returnCheckSyntax = self::_checkSyntaxError($code);
+		if (!empty($returnCheckSyntax[1]))
+			return implode(" ",$returnCheckSyntax[1]);
+		$code_parsed = $returnCheckSyntax[0];
+
 		//Check if have Contract define struct
 		$matches = [];
-		preg_match("/[Cc]ontract\s{0,}([a-zA-Z0-9]*)\s{0,}=\s{0,}\{/",$code,$matches);
-		if (!empty($matches[0]))
-			$code_parsed = @str_replace($matches[0],@str_replace('Contract','var',$matches[0]),$code);
+		preg_match("/[Cc]ontract\s{0,}([a-zA-Z0-9]*)\s{0,}(is J4FRC10|is J4FRC20|)\s{0,}\{/",$code_parsed,$matches);
+		if (!empty($matches))
+			$code_parsed = str_replace($matches[0],'var '.$matches[1].' = {',$code_parsed);
 
 		//Class
 		$matches = [];
 		preg_match_all("/[Cc]lass\s{0,}+([a-zA-Z_\-]*)\s{0,}{/",$code_parsed,$matches);
 		if (!empty($matches[0])) {
 			for ($i = 0; $i < count($matches[0]); $i++)
-				$code_parsed = str_replace($matches[0][$i],'var '.$matches[1][$i].' = {',$code_parsed);
+				if (!empty($matches[0]))
+					$code_parsed = str_replace($matches[0][$i],'var '.$matches[1][$i].' = {',$code_parsed);
 		}
-
-		//Check Syntax Error
-		$code_parsed = self::_checkSyntaxError($code_parsed);
 
 		//Parse functions Funity to JS
 		$code_parsed = self::_parseFunctions($code_parsed);
@@ -257,7 +282,7 @@ class J4FVMBase {
 		$code_parsed = str_replace('#pragma funity',		'//pragma funity',		$code_parsed);
 		$code_parsed = str_replace('#define Token',			'//define Token',		$code_parsed);
 		$code_parsed = str_replace('#define Name',			'//define Name',		$code_parsed);
-		$code_parsed = str_replace('#define MaxSupply',		'//define MaxSupply',	$code_parsed);
+		$code_parsed = str_replace('#define TotalSupply',	'//define TotalSupply',	$code_parsed);
 		$code_parsed = str_replace('#define Precision',		'//define Precision',	$code_parsed);
 
 		return $code_parsed;
@@ -503,6 +528,45 @@ class J4FVMBase {
 	}
 
 	/**
+	 * Blockchain Function
+     * Write Internal Transaction of contract J4FRC20
+     *
+     * @param string $sender
+     * @param string $receiver
+     * @param float $amount
+     * @return bool
+     */
+	public static function blockchain_transfer_token($sender,$receiver,$tokenId) {
+
+		echo 'blockchain_transfer_token';
+
+		//Check if have txn_hash for this J4VM
+		if (self::$contract_hash != null && strlen(self::$contract_hash) == 128) {
+
+			//Parsing jsvars to phpvars
+			$sender = php_str($sender);
+			$receiver = php_str($receiver);
+			$tokenId = php_str($tokenId);
+
+			//Instance DB
+			$db = new DB();
+
+			if ($db != null) {
+
+				//Check param formats
+				$REGEX_Address = '/J4F[a-fA-F0-9]{56}/';
+				if (preg_match($REGEX_Address,$sender) && preg_match($REGEX_Address,$receiver) && is_numeric($tokenId)) {
+
+					//write Internal Transaction on blockchain (local)
+					$db->addInternalTransactionToken(self::$txn_hash,self::$contract_hash,$sender,$receiver,$tokenId);
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * Contract Function (withdraw)
      * Write Internal Transaction of contract
      *
@@ -619,7 +683,9 @@ class J4FVMBase {
 	}
 
 	public static function math_compare($num1,$num2) {
-		return js_str(@bccomp(php_str($num1),php_str($num2)));
+		$num1 = php_str($num1);
+		$num2 = php_str($num2);
+		return js_int(@bccomp($num1,$num2));
 	}
 
 	public static function math_mul($num1,$num2) {
@@ -644,6 +710,19 @@ class J4FVMBase {
 
 	public static function math_powmod($num1,$num2,$mod) {
 		return js_str(self::math_parse(@bcpowmod(php_str($num1),php_str($num2),php_str($mod))));
+	}
+
+	//CRYPTO
+	public static function js_sha3($str) {
+		return js_str(PoW::hash(php_str($str)));
+	}
+	//CRYPTO
+	public static function math_random($length=32) {
+		if (is_numeric($length))
+			$randomNum = substr(Tools::hex2dec(PoW::hash(time().rand())),0,$length);
+		else
+			$randomNum = substr(Tools::hex2dec(PoW::hash(time().rand())),0,php_str($length));
+		return js_str($randomNum);
 	}
 }
 ?>

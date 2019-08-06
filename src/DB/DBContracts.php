@@ -174,7 +174,7 @@ class DBContracts extends DBTransactions {
 	}
 
     /**
-     * Save Internal TXN of SmartContract in Blockchain
+     * Save Internal TXN of SmartContract J4FRC10 in Blockchain
      *
      * @param string $txn_hash
 	 * @param string $contract_hash
@@ -247,6 +247,74 @@ class DBContracts extends DBTransactions {
 					INSERT INTO accounts (hash,sended,received,mined)
 					VALUES ('".$wallet_to."',0,'".$amount."',0)
 					ON DUPLICATE KEY UPDATE received = received + VALUES(received);
+					";
+
+					if (!$this->db->query($sql_updateAccountTo)) {
+						$error = true;
+					}
+				}
+			}
+		}
+
+
+		//Commit Internal Transaction
+		if (!$error) {
+			$this->db->commit();
+			return true;
+		}
+
+		//Rollback Internal Transaction
+		else
+			$this->db->rollback();
+
+        return false;
+	}
+
+	//addInternalTransactionToken
+	/**
+     * Save Internal TXN of SmartContract J4FRC20 in Blockchain
+     *
+     * @param string $txn_hash
+	 * @param string $contract_hash
+	 * @param string $wallet_from
+	 * @param string $wallet_to
+	 * @param int $tokenId
+     * @return bool
+     */
+	public function addInternalTransactionToken($txn_hash,$contract_hash,$wallet_from,$wallet_to,$tokenId) {
+
+		$error = false;
+
+		//Start Internal Transaction
+		$this->db->begin_transaction();
+
+		$timestamp = Tools::GetGlobalTime();
+		$sqlInternalTxn = "INSERT INTO smart_contracts_txn_token (txn_hash, contract_hash, wallet_from, wallet_to, tokenId, timestamp)
+			VALUES ('" . $txn_hash . "','" . $contract_hash . "','" . $wallet_from . "','" . $wallet_to . "','".$tokenId."','".$timestamp."');";
+
+		//Commit Internal Transaction
+		if (!$this->db->query($sqlInternalTxn)) {
+			$error = true;
+		}
+
+		//Update Account FROM
+		if (!$error) {
+
+			//Token TXN
+			$REGEX_Address = '/J4F[a-fA-F0-9]{56}/';
+			if (preg_match($REGEX_Address,$wallet_from)) {
+				if (strlen($wallet_from) > 0 && $wallet_from != 'J4F00000000000000000000000000000000000000000000000000000000') {
+					$sql_updateAccountFrom = "
+					DELETE FROM accounts_j4frc20 WHERE hash = '".$wallet_from."' AND contract_hash = '".$contract_hash."' AND tokenId = '".$tokenId."';
+					";
+					if (!$this->db->query($sql_updateAccountFrom)) {
+						$error = true;
+					}
+				}
+				//Update Account TO
+				if (strlen($wallet_to) > 0) {
+					$sql_updateAccountTo = "
+					INSERT INTO accounts_j4frc20 (hash,contract_hash,tokenId) VALUES ('".$wallet_to."','".$contract_hash."','".$tokenId."');
 					";
 
 					if (!$this->db->query($sql_updateAccountTo)) {

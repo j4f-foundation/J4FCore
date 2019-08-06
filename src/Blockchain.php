@@ -323,14 +323,14 @@ class Blockchain {
 				$blockToCheck = BlockChain::BlockArrayToObject($currentBlock);
 				if ($blockToCheck != null) {
 					//Check if rewarded transaction is valid, prevent hack money
-					if (!$blockToCheck->isValidReward($currentBlock['height'],$isTestnet)) {
+					if (!$blockToCheck->isValidReward($currentBlock['height'],$isTestNet)) {
 						Display::print('CheckIntegrity -> PASO 2');
 						self::SanityFromBlockHeight($chaindata,(($heightToStart-$i)-1));
 						return false;
 					}
 
 					//AddBlock to blockchain
-					if (!$blockToCheck->isValid($currentBlock['height'],$isTestnet)) {
+					if (!$blockToCheck->isValid($currentBlock['height'],$isTestNet)) {
 						Display::print('CheckIntegrity -> PASO 3');
 						self::SanityFromBlockHeight($chaindata,(($heightToStart-$i)-1));
 						return false;

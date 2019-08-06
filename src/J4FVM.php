@@ -146,8 +146,11 @@ class J4FVM extends J4FVMBase {
 	public static function GetContractName($code) {
 		//Check if have Contract define struct
 		$matches = [];
-		preg_match("/[Cc]ontract\s{0,}([a-zA-Z0-9]*)\s{0,}=\s{0,}\{/",$code,$matches);
-		return (isset($matches[1])) ? $matches[1]:'';
+		preg_match("/[Cc]ontract\s{0,}([a-zA-Z0-9]*)\s{0,}(is J4FRC10|is J4FRC20|)\s{0,}\{/",$code,$matches);
+		if (!empty($matches))
+			return (isset($matches[0])) ? $matches[1]:'';
+		else
+			return '';
 	}
 
 	/**
@@ -156,13 +159,13 @@ class J4FVM extends J4FVMBase {
      * @param string $code
 	 * @param string $functionToCall
      *
-     * @return bool
+     * @return string
      */
 	public static function canCallThisFunction($code,$functionToCall) {
 		$functions = self::getFunctions($code,false);
 		if (!empty($functions['public'])) {
 			foreach ($functions['public'] as $function=>$params) {
-				if (substr(Tools::str2hex(trim($function)),0,10) == $functionToCall) {
+				if ('0x'.substr(PoW::hash(trim($function)),0,8) == $functionToCall) {
 					return true;
 				}
 			}
@@ -182,14 +185,14 @@ class J4FVM extends J4FVMBase {
 		$functions = self::getFunctions($code,false);
 		if (!empty($functions['public'])) {
 			foreach ($functions['public'] as $function=>$params) {
-				if (substr(Tools::str2hex(trim($function)),0,10) == $functionToCall) {
+				if ('0x'.substr(PoW::hash(trim($function)),0,8) == $functionToCall) {
 					return $function;
 				}
 			}
 		}
 		return false;
 	}
-
+	
 	/**
      * Function that get token info from code
      *
@@ -206,7 +209,7 @@ class J4FVM extends J4FVMBase {
 			$token = array(
 				'Token'=>'',
 				'Name'=>'',
-				'MaxSupply'=>100,
+				'TotalSupply'=>100,
 				'Precision'=>8
 			);
 
@@ -226,16 +229,16 @@ class J4FVM extends J4FVMBase {
 			}
 			$token['Name'] = $matches[1];
 
-			//Check if have define MaxSupply
+			//Check if have define totalSupply
 			$matches = [];
-			preg_match("/[Dd]efine MaxSupply (.*)/",$code,$matches);
+			preg_match("/[Dd]efine TotalSupply (.*)/",$code,$matches);
 			if (count($matches) >= 2) {
-				$token['MaxSupply'] = $matches[1];
-				if ($token['MaxSupply'] > 1000000000000000) {
-					return '<strong class="text-danger">J4FVM_DEFINE_ERROR</strong> parsing <strong>MaxSupply</strong> max value: <strong>1000000000000000</strong>';
+				$token['TotalSupply'] = $matches[1];
+				if ($token['TotalSupply'] > 1000000000000000) {
+					return '<strong class="text-danger">J4FVM_DEFINE_ERROR</strong> parsing <strong>TotalSupply</strong> max value: <strong>1000000000000000</strong>';
 				}
-				else if ($token['MaxSupply'] < 1) {
-					return '<strong class="text-danger">J4FVM_DEFINE_ERROR</strong> parsing <strong>MaxSupply</strong> min value: <strong>1</strong>';
+				else if ($token['TotalSupply'] < 1) {
+					return '<strong class="text-danger">J4FVM_DEFINE_ERROR</strong> parsing <strong>TotalSupply</strong> min value: <strong>1</strong>';
 				}
 			}
 
@@ -252,6 +255,12 @@ class J4FVM extends J4FVMBase {
 				}
 			}
 		}
+
+		if (J4FVM::isJ4FRC20Standard($code)) {
+			$token['TotalSupply'] = '~';
+			$token['Precision'] = 0;
+		}
+
 		return $token;
 	}
 
@@ -337,6 +346,70 @@ class J4FVM extends J4FVMBase {
 			$return .= 'print("<strong class=\"text-danger\">J4FVM_COMPILER_ERROR</strong> Function <strong>transferFrom(address,address,uint256)</strong> Required for <strong>J4FRC-10 Token</strong>");';
 
 		return $return;
+	}
+
+	/**
+	 * Function that check required functions for J4FRC-20 Standard Token
+	 *
+	 * @param string $code
+	 *
+	 * @return string
+	 */
+	public static function CheckJ4FRC20Standard($code) {
+
+		$return = '';
+
+		//inventoryOf(address)
+		$matches = [];
+		preg_match_all('/inventoryOf:\s*function\(\s*address\s*(.*)\)\s*public\s*returns\s*string/',$code,$matches);
+		if (empty($matches[0]))
+			$return .= 'print("<strong class=\"text-danger\">J4FVM_COMPILER_ERROR</strong> Function <strong>inventoryOf(address) public returns array</strong> Required for <strong>J4FRC-20 Token</strong><br>");';
+
+		//transferToken(address,tokenId)
+		$matches = [];
+		preg_match_all('/transferToken:\s*function\(\s*address\s(.*)\s*,\s*tokenId\s*(.*)\)\s*public/',$code,$matches);
+		if (empty($matches[0]))
+			$return .= 'print("<strong class=\"text-danger\">J4FVM_COMPILER_ERROR</strong> Function <strong>transferToken(address,tokenId)</strong> Required for <strong>J4FRC-20 Token</strong><br>");';
+
+		//transferTokenFrom(address,address,tokenId)
+		$matches = [];
+		preg_match_all('/transferTokenFrom:\s*function\(\s*address\s*(.*),\s*address\s*(.*),\s*tokenId\s*(.*)\)\s*public/',$code,$matches);
+		if (empty($matches[0]))
+			$return .= 'print("<strong class=\"text-danger\">J4FVM_COMPILER_ERROR</strong> Function <strong>transferTokenFrom(address,address,tokenId)</strong> Required for <strong>J4FRC-20 Token</strong><br>");';
+
+		return $return;
+	}
+
+	/**
+     * Function that check required functions for J4FRC-10 Standard Token
+     *
+     * @param string $code
+	 *
+	 * @return bool
+     */
+	public static function isJ4FRC10Standard($code) {
+		$matches = [];
+		preg_match('/[Cc]ontract\s{0,}([a-zA-Z0-9]*)\s{0,}(is J4FRC10|)\s{0,}\{/',$code,$matches);
+		if (!empty($matches))
+			if (trim($matches[2]) == 'is J4FRC10')
+				return true;
+		return false;
+	}
+
+	/**
+     * Function that check required functions for J4FRC-20 Standard Token
+     *
+     * @param string $code
+	 *
+	 * @return bool
+     */
+	public static function isJ4FRC20Standard($code) {
+		$matches = [];
+		preg_match('/[Cc]ontract\s{0,}([a-zA-Z0-9]*)\s{0,}(is J4FRC20|)\s{0,}\{/',$code,$matches);
+		if (!empty($matches))
+			if ($matches[2] == 'is J4FRC20')
+				return true;
+		return false;
 	}
 }
 ?>
