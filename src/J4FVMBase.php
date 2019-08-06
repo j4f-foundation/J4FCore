@@ -712,17 +712,31 @@ class J4FVMBase {
 		return js_str(self::math_parse(@bcpowmod(php_str($num1),php_str($num2),php_str($mod))));
 	}
 
-	//CRYPTO
-	public static function js_sha3($str) {
-		return js_str(PoW::hash(php_str($str)));
-	}
-	//CRYPTO
 	public static function math_random($length=32) {
 		if (is_numeric($length))
 			$randomNum = substr(Tools::hex2dec(PoW::hash(time().rand())),0,$length);
 		else
 			$randomNum = substr(Tools::hex2dec(PoW::hash(time().rand())),0,php_str($length));
 		return js_str($randomNum);
+	}
+
+	//JSON
+	public static function json_stringify($array) {
+		return js_str(@json_encode(php_array($array)));
+	}
+
+	public static function json_parse($jsonString) {
+		$json = @json_encode(php_str($jsonString));
+		if (is_array($json) && !empty($json))
+			$object = js_object($json);
+		else
+			$object = js_object(null);
+		return $object;
+	}
+
+	//CRYPTO
+	public static function js_sha3($str) {
+		return js_str(PoW::hash(php_str($str)));
 	}
 }
 ?>

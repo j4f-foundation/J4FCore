@@ -416,6 +416,15 @@ class SmartContract {
 			),
 			array()
 		);
+
+		js::define("JSON",
+			array(
+				"stringify" => "J4FVM::json_stringify",
+				"parse" => "J4FVM::json_parse",
+			),
+			array()
+		);
+
 	}
 
 }
