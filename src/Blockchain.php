@@ -33,24 +33,16 @@ class Blockchain {
 
         // Initial difficulty
         if ($currentBlock['height'] == 0)
-            return [1,1];
+            return [2,1];
 
-        // for first 5 blocks use difficulty 1
-        if ($currentBlock['height'] < 5)
-            return [1,1];
+        // for first 50 blocks use difficulty 2
+        if ($currentBlock['height'] < 50)
+            return [2,1];
 
-		if ($currentBlock['height'] <= 21935) {
-			// Limit of last blocks to check time
-	        $limit = ($isTestNet) ? 2880:5760;
-	        if ($currentBlock['height'] < 2880)
-	            $limit = $currentBlock['height'] - 1;
-		}
-		else {
-			// Limit of last blocks to check time
-	        $limit = 250;
-	        if ($currentBlock['height'] < 250)
-	            $limit = $currentBlock['height'] - 1;
-		}
+		// Limit of last blocks to check time
+        $limit = 50;
+        if ($currentBlock['height'] < 50)
+            $limit = $currentBlock['height'] - 1;
 
         // Get limit check block
         $limitBlock = $chaindata->GetBlockByHeight($currentBlock['height']-$limit);
@@ -66,25 +58,23 @@ class Blockchain {
         $minAvg = 14;
         $maxAvg = 16;
 
-		// If testnet Max 35s - Min 25s
+		// If testnet Max 12s - Min 8s
         if ($isTestNet) {
-            //$minAvg = 29;
-			$minAvg = 9;
-			//$maxAvg = 31;
-            $maxAvg = 11;
+			$minAvg = 8;
+            $maxAvg = 12;
 		}
 
-        // if lower than min, increase by 5%
+        // if lower than min, increase by 2%
         if ($avgTime < $minAvg)
-            $difficulty = bcmul(strval($currentBlock['difficulty']), "1.05",2);
+            $difficulty = bcmul(strval($currentBlock['difficulty']), "1.02",2);
 
-        // if bigger than min, decrease by 5%
+        // if bigger than min, decrease by 2%
         elseif ($avgTime > $maxAvg)
-            $difficulty = bcmul(strval($currentBlock['difficulty']), "0.95",2);
+            $difficulty = bcmul(strval($currentBlock['difficulty']), "0.98",2);
 
 		// Min difficulty is 1
-       if ($difficulty < 1)
-           $difficulty = 1;
+       if ($difficulty < 2)
+           $difficulty = 2;
 
         return [$difficulty,$avgTime];
     }
