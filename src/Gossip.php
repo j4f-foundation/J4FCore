@@ -986,9 +986,6 @@ class Gossip {
      */
     public function ShowInfoSubprocessMiners() {
 
-		if (!SHOW_INFO_SUBPROCESS)
-			return;
-
         //Check if miners are enabled
         if (@!file_exists(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR.Subprocess::$FILE_MINERS_STARTED))
             return;
@@ -1025,7 +1022,9 @@ class Gossip {
         }
         if ($hashRateMiner != null) {
             $this->chaindata->SetConfig('hashrate',$hashRateMiner);
-            Display::print("Miners Threads Status                    %G%count%W%=".$multiplyNonce."            %G%hashRate%W%=" . $hashRateMiner);
+
+			if (SHOW_INFO_SUBPROCESS)
+            	Display::print("Miners Threads Status                    %G%count%W%=".$multiplyNonce."            %G%hashRate%W%=" . $hashRateMiner);
         }
     }
 

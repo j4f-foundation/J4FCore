@@ -392,6 +392,7 @@ class DB extends DBBase {
 
 		$tokens = array();
 
+		//J4FRC10
 		$tokensAccount = $this->db->query("SELECT * FROM accounts_j4frc10 WHERE hash = '".$wallet."';");
 		if (!empty($tokensAccount)) {
 			while ($tokenAccountInfo = $tokensAccount->fetch_array(MYSQLI_ASSOC)) {
@@ -401,22 +402,44 @@ class DB extends DBBase {
 				$totalReceivedReal = uint256::parse($tokenAccountInfo['received']);
 				$current = uint256::parse(bcsub($tokenAccountInfo['received'],$tokenAccountInfo['sended'],18));
 
-
-				$tokens[$tokenHash]['info'] = array(
+				$tokens['j4frc10'][$tokenHash]['info'] = array(
 		            'sended' => $totalSpend,
 		            'received' => $totalReceivedReal,
 		            'current' => $current
 		        );
 			}
 		}
+		if (!empty($tokens['j4frc10'])) {
+			foreach ($tokens['j4frc10'] as $tokenHash=>$tokenInfo) {
 
-		foreach ($tokens as $tokenHash=>$tokenInfo) {
+				$contractInfo = $this->GetContractByHash($tokenHash);
+				$tokenDefines = J4FVM::getTokenDefine(Tools::hex2str($contractInfo['code']));
 
-			$contractInfo = $this->GetContractByHash($tokenHash);
-			$tokenDefines = J4FVM::getTokenDefine(Tools::hex2str($contractInfo['code']));
+				$tokens['j4frc10'][$tokenHash]['Token'] = trim($tokenDefines['Token']);
+				$tokens['j4frc10'][$tokenHash]['Name'] = trim($tokenDefines['Name']);
+			}
+		}
 
-			$tokens[$tokenHash]['Token'] = trim($tokenDefines['Token']);
-			$tokens[$tokenHash]['Name'] = trim($tokenDefines['Name']);
+
+		//J4FRC20
+		$tokensAccount = $this->db->query("SELECT * FROM accounts_j4frc20 WHERE hash = '".$wallet."';");
+		if (!empty($tokensAccount)) {
+			while ($tokenAccountInfo = $tokensAccount->fetch_array(MYSQLI_ASSOC)) {
+				$tokenHash = $tokenAccountInfo['contract_hash'];
+
+				$tokens['j4frc20'][$tokenHash]['tokens'][] = $tokenAccountInfo['tokenId'];
+			}
+		}
+
+		if (!empty($tokens['j4frc20'])) {
+			foreach ($tokens['j4frc20'] as $tokenHash=>$tokenInfo) {
+
+				$contractInfo = $this->GetContractByHash($tokenHash);
+				$tokenDefines = J4FVM::getTokenDefine(Tools::hex2str($contractInfo['code']));
+
+				$tokens['j4frc20'][$tokenHash]['Token'] = trim($tokenDefines['Token']);
+				$tokens['j4frc20'][$tokenHash]['Name'] = trim($tokenDefines['Name']);
+			}
 		}
 
 		return $tokens;
