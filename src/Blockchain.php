@@ -39,10 +39,18 @@ class Blockchain {
         if ($currentBlock['height'] < 5)
             return [1,1];
 
-        // Limit of last blocks to check time
-        $limit = ($isTestNet) ? 2880:5760;
-        if ($currentBlock['height'] < 2880)
-            $limit = $currentBlock['height'] - 1;
+		if ($currentBlock['height'] <= 21935) {
+			// Limit of last blocks to check time
+	        $limit = ($isTestNet) ? 2880:5760;
+	        if ($currentBlock['height'] < 2880)
+	            $limit = $currentBlock['height'] - 1;
+		}
+		else {
+			// Limit of last blocks to check time
+	        $limit = 250;
+	        if ($currentBlock['height'] < 250)
+	            $limit = $currentBlock['height'] - 1;
+		}
 
         // Get limit check block
         $limitBlock = $chaindata->GetBlockByHeight($currentBlock['height']-$limit);
