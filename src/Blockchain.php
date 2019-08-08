@@ -44,12 +44,8 @@ class Blockchain {
         if ($currentBlock['height'] < 50)
             $limit = $currentBlock['height'] - 1;
 
-        // Get limit check block
-        $limitBlock = $chaindata->GetBlockByHeight($currentBlock['height']-$limit);
-
         // Get diff time (timestamps are in seconds already)
-        $diffTime = $currentBlock['timestamp_end_miner'] - $limitBlock['timestamp_end_miner'];
-        $avgTime = ceil($diffTime / $limit);
+		$avgTime = $chaindata->GetAvgBlockTime($currentBlock['height']-$limit);
 
         // Default same difficulty
         $difficulty = $currentBlock['difficulty'];

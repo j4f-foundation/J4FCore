@@ -1115,6 +1115,30 @@ class DBBlocks extends DBContracts {
         }
         return $blocksToSync;
     }
+
+
+	/**
+     * Get Avg time block from height
+     *
+     * @param $height
+     * @return int
+     */
+	public function GetAvgBlockTime($height) {
+
+		$totalTimeMined = 0;
+		$numBlocks = 0;
+
+		$sql = "SELECT timestamp_start_miner,timestamp_end_miner FROM blocks WHERE height >= '".$height."' ORDER BY height ASC";
+		$blocks = $this->db->query($sql);
+		if (!empty($blocks)) {
+            while ($blockInfo = $blocks->fetch_array(MYSQLI_ASSOC)) {
+				$numBlocks++;
+				$totalTimeMined += $blockInfo['timestamp_end_miner'] - $blockInfo['timestamp_start_miner'];
+			}
+		}
+		
+		return ceil($totalTimeMined / $numBlocks);
+	}
 }
 
 ?>
