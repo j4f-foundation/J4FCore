@@ -115,7 +115,7 @@ class Block {
         for ($i = 0; $i < MINER_MAX_SUBPROCESS; $i++) {
             $params = array(
                 $lastBlock_hash,
-                1,
+                2,
                 $i,
                 MINER_MAX_SUBPROCESS,
                 $network

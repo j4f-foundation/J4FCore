@@ -40,8 +40,8 @@ class Blockchain {
             return [2,1];
 
 		// Limit of last blocks to check time
-        $limit = 50;
-        if ($currentBlock['height'] < 50)
+        $limit = 5;
+        if ($currentBlock['height'] < 5)
             $limit = $currentBlock['height'] - 1;
 
         // Get diff time (timestamps are in seconds already)
@@ -50,15 +50,8 @@ class Blockchain {
         // Default same difficulty
         $difficulty = $currentBlock['difficulty'];
 
-        // Max 16s - Min 14s
-        $minAvg = 14;
-        $maxAvg = 16;
-
-		// If testnet Max 12s - Min 8s
-        if ($isTestNet) {
-			$minAvg = 8;
-            $maxAvg = 12;
-		}
+        // Min/Max Avg BlockTime
+		$minAvg = 9; $maxAvg = 11;
 
         // if lower than min, increase by 2%
         if ($avgTime < $minAvg)

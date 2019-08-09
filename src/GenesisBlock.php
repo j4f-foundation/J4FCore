@@ -75,7 +75,7 @@ class GenesisBlock {
 		$lastBlock = $chaindata->GetLastBlock();
 
 		//Define block
-		$genesisBlock = new Block(0,null,1,$transactions,$lastBlock,$genesisBlock,0,1);
+		$genesisBlock = new Block(0,null,2,$transactions,$lastBlock,$genesisBlock,0,1);
 
 		//Mine block
 		$genesisBlock->mine(0,$isTestnet,false);
