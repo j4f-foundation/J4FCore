@@ -863,9 +863,9 @@ class Gossip {
 			$gossip->peers[] = array($ip.':'.$port => $ip,$port);
 
 			if ($gossip->isTestNet)
-				Display::print("%LP%Network%W% Connected to BootstrapNode		%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
+				Display::print("%LP%Network%W% Connected to peer		%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
 			else
-				Display::print("%LP%Network%W% Connected to BootstrapNode		%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
+				Display::print("%LP%Network%W% Connected to peer		%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
 
 			$gossip->openned_ports = true;
 			$gossip->connected_to_bootstrap = true;
@@ -905,13 +905,13 @@ class Gossip {
                     $this->chaindata->addPeer($ip, $port);
                     $this->peers[] = array($ip.':'.$port => $ip,$port);
                     if ($displayMessage)
-						Display::print('%LP%Network%W% Connected to peer		%G%peerId%W%='.Tools::GetIdFromIpAndPort($msgFromPeer['client_ip'],$msgFromPeer['client_port']));
+						Display::print('%LP%Network%W% Connected to peer		%G%peerId%W%='.Tools::GetIdFromIpAndPort($ip,$port));
                 }
                 return true;
             }
             else {
                 if ($displayMessage)
-					Display::_warning("%LP%Network%W% Can't connect to peer		%G%peerId%W%=".Tools::GetIdFromIpAndPort($msgFromPeer['client_ip'],$msgFromPeer['client_port']));
+					Display::_warning("%LP%Network%W% Can't connect to peer		%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
                 return false;
             }
         }

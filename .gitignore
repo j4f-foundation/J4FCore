@@ -8,9 +8,10 @@ data/db/
 css/
 vendor/
 bin/
-tmp/
 web_*
 composer*
 index*.php
 funity/example_contract.php
 .htaccess
+tmp/*
+!tmp/db.update
