@@ -45,6 +45,7 @@ include(__DIR__.'/J4FVMBase.php');
 include(__DIR__.'/J4FVM.php');
 include(__DIR__.'/uint256.php');
 include(__DIR__.'/Socket.php');
+include(__DIR__.'/CLI.php');
 include(__DIR__.'/../funity/js.php');
 
 //J4F Version

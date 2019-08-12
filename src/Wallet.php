@@ -135,6 +135,13 @@ class Wallet {
             $wallet_from_info = self::GetCoinbase();
             $address = self::GetWalletAddressFromPubKey($wallet_from_info['public']);
         }
+		else {
+			//Check walletFrom Format
+			$REGEX_Address = '/J4F[a-fA-F0-9]{56}/';
+			if (!@preg_match($REGEX_Address,$address)) {
+            	return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." Address have bad format".PHP_EOL;
+			}
+		}
 
         $chaindata = new DB();
 
@@ -171,6 +178,13 @@ class Wallet {
             $wallet_from_info = self::GetCoinbase();
             $address = self::GetWalletAddressFromPubKey($wallet_from_info['public']);
         }
+		else {
+			//Check walletFrom Format
+			$REGEX_Address = '/J4F[a-fA-F0-9]{56}/';
+			if (!@preg_match($REGEX_Address,$address)) {
+				return "Error, address have bad format".PHP_EOL;
+			}
+		}
 
         //Instanciamos el puntero al chaindata
         $chaindata = new DB();

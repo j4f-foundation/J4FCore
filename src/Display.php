@@ -61,6 +61,15 @@ class Display {
         ob_flush();
     }
 
+	/**
+     * Write a line in the CMD (CLI)
+     * @param $string
+     */
+    public static function printCLI($string) {
+    	echo self::_replaceColors($string."%W%").self::_br();
+        ob_flush();
+    }
+
     /**
      * Write a debug line in the CMD
      * @param $string
@@ -80,6 +89,15 @@ class Display {
     public static function _error($string) {
         $date = new DateTime();
         echo self::_replaceColors("%LR%ERROR%W% [".$date->format("m-d|H:i:s")."] ".$string."%W%").self::_br();
+        ob_flush();
+    }
+
+	/**
+     * Write a Error line in the CMD
+     * @param $string
+     */
+    public static function errorCLI($string) {
+        echo self::_replaceColors("%LR%ERROR%W% ".$string."%W%").self::_br();
         ob_flush();
     }
 
