@@ -38,7 +38,8 @@ class CLI {
 		Display::printCLI("Menu actions:");
 		Display::printCLI("1. New Wallet");
 		Display::printCLI("2. Get Balance");
-		Display::printCLI("3. Send Money");
+		Display::printCLI("3. Send Transaction");
+		Display::printCLI("4. Encrypt data");
 		Display::_br();
 		Display::printCLI("0. Exit");
 		Display::_br();
@@ -54,6 +55,9 @@ class CLI {
 			break;
 			case '3':
 				self::SendMoney();
+			break;
+			case '4':
+				self::EncryptData();
 			break;
 			case '0':
 				exit();
@@ -369,6 +373,38 @@ class CLI {
 			Display::printCLI("Press any key to return to Main Menu");
 			$input = self::ReadInput();
 			self::MainMenu();
+		}
+	}
+
+	/**
+     * Show Balance Menu Wallet CLI
+     *
+     */
+	public static function EncryptData() {
+		self::Title();
+
+		Display::printCLI("Encrypt data");
+		Display::printCLI("Write %Y%:b%W% to return to MainMenu");
+		Display::_br();
+		Display::printCLI("Message to encrypt: ");
+		$inputData = self::ReadInput();
+		//J4Ff994e3b5c49c7f41eee4e3a5b0e6621f846b00ddd5142f7d66c888e1
+		if (strlen($inputData) > 0) {
+			if ($inputData == ":b") {
+				self::MainMenu();
+			}
+			else {
+				$dataParsed = Tools::str2hex($inputData);
+				Display::printCLI('Message crypted:');
+				Display::printCLI('%G%'.$dataParsed.'%W%');
+				Display::_br();
+				Display::printCLI("Press any key to return to Main Menu");
+				self::ReadInput();
+				self::MainMenu();
+			}
+		}
+		else {
+			self::EncryptData();
 		}
 	}
 
