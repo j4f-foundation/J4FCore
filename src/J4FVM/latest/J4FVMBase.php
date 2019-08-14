@@ -93,7 +93,7 @@ class J4FVMBase {
 			//Check if contract its a Token and have J4FRC-10 Standard
 			$tokenInfo = J4FVMTools::getTokenDefine($code);
 			if ($tokenInfo != null) {
-				$isJ4FRC10Standard = J4FVMTools::CheckJ4FRC10Standard($code);
+				$isJ4FRC10Standard = J4FVM::CheckJ4FRC10Standard($code);
 				if (strlen($isJ4FRC10Standard) > 0)
 					$code_parsed .= $isJ4FRC10Standard;
 			}
