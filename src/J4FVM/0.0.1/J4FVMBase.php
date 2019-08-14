@@ -89,11 +89,11 @@ class J4FVMBase {
 		$functions = J4FVM::getFunctions($code,true);
 
 		//Check if is a J4FRC10
-		if (J4FVM::isJ4FRC10Standard($code)) {
+		if (J4FVMTools::isJ4FRC10Standard($code)) {
 			//Check if contract its a Token and have J4FRC-10 Standard
-			$tokenInfo = J4FVM::getTokenDefine($code);
+			$tokenInfo = J4FVMTools::getTokenDefine($code);
 			if ($tokenInfo != null) {
-				$isJ4FRC10Standard = J4FVM::CheckJ4FRC10Standard($code);
+				$isJ4FRC10Standard = J4FVMTools::CheckJ4FRC10Standard($code);
 				if (strlen($isJ4FRC10Standard) > 0)
 					$code_parsed .= $isJ4FRC10Standard;
 			}
@@ -102,9 +102,9 @@ class J4FVMBase {
 			}
 		}
 
-		if (J4FVM::isJ4FRC20Standard($code)) {
+		if (J4FVMTools::isJ4FRC20Standard($code)) {
 			//Check if contract its a Token and have J4FRC-10 Standard
-			$tokenInfo = J4FVM::getTokenDefine($code);
+			$tokenInfo = J4FVMTools::getTokenDefine($code);
 			if ($tokenInfo != null) {
 				$isJ4FRC20Standard = J4FVM::CheckJ4FRC20Standard($code);
 				if (strlen($isJ4FRC20Standard) > 0)
@@ -227,7 +227,7 @@ class J4FVMBase {
 		}
 
 		//Special define::var
-		$token = J4FVM::getTokenDefine($code);
+		$token = J4FVMTools::getTokenDefine($code);
 		$matches = [];
 		preg_match_all("/define::([a-zA-Z]{0,})([;\)])/",$code_parsed,$matches);
 		//echo '<pre>'.print_r($matches,true).'</pre>';

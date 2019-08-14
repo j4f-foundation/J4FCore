@@ -91,17 +91,17 @@ class enfa {
 	function enfa() {
 		# $this->alphabet = array();	# We don't care
 		$this->states = array();	# Contains a list of labels
-		
+
 		# These are hashes with state labels for keys:
 		$this->delta = array();	# sub-hash from symbol to label-list
 		$this->epsilon = array();	# label-list
 		$this->mark = array();		# distinguishing mark
-		
+
 		# Now we can add the initial and final states:
 		$this->initial = $this->add_state(gen_label());
 		$this->final = $this->add_state(gen_label());
 	}
-	
+
 	function eclose($label_list) {
 		$states = array_count_values($label_list);
 		$queue = array_keys($states);
@@ -114,11 +114,11 @@ class enfa {
 		}
 		return array_keys($states);
 	}
-	
+
 	function any_are_final($label_list) {
 		return in_array($this->final, $label_list);
 	}
-	
+
 	function best_mark($label_list) {
 		$mark = FA_NO_MARK;
 		foreach($label_list as $label) {
@@ -126,7 +126,7 @@ class enfa {
 		}
 		return $mark;
 	}
-	
+
 	function add_state($label) {
 		if (isset($this->delta[$label])) {
 			die ("Trying to add existing state to an NFA.");
@@ -137,21 +137,21 @@ class enfa {
 		$this->mark[$label] = FA_NO_MARK;
 		return $label;
 	}
-	
+
 	function add_epsilon($src, $dest) {
 		$this->epsilon[$src][] = $dest;
 	}
-	
+
 	function start_states() {
 		return $this->eclose(array($this->initial));
 	}
-	
+
 	function add_transition($src, $glyph, $dest) {
 		$lst = & $this->delta[$src];
 		if (empty($lst[$glyph])) $lst[$glyph] = array($dest);
 		else $lst[$glyph][] = $dest;
 	}
-	
+
 	function step($label_list, $glyph) {
 		$out = array();
 		foreach($label_list as $label) {
@@ -161,11 +161,11 @@ class enfa {
 		}
 		return $this->eclose($out);
 	}
-	
+
 	function accepting($label_list) {
 		# Return a set of those glyphs which will not kill the NFA.
 		# Assume that any necessary epsilon closure is already done.
-		
+
 		# Note that there is a certain amount of unavoidable cleverness
 		# in the algorithm. I don't care the values of $out, so it
 		# doesn't matter that they happen also to be some arbitrary
@@ -174,51 +174,51 @@ class enfa {
 		foreach($label_list as $label) $out = array_merge($out, $this->delta[$label]);
 		return array_keys($out);
 	}
-	
+
 	/*
 	Now that we have the basics down, I'd like some functions that
 	let me make convenient modifications to an NFA. In particular,
 	I would like to:
-	
+
 	1: Recognize a particular sequence of glyphs
 	2: Accept the union of the current NFA and some other
 	3: Perform the Kleene closure
 	4: Similar for the common + and ? operators
 	5: Accept the concatenation of this and some other NFA.
-	
+
 	Fortunately, these all boil down to a fairly simple set of steps.
-	
+
 	One slightly complicated part is that I'd also like to be able
 	to carry these "distinguishing marks" through the system so that
 	they can instruct the final PDA on which production matched.
-	
+
 	The other more complicated part is that these production rules are
 	really transducers. Each rule has certain parts which must go into
 	a parse tree node. It turns out that this is a relatively hard
 	problem in the short run, and not necessary for a solution to the
 	ultimate goal of getting PHP programs into a "tree-of-lists" structure.
 	*/
-	
+
 	function recognize($glyph) {
 		$this->add_transition($this->initial, $glyph, $this->final);
 	}
-	
+
 	function plus() {
 		# Recognize the current NFA one or more times:
 		$this->add_epsilon($this->final, $this->initial);
 	}
-	
+
 	function hook() {
 		# Recognize the current NFA zero or one times:
 		$this->add_epsilon($this->initial, $this->final);
 	}
-	
+
 	function kleene() {
 		# kleen-star closure over the current NFA:
 		$this->hook();
 		$this->plus();
 	}
-	
+
 	function copy_in($nfa) {
 		# Used by the union and concatenation operations.
 		# Highly magical. Counts on a few things....
@@ -226,21 +226,21 @@ class enfa {
 			$this->$part = array_merge($this->$part, $nfa->$part);
 		}
 	}
-	
+
 	function determinize() {
 		# Now I can write the code that converts
 		# an NFA into an equivalent DFA.
-		
+
 		$map = new state_set_labeler();
 		$start = $this->start_states();
 		$queue = array($start);
-		
+
 		$dfa = new dfa();
 		$i = $map->label($start);
 		$dfa->add_state($i);
 		$dfa->initial = $i;
 		$dfa->mark[$i] = $this->best_mark($start);
-		
+
 		while (count($queue) > 0) {
 			$set = array_shift($queue);
 			$label = $map->label($set);
@@ -256,10 +256,10 @@ class enfa {
 			}
 			if ($this->any_are_final($set)) $dfa->final[$label] = true;
 		}
-		
+
 		return $dfa;
 	}
-	
+
 }
 
 /*
@@ -299,18 +299,18 @@ class dfa {
 	A DFA has a simpler representation than that of an NFA.
 	It also has a bit of a different interface.
 	*/
-	
+
 	function dfa() {
 		# $this->alphabet = array();	# We don't care
 		$this->states = array();	# Contains a list of labels
 		$this->initial = '';		# Set this later.
-		
+
 		# These are hashes with state labels for keys:
 		$this->final = array();	# Just a bit for each state
 		$this->delta = array();	# sub-hash from symbol to label
 		$this->mark = array();		# distinguishing mark
 	}
-	
+
 	function add_state($label) {
 		if ($this->has_state($label)) {
 			die ("Trying to add existing state to an DFA.");
@@ -321,34 +321,34 @@ class dfa {
 		$this->mark[$label] = FA_NO_MARK;
 		return $label;
 	}
-	
+
 	function has_state($label) {
 		return isset($this->delta[$label]);
 	}
-	
+
 	function add_transition($src, $glyph, $dest) {
 		$this->delta[$src][$glyph] = $dest;
 	}
-	
+
 	function step($label, $glyph) {
 		return @$this->delta[$label][$glyph];
 	}
-	
+
 	function accepting($label) {
 		return array_keys($this->delta[$label]);
 	}
-	
+
 	function minimize() {
 		/*
 		We'll use the table-filling algorithm to find pairs of
 		distinguishable states. When that algorithm is done, any states
 		not distinguishable are equivalent. We'll return a new DFA.
 		*/
-		
+
 		$map = $this->indistinguishable_state_map($this->table_fill());
 		$dist = array();
 		foreach($map as $p => $q) $dist[$q] = $q;
-		
+
 		$dfa = new dfa();
 		foreach($dist as $p) $dfa->add_state($p);
 		foreach($dist as $p) {
@@ -357,7 +357,7 @@ class dfa {
 			$dfa->mark[$p] = $this->mark[$p];
 		}
 		$dfa->initial = $map[$this->initial];
-		
+
 		return $dfa;
 	}
 	function indistinguishable_state_map($table) {
@@ -380,23 +380,23 @@ class dfa {
 		Two states are automatically distinguishable if their marks
 		differ.
 		*/
-		
+
 		# Base Case:
 		$table = new distinguishing_table();
-		
+
 		foreach($this->states as $s1) foreach($this->states as $s2) {
 			if ($this->mark[$s1] != $this->mark[$s2]) $table->distinguish($s1, $s2);
 		}
-		
-		# Induction: 
+
+		# Induction:
 		do { /* nothing */ } while (!$this->filling_round($table));
-		
+
 		return $table;
 	}
-	
+
 	function filling_round(&$table) {
 		$done = true;
-		
+
 		foreach($this->states as $s1) foreach($this->states as $s2) {
 			if ($s1 == $s2) continue;
 			if (!$table->differ($s1, $s2)) {
@@ -416,7 +416,7 @@ class dfa {
 		# ("Done Round<br/>");
 		return $done;
 	}
-	
+
 	function compare_states($p, $q, $table) {
 		$sigma = array_unique(array_merge($this->accepting($p), $this->accepting($q)));
 		# "Comparing $p and $q - shared vocabulary: [ ".implode(' : ', $sigma)." ] - ");
@@ -424,7 +424,7 @@ class dfa {
 			# "Same State<br/>";
 			return false;
 		}
-		
+
 		foreach($sigma as $glyph) {
 			$p1 = $this->step($p, $glyph);
 			$q1 = $this->step($q, $glyph);
@@ -433,11 +433,11 @@ class dfa {
 				return true;
 			}
 		}
-		
+
 		# ("No difference found (yet)<br/>");
 		return false;
 	}
-	
+
 }
 
 class distinguishing_table {
@@ -459,7 +459,7 @@ class distinguishing_table {
 	}
 }
 
-	
+
 class state_set_labeler {
 	function state_set_labeler() {
 		$this->map=array();
@@ -556,7 +556,7 @@ class stream {
 	}
 	function default_rule() {
 		if (!strlen($this->string)) return null_token();
-		
+
 		$start = $this->pos();
 		$ch = $this->string[0];
 		$this->consume($ch);
@@ -692,7 +692,7 @@ abstract class parser {
 				$tos->state = $step[1];
 				$token = $lex->next();
 				break;
-				
+
 				case 'do':
 				$semantic = $this->reduce($step[1], $tos->semantic());
 				if (empty($stack)) {
@@ -703,23 +703,23 @@ abstract class parser {
 					$tos->shift($semantic);
 				}
 				break;
-				
+
 				case 'push':
 				$tos->state = $step[2];
 				$stack[] = $tos;
 				$tos = $this->frame($step[1]);
 				break;
-				
+
 				case 'fold':
 				$tos->fold($this->reduce($step[1], $tos->semantic()));
 				$tos->state = $step[2];
 				break;
-				
+
 				case 'error':
 				$stack[] = $tos;
 				$strategy->stuck($token, $lex, $stack);
 				break;
-				
+
 				default:
 				throw new parse_error("Impossible. Bad PDA has $step[0] instruction.");
 			}

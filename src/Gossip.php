@@ -525,6 +525,7 @@ class Gossip {
 									$return['status'] = true;
 									$return['error'] = "3x00000000";
 									$return['message'] = "Blockchain syncing";
+									//Display::_error("Blockchain syncing");
 									break;
 								}
 
@@ -533,6 +534,7 @@ class Gossip {
 									$return['status'] = true;
 									$return['error'] = "0x10000003";
 									$return['message'] = "Busy";
+									//Display::_error("Busy");
 									break;
 								}
 
@@ -547,6 +549,7 @@ class Gossip {
 									$return['status'] = true;
 									$return['error'] = "0x10000002";
 									$return['message'] = "Need hashPrevious & blockInfo";
+									//Display::_error("Need hashPrevious & blockInfo");
 									break;
 								}
 
@@ -561,7 +564,7 @@ class Gossip {
 									$return['status'] = true;
 									$return['error'] = "5x00000000";
 									$return['message'] = "Block received malformed";
-									Display::_error('Block received malformed');
+									//Display::_error('Block received malformed');
 									break;
 								}
 
@@ -571,6 +574,9 @@ class Gossip {
 									$return['status'] = true;
 									$return['error'] = "6x00000002";
 									$return['message'] = "Block date is from the future";
+									//Display::_error('Block date is from the future');
+									//Display::_error('BlockTime: ' . $blockMinedByPeer->timestamp_end);
+									//Display::_error('LocalTime: ' . $currentLocalTime);
 									break;
 								}
 
@@ -578,6 +584,7 @@ class Gossip {
 								if ($lastBlock['block_hash'] == $blockMinedByPeer->hash) {
 									$return['status'] = true;
 									$return['error'] = "0x00000000";
+									//Display::_error('Same block');
 									break;
 								}
 
@@ -590,6 +597,7 @@ class Gossip {
 										$return['status'] = true;
 										$return['error'] = "4x00000000";
 										$return['message'] = "Block difficulty hacked?";
+										//Display::_error('Block difficulty hacked?');
 										break;
 									}
 
@@ -604,6 +612,7 @@ class Gossip {
 										$return['status'] = true;
 										$return['error'] = "5x00000000";
 										$return['result'] = 'sanity';
+										//Display::_error('Peer need sanity');
 										break;
 									}
 

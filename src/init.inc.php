@@ -40,16 +40,16 @@ include(__DIR__.'/Miner.php');
 include(__DIR__.'/GenesisBlock.php');
 include(__DIR__.'/Peer.php');
 include(__DIR__.'/SmartContract.php');
-include(__DIR__.'/SmartContractStateMachine.php');;
-include(__DIR__.'/J4FVMBase.php');
-include(__DIR__.'/J4FVM.php');
+include(__DIR__.'/SmartContractStateMachine.php');
+include(__DIR__.'/J4FVM/J4FVMTools.php');
+include(__DIR__.'/J4FVM/J4FVMSubprocess.php');
 include(__DIR__.'/uint256.php');
 include(__DIR__.'/Socket.php');
 include(__DIR__.'/CLI.php');
 include(__DIR__.'/../funity/js.php');
 
 //J4F Version
-define('VERSION','0.1.0');
+define('VERSION','0.1.1');
 
 //Start capturing flush
 ob_start();
@@ -65,9 +65,9 @@ date_default_timezone_set("UTC");
 
 ini_set('memory_limit', '512M');
 
-error_reporting(E_ALL & ~E_NOTICE);
-//error_reporting(0);
-//ini_set('display_errors', "off");
+//error_reporting(E_ALL & ~E_NOTICE);
+error_reporting(0);
+ini_set('display_errors', "off");
 
 if (DB_PASS == "DEFINE_YOUR_PASSWORD") {
     Display::print("%LR%ERROR%W%    Database password not defined");

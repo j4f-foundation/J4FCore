@@ -20,7 +20,7 @@ define('PHP_RUN_COMMAND',               'php');
 //define('PHP_RUN_COMMAND',             'C:\php\php.exe');
 
 define('DISPLAY_DEBUG',                 false);
-define('DISPLAY_DEBUG_LEVEL',           1); //Levels: 1-4
+define('DISPLAY_DEBUG_LEVEL',           2); //Levels: 1-4
 
 // MXC BOOTSTRAP NODE INFO
 define('NODE_BOOTSTRAP',                '137.74.50.40');

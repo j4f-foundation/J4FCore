@@ -10,7 +10,8 @@ vendor/
 bin/
 web_*
 composer*
-index*.php
+index_node.php
+index.php
 funity/example_contract.php
 .htaccess
 tmp/*

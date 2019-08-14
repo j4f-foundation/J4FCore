@@ -413,7 +413,7 @@ class DB extends DBBase {
 			foreach ($tokens['j4frc10'] as $tokenHash=>$tokenInfo) {
 
 				$contractInfo = $this->GetContractByHash($tokenHash);
-				$tokenDefines = J4FVM::getTokenDefine(Tools::hex2str($contractInfo['code']));
+				$tokenDefines = J4FVMTools::getTokenDefine(Tools::hex2str($contractInfo['code']));
 
 				$tokens['j4frc10'][$tokenHash]['Token'] = trim($tokenDefines['Token']);
 				$tokens['j4frc10'][$tokenHash]['Name'] = trim($tokenDefines['Name']);
@@ -435,7 +435,7 @@ class DB extends DBBase {
 			foreach ($tokens['j4frc20'] as $tokenHash=>$tokenInfo) {
 
 				$contractInfo = $this->GetContractByHash($tokenHash);
-				$tokenDefines = J4FVM::getTokenDefine(Tools::hex2str($contractInfo['code']));
+				$tokenDefines = J4FVMTools::getTokenDefine(Tools::hex2str($contractInfo['code']));
 
 				$tokens['j4frc20'][$tokenHash]['Token'] = trim($tokenDefines['Token']);
 				$tokens['j4frc20'][$tokenHash]['Name'] = trim($tokenDefines['Name']);

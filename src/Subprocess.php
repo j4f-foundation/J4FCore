@@ -43,9 +43,7 @@ class Subprocess {
         $params = $id . " " . $params;
 
 		if (IS_WIN)
-			// Lanza el proceso en background
             @pclose(@popen('start /B cmd /C "'.PHP_RUN_COMMAND.' '.$directory.$fileProcess.'.php '.$params.' >NUL 2>NUL"', 'r'));
-            //@pclose(@popen('start cmd /C "'.PHP_RUN_COMMAND.' '.$directory.$fileProcess.'.php '.$params.' >NUL 2>NUL"', 'r'));
         else
             system(PHP_RUN_COMMAND." ".$directory.$fileProcess.".php ".$params." > /dev/null 2>&1 &");
 

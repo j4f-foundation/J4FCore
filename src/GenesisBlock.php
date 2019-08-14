@@ -213,7 +213,6 @@ class GenesisBlock {
             $infoBlock
         );
 
-		//var_dump($genesis_block);
         //Check if node is connected on testnet or mainnet
         $isTestnet = ($chaindata->GetNetwork() == "testnet") ? true:false;
 

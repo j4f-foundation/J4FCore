@@ -8,6 +8,9 @@ Total coins: Unlimited
 Blocks every: Mainnet ?? (average) | Testnet: 20 sec (average)
 ```
 
+![php >= 7.1](https://img.shields.io/badge/php-%3E%3D%207.1-blue)
+![GPL 3.0](https://img.shields.io/badge/license-GPL%203.0-orange)
+
 # Requisites
 
 - Time synchronized with NTP ([NTP Pool](https://www.pool.ntp.org))
@@ -21,18 +24,6 @@ Blocks every: Mainnet ?? (average) | Testnet: 20 sec (average)
   - php_mysqli
   - php_bcmath
 
-# TODO
-- [x] Migrate form SQLite to MySQL/MariaDB
-- [x] Blockchain Explorer
-- [x] API JSON-RPC / HTTP
-- [x] Multithread miner
-- [x] Testnet
-- [x] CLI Wallet
-- [x] GUI Wallet
-- [ ] Improve Smart Contract and Funity Language
-- [ ] Improve peer system
-- [ ] Improve sanity system
-
 # Links
 [Explorer TESTNET](https://testnet.j4f.dev)
 
@@ -44,7 +35,7 @@ Blocks every: Mainnet ?? (average) | Testnet: 20 sec (average)
 
 # Discord
 
-If you want to talk about the development of currency or need support to run a node, connect to Discord Server!
+If you want to talk about the development of blockchain or need support to run a node, connect to Discord Server!
 
 [Discord](https://discord.gg/kcSGSaa)
 
@@ -89,7 +80,7 @@ php client.php -u USER1 -ip 0.0.0.0 -port 6969 -testnet -sanity 100
 Anyone is welcome to contribute to J4FCore!
 If you have a fix or code change, feel free to submit it as a pull request directly to the "master" branch.
 
-# Cryptocurrency under construction
+# Blockchain under construction
 Currency is still in early development phase, it may not be stable 100%
 ```
 The mainnet has not yet been released.

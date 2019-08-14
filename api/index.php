@@ -41,8 +41,8 @@ include('../src/Peer.php');
 include('../src/Miner.php');
 include('../src/SmartContract.php');
 include('../src/SmartContractStateMachine.php');
-include('../src/J4FVMBase.php');
-include('../src/J4FVM.php');
+include('../src/J4FVM/J4FVMTools.php');
+include('../src/J4FVM/J4FVMSubprocess.php');
 include('../src/uint256.php');
 include('../src/Socket.php');
 include('../funity/js.php');
@@ -560,9 +560,33 @@ if ($id != null) {
                                 'message' => 'Internal error'
                             );
                         } else {
-							//Call External contract function (ReadOnly)
-							$outputCall = SmartContract::CallReadFunction($chaindata,$contract,$params['data']);
-                            $response_jsonrpc['result'] = $outputCall;
+
+							$j4fvm_process = new J4FVMSubprocess('READ');
+
+							//Set info for J4FVM
+							$j4fvm_process->setContractHash($params['hash']);
+							$j4fvm_process->setTxnHash('empty');
+							$j4fvm_process->setVersion('1.0');
+							$j4fvm_process->setFrom('0');
+							$j4fvm_process->setAmount('0');
+							$j4fvm_process->setTimestamp('empty');
+							$j4fvm_process->setSignature('empty');
+							$j4fvm_process->setData($params['data']);
+
+							//Run contract
+							$statusRun = $j4fvm_process->run();
+							if ($statusRun !== true) {
+								$response_jsonrpc['error'] = array(
+	                                'code'    => -32604,
+	                                'message' => 'Internal error'
+	                            );
+							}
+							else {
+								$outputCall = '';
+								foreach ($j4fvm_process->output() as $line)
+									$outputCall .= $line;
+								$response_jsonrpc['result'] = $outputCall;
+							}
                         }
                     }
                 break;

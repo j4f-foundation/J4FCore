@@ -155,7 +155,7 @@ class DBBase extends DBBlocks {
 		foreach ($tokens as $tokenHash=>$tokenInfo) {
 
 			$contractInfo = $this->GetContractByHash($tokenHash);
-			$tokenDefines = J4FVM::getTokenDefine(Tools::hex2str($contractInfo['code']));
+			$tokenDefines = J4FVMTools::getTokenDefine(Tools::hex2str($contractInfo['code']));
 
 			$tokens[$tokenHash]['Token'] = trim($tokenDefines['Token']);
 			$tokens[$tokenHash]['Name'] = trim($tokenDefines['Name']);

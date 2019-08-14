@@ -35,64 +35,127 @@ class SmartContract {
 				//Check if transaction is for make new contract
 				if ($transaction->to == 'J4F00000000000000000000000000000000000000000000000000000000' && $transaction->data != "0x") {
 
-					//Parse txn::data (contract code) to string
-					$contract_code = $transaction->data;
-					$code = Tools::hex2str($contract_code);
-					if (strlen($code) == 0)
-						return;
+					$j4fvm_process = new J4FVMSubprocess('MAKE');
 
-					//Merge code into MXDity::MakeContract
-					$code_parsed = J4FVM::_init($code);
+					//Set info for J4FVM
+					$j4fvm_process->setContractHash($transaction->to);
+					$j4fvm_process->setTxnHash($transaction->hash);
+					$j4fvm_process->setVersion(J4FVMTools::GetFunityVersion($transaction->data));
+					$j4fvm_process->setFrom(Tools::str2hex($transaction->from));
+					$j4fvm_process->setAmount($transaction->amount);
+					$j4fvm_process->setTimestamp($transaction->timestamp);
+					$j4fvm_process->setSignature($transaction->signature);
+					$j4fvm_process->setData($transaction->data);
 
-					//Define sender Object
-					js::define("msg",
-						array(),
-						array(
-							"sender"=> Wallet::GetWalletAddressFromPubKey($transaction->from),
-							"amount"=> $transaction->amount,
-						)
-					);
+					//Run contract
+					$j4fvm_process->run();
+				}
+			}
+		}
+	}
 
-					//Make funity defines
-					self::MakeFunityDefines();
+	/**
+	 * Make Smart Contracts of this block
+	 * All nodes create smart contracts on blockchain (local)
+	 *
+	 * @param DB $chaindata
+	 * @param Block $block
+	 */
+	public static function _Make(&$chaindata,$txnHash,$txnFrom,$txnAmount,$txnData,$txnTimestamp,$txnSignature) {
 
-					//Get Contract Hash
-					$contractHash = PoW::hash($contract_code.$transaction->from.$transaction->timestamp.$transaction->signature);
+		//Parse txn::data (contract code) to string
+		$contract_code = $txnData;
+		$code = Tools::hex2str($contract_code);
+		if (strlen($code) == 0)
+			return;
 
-					#Contract status - Default not created
-					$run_status = 0;
+		//Merge code into MXDity::MakeContract
+		$code_parsed = J4FVM::_init($code);
 
-					//Check if parsedCode have COMPILER_ERROR
-					if (strpos($code_parsed,'J4FVM_COMPILER_ERROR') === false) {
-						try {
+		//Define sender Object
+		js::define("msg",
+			array(),
+			array(
+				"sender"=> Wallet::GetWalletAddressFromPubKey($txnFrom),
+				"amount"=> $txnAmount,
+			)
+		);
 
-							//Set TXN that created contract
-							J4FVM::$txn_hash = $transaction->hash;
-							J4FVM::$contract_hash = $contractHash;
+		//Make funity defines
+		self::MakeFunityDefines();
 
-							//Run code
-							ob_start();
-							js::run($code_parsed,$contractHash.rand());
-							$output = ob_get_contents();
-							ob_end_clean();
+		//Get Contract Hash
+		$contractHash = PoW::hash($contract_code.$txnFrom.$txnTimestamp.$txnSignature);
 
-							//Contract status - OK
-							$run_status = 1;
+		#Contract status - Default not created
+		$run_status = 0;
 
-						} catch (Exception $e) {
-							//Contract status - Error
-							$run_status = -1;
-						}
-					}
+		//Check if parsedCode have COMPILER_ERROR
+		if (strpos($code_parsed,'J4FVM_COMPILER_ERROR') === false) {
+			try {
 
-					// If status contract its OK, save this contract
-					if ($run_status == 1) {
+				//Set TXN that created contract
+				J4FVM::$txn_hash = $txnHash;
+				J4FVM::$contract_hash = $contractHash;
 
-						//Get data contract
-						$contractData = Tools::str2hex(@json_encode(J4FVM::$data));
+				//Run code
+				ob_start();
+				js::run($code_parsed,$contractHash.rand());
+				$output = ob_get_contents();
+				ob_end_clean();
 
-						//Add SmartContract on blockchain (local)
-						$chaindata->addSmartContract($contractHash,$transaction->hash,$contract_code,$contractData);
+				//Contract status - OK
+				$run_status = 1;
+
+			} catch (Exception $e) {
+				//Contract status - Error
+				$run_status = -1;
+			}
+		}
+
+		// If status contract its OK, save this contract
+		if ($run_status == 1) {
+
+			//Get data contract
+			$contractData = Tools::str2hex(@json_encode(J4FVM::$data));
+
+			//Add SmartContract on blockchain (local)
+			$chaindata->addSmartContract($contractHash,$txnHash,$contract_code,$contractData);
+		}
+	}
+
+	/**
+	 * Call a function of Contracts
+	 *
+	 * @param DB $chaindata
+	 * @param Block $block
+	 */
+	public static function CallFunction(&$chaindata,$block) {
+
+		foreach ($block->transactions as $transaction) {
+
+			//Check if transaction is valid
+			if ($transaction->isValid()) {
+
+				//Txn to Contract
+				if ((strlen($transaction->to) > 64) && $transaction->data != "0x") {
+
+					$contract = $chaindata->GetContractByHash($transaction->to);
+					if ($contract != null) {
+						$j4fvm_process = new J4FVMSubprocess('WRITE');
+
+						//Set info for J4FVM
+						$j4fvm_process->setContractHash($transaction->to);
+						$j4fvm_process->setTxnHash($transaction->hash);
+						$j4fvm_process->setVersion(J4FVMTools::GetFunityVersion($contract['code']));
+						$j4fvm_process->setFrom(Tools::str2hex($transaction->from));
+						$j4fvm_process->setAmount($transaction->amount);
+						$j4fvm_process->setTimestamp($transaction->timestamp);
+						$j4fvm_process->setSignature($transaction->signature);
+						$j4fvm_process->setData($transaction->data);
+
+						//Run contract
+						$j4fvm_process->run();
 					}
 				}
 			}
@@ -103,93 +166,87 @@ class SmartContract {
 	 * Call a function of Contracts
 	 *
 	 * @param DB $chaindata
-	 * @param Block $lastBlock
-	 * @param Block $blockMinedByPeer
+	 * @param Array $contract
+	 * @param string $txnHash
+	 * @param string $txnFrom
+	 * @param string $txnAmount
+	 * @param string $txnData
 	 */
-	public static function CallFunction(&$chaindata,$block) {
+	public static function _CallFunction(&$chaindata,$contract,$txnHash,$txnFrom,$txnAmount,$txnData) {
 
-		//Obteemos todas las transacciones del bloque
-		//Si alguna transaccion va dirigida a 00000
+		if (is_array($contract) && !empty($contract)) {
 
-		foreach ($block->transactions as $transaction) {
+			//Parse txn::data (call code) to string
+			$call_code = Tools::hex2str($txnData);
+			if (strlen($call_code) == 0)
+				return;
 
-			//Check if transaction is valid
-			if ($transaction->isValid()) {
+			//Parse contract code to string
+			$code_contract = Tools::hex2str($contract['code']);
+			if (strlen($code_contract) == 0)
+				return;
 
-				//Txn to Contract
-				if ((strlen($transaction->to) > 64) && $transaction->data != "0x") {
-					$contract = $chaindata->GetContractByHash($transaction->to);
-					if ($contract != null) {
+			//Parse code Funity::Call_Contract
+			$code_parsed = J4FVM::call($code_contract,$txnData);
 
-						//Parse txn::data (call code) to string
-						$call_code = Tools::hex2str($transaction->data);
-						if (strlen($call_code) == 0)
-							return;
+			//Define msg sender Object
+			js::define("msg",
+				array(),
+				array(
+					"sender"=> Wallet::GetWalletAddressFromPubKey($txnFrom),
+					"amount"=> $txnAmount,
+				)
+			);
 
-						//Parse contract code to string
-						$code_contract = Tools::hex2str($contract['code']);
-						if (strlen($code_contract) == 0)
-							return;
+			//Make funity defines
+			self::MakeFunityDefines();
 
-						//Parse code Funity::Call_Contract
-						$code_parsed = J4FVM::call($code_contract,$transaction->data);
+			//Contract Output
+			$output = '';
 
-						//Define msg sender Object
-						js::define("msg",
-							array(),
-							array(
-								"sender"=> Wallet::GetWalletAddressFromPubKey($transaction->from),
-								"amount"=> $transaction->amount,
-							)
-						);
+			//Contract status - Default not created
+			$run_status = 0;
 
-						//Make funity defines
-						self::MakeFunityDefines();
+			//Check if parsedCode have COMPILER_ERROR
+			if (strpos($code_parsed,'J4FVM_COMPILER_ERROR') === false) {
+				try {
 
-						//Contract status - Default not created
-						$run_status = 0;
+					//Set TXN that call contract
+					J4FVM::$txn_hash = $txnHash;
+					J4FVM::$contract_hash = $contract['contract_hash'];
 
-						//Check if parsedCode have COMPILER_ERROR
-						if (strpos($code_parsed,'J4FVM_COMPILER_ERROR') === false) {
-							try {
+					//Set data of contract (last snapshot)
+					$stateMachine = SmartContractStateMachine::store($contract['contract_hash'],Tools::GetBaseDir().'data'.DIRECTORY_SEPARATOR.'db');
+					J4FVM::$data = @json_decode(Tools::hex2str($stateMachine->last()['state']),true);
 
-								//Set TXN that call contract
-								J4FVM::$txn_hash = $transaction->hash;
-								J4FVM::$contract_hash = $contract['contract_hash'];
+					//Run code
+					ob_start();
+					js::run($code_parsed,$contract['contract_hash'].rand());
+					$output = ob_get_contents();
+					ob_end_clean();
 
-								//Set data of contract (last snapshot)
-								$stateMachine = SmartContractStateMachine::store($contract['contract_hash'],Tools::GetBaseDir().'data'.DIRECTORY_SEPARATOR.'db');
-								J4FVM::$data = @json_decode(Tools::hex2str($stateMachine->last()['state']),true);
+					//Contract status - OK
+					$run_status = 1;
 
-								//Run code
-								ob_start();
-								js::run($code_parsed,$contract['contract_hash'].rand());
-								$output = ob_get_contents();
-								ob_end_clean();
+				} catch (Exception $e) {
 
-								//Contract status - OK
-								$run_status = 1;
-
-							} catch (Exception $e) {
-
-								//Contract status - Error
-								$run_status = -1;
-							}
-						}
-
-						// If status contract its OK, update contract storedata
-						if ($run_status == 1) {
-
-							//Get data contract
-							$contractData = Tools::str2hex(@json_encode(J4FVM::$data));
-
-							//Update StoredData of Smart Contract on blockchain (local)
-							$chaindata->updateStoredDataContract($contract['contract_hash'],$transaction->hash,$contractData);
-						}
-
-					}
+					//Contract status - Error
+					$run_status = -1;
 				}
 			}
+
+			// If status contract its OK, update contract storedata
+			if ($run_status == 1) {
+
+				//Get data contract
+				$contractData = Tools::str2hex(@json_encode(J4FVM::$data));
+
+				//Update StoredData of Smart Contract on blockchain (local)
+				$chaindata->updateStoredDataContract($contract['contract_hash'],$txnHash,$contractData);
+			}
+
+			return $output;
+
 		}
 	}
 
@@ -213,9 +270,6 @@ class SmartContract {
 			if (strlen($callCode) == 0)
 				return;
 
-			//Parse CALL Code
-			$callInfo = J4FVM::_parseCall($callCode);
-
 			//Parse contract code to string
 			$code_contract = Tools::hex2str($contract['code']);
 			if (strlen($code_contract) == 0)
@@ -236,7 +290,7 @@ class SmartContract {
 			//Make funity defines
 			self::MakeFunityDefines();
 
-			//Contract status - Default not created
+			//Contract Output
 			$output = '';
 
 			//Check if parsedCode have COMPILER_ERROR
