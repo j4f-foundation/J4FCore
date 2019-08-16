@@ -28,6 +28,25 @@ class DBBase extends DBBlocks {
         return false;
     }
 
+	/**
+     * Check if have RocksDB Engine installed on MariaDB Server
+     *
+     * @return bool`
+     */
+    public function HaveRocksDBEngine() {
+		try {
+			$query = $this->db->query("SHOW ENGINES;");
+	        if (!empty($query)) {
+	            while ($engines = $query->fetch_array(MYSQLI_ASSOC)) {
+					if (strtoupper($engines['Engine']) == 'ROCKSDB')
+						return true;
+				}
+	        }
+		}
+		catch (Exception $e) { }
+        return false;
+    }
+
     /**
      * Get all config
      *
@@ -71,29 +90,6 @@ class DBBase extends DBBlocks {
         else {
             $this->db->query("UPDATE config SET val='".$value."' WHERE cfg='".$key."'");
         }
-    }
-
-    /**
-     * Get current network
-     *
-     * @return string
-     */
-    public function GetNetwork() {
-        $currentNetwork = $this->db->query("SELECT val FROM config WHERE cfg = 'network';")->fetch_assoc();
-        if (!empty($currentNetwork))
-            return strtolower($currentNetwork['val']);
-        return "mainnet";
-    }
-
-    /**
-     * @return bool|mixed
-     */
-    public function GetBootstrapNode() {
-        $info_mined_blocks_by_peer = $this->db->query("SELECT * FROM peers ORDER BY id ASC LIMIT 1;")->fetch_assoc();
-        if (!empty($info_mined_blocks_by_peer)) {
-            return $info_mined_blocks_by_peer;
-        }
-        return false;
     }
 
     /**

@@ -27,65 +27,15 @@ class DB extends DBBase {
 
         //We create or load the database
         $this->db = @new mysqli(DB_HOST,DB_USER,DB_PASS,DB_NAME, DB_PORT);
-
-        //Check if have error on connect to mysql server
-        if (mysqli_connect_errno())
-            return null;
-    }
-
-    /**
-     * @param $table
-     * @return bool
-     */
-    public function truncate($table) {
-        if ($this->db->query("TRUNCATE TABLE " . $table.";"))
-            return true;
-        return false;
-    }
-
-    /**
-     * Get all config
-     *
-     * @return array
-     */
-    public function GetAllConfig() {
-        $_CONFIG = array();
-        $query = $this->db->query("SELECT cfg, val FROM config");
-        if (!empty($query)) {
-            while ($cfg = $query->fetch_array(MYSQLI_ASSOC))
-                $_CONFIG[$cfg['cfg']] = trim($cfg['val']);
-        }
-        return $_CONFIG;
-    }
-
-    /**
-     * Get config
-     *
-     * @param $key
-     * @return string
-     */
-    public function GetConfig($key) {
-        $currentConfig = $this->db->query("SELECT val FROM config WHERE cfg = '".$key."';")->fetch_assoc();
-        if (!empty($currentConfig)) {
-            return $currentConfig['val'];
-        }
-        return null;
-    }
-
-    /**
-     * Save config on database
-     *
-     * @param $key
-     * @param $value
-     */
-    public function SetConfig($key,$value) {
-        $currentConfig = $this->db->query("SELECT val FROM config WHERE cfg = '".$key."';")->fetch_assoc();
-        if (empty($currentConfig)) {
-            $this->db->query("INSERT INTO config (cfg,val) VALUES ('".$key."', '".$value."');");
-        }
-        else {
-            $this->db->query("UPDATE config SET val='".$value."' WHERE cfg='".$key."'");
-        }
+		if (isset($this->db->connect_error) && strlen($this->db->connect_error) > 0) {
+			Display::_error('Database ERROR');
+			Display::_error($this->db->connect_error);
+			if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+				Display::_error("Press Enter to close close window");
+				readline();
+			}
+			exit();
+		}
     }
 
     /**

@@ -71,39 +71,49 @@ ini_set('display_errors', "off");
 
 if (DB_PASS == "DEFINE_YOUR_PASSWORD") {
     Display::print("%LR%ERROR%W%    Database password not defined");
-    if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN')
-        readline("Press any Enter to close close window");
+	if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+		Display::_error("Press Enter to close close window");
+		readline();
+	}
     exit();
 }
 
 // checks for php extensions
 if (!extension_loaded("openssl") && !defined("OPENSSL_KEYTYPE_RSA")) {
     Display::_error("You must install the extension %LG%openssl%W% with %LG%OPENSSL_KEYTYPE_RSA");
-    if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN')
-        readline("Press any Enter to close close window");
+	if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+		Display::_error("Press Enter to close close window");
+		readline();
+	}
     exit();
 }
 
 if (!extension_loaded("mysqli")) {
     Display::_error("You must install the extension %LG%mysqli");
 
-    if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN')
-        readline("Press any Enter to close close window");
+	if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+		Display::_error("Press Enter to close close window");
+		readline();
+	}
     exit();
 }
 
 if (!extension_loaded("bcmath")) {
     Display::_error("You must install the extension %LG%bcmath");
-    if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN')
-        readline("Press any Enter to close close window");
+	if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+		Display::_error("Press Enter to close close window");
+		readline();
+	}
     exit();
 }
 
 // check php version
 if (floatval(phpversion()) < 7.1) {
     Display::_error("The minimum php version required is %LG%7.1");
-    if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN')
-        readline("Press any Enter to close close window");
+	if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+		Display::_error("Press Enter to close close window");
+		readline();
+	}
     exit();
 }
 
@@ -113,8 +123,10 @@ if ($db == null) {
     Display::_error("Could not connect to the database");
     Display::_error("Check CONFIG.php and setup correct mysql data");
 
-    if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN')
-        readline("Press any Enter to close close window");
+	if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+		Display::_error("Press Enter to close close window");
+		readline();
+	}
     exit();
 }
 
@@ -130,8 +142,10 @@ if (@file_exists("tmp".DIRECTORY_SEPARATOR."db.update")) {
         exit();
     }
     Display::_error("Could not access the tmp/db.update file");
-    if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN')
-        readline("Press any Enter to close close window");
+	if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+		Display::_error("Press Enter to close close window");
+		readline();
+	}
     exit();
 }
 
