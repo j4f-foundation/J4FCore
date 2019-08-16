@@ -7,8 +7,6 @@ Class J4FVMSubprocess {
 	public $txnData;
 	public $txnFrom;
 	public $txnAmount;
-	public $txnTimestamp;
-	public $txnSignature;
 
 	public $version;
 	public $output;
@@ -50,14 +48,6 @@ Class J4FVMSubprocess {
 		$this->txnData = $data;
 	}
 
-	public function setTimestamp($timestamp) {
-		$this->txnTimestamp = $timestamp;
-	}
-
-	public function setSignature($signature) {
-		$this->txnSignature = $signature;
-	}
-
 	public function run() {
 
 		if ($this->contractHash == null)
@@ -75,18 +65,12 @@ Class J4FVMSubprocess {
 		if ($this->txnAmount == null)
 			return 'Error, TXN Amount not defined';
 
-		if ($this->txnTimestamp == null)
-			return 'Error, TXN Timestamp not defined';
-
-		if ($this->txnSignature == null)
-			return 'Error, TXN Signature not defined';
-
 		//Default use latest versionfd
 		if ($this->version == null)
 			$this->version = 'latest';
 
         //Make params for j4fvm
-        $params = $this->typeCall.' '.$this->contractHash.' '.$this->version.' '.$this->txnData.' '.$this->txnHash.' '.$this->txnFrom.' '.$this->txnAmount.' '.$this->txnTimestamp.' '.$this->txnSignature;
+        $params = $this->typeCall.' '.$this->contractHash.' '.$this->version.' '.$this->txnData.' '.$this->txnHash.' '.$this->txnFrom.' '.$this->txnAmount;
 
 		try {
 

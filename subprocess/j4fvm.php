@@ -74,12 +74,6 @@ if (!isset($argv[6]))
 if (!isset($argv[7]))
     die("TXN Amount not defined");
 
-if (!isset($argv[8]))
-    die("TXN Timestamp not defined");
-
-if (!isset($argv[9]))
-    die("TXN Signature not defined");
-
 $typeCall = strtoupper($argv[1]);
 
 $contractHash = $argv[2];
@@ -89,8 +83,6 @@ $txnData = $argv[4];
 $txnHash = $argv[5];
 $txnFrom = Tools::hex2str($argv[6]);
 $txnAmount = $argv[7];
-$txnTimestamp = $argv[8];
-$txnSignature = $argv[9];
 
 //Start Chaindata pointer
 $chaindata = new DB();
@@ -120,7 +112,7 @@ include($J4FVMBaseDir.'J4FVM.php');
 //Run contract
 $output = '';
 if ($typeCall == 'MAKE')
-	$output = SmartContract::_Make($chaindata,$txnHash,$txnFrom,$txnAmount,$txnData,$txnTimestamp,$txnSignature);
+	$output = SmartContract::_Make($chaindata,$contractHash,$txnHash,$txnFrom,$txnAmount,$txnData);
 else if ($typeCall == 'WRITE')
 	$output = SmartContract::_CallFunction($chaindata,$contract,$txnHash,$txnFrom,$txnAmount,$txnData);
 else if ($typeCall == 'READ')

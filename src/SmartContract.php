@@ -37,14 +37,15 @@ class SmartContract {
 
 					$j4fvm_process = new J4FVMSubprocess('MAKE');
 
+					//Make ContractHash
+					$contractHash = PoW::hash($transaction->data.$transaction->from.$transaction->timestamp.$transaction->signature);
+
 					//Set info for J4FVM
-					$j4fvm_process->setContractHash($transaction->to);
+					$j4fvm_process->setContractHash($contractHash);
 					$j4fvm_process->setTxnHash($transaction->hash);
 					$j4fvm_process->setVersion(J4FVMTools::GetFunityVersion($transaction->data));
 					$j4fvm_process->setFrom(Tools::str2hex($transaction->from));
 					$j4fvm_process->setAmount($transaction->amount);
-					$j4fvm_process->setTimestamp($transaction->timestamp);
-					$j4fvm_process->setSignature($transaction->signature);
 					$j4fvm_process->setData($transaction->data);
 
 					//Run contract
@@ -61,7 +62,7 @@ class SmartContract {
 	 * @param DB $chaindata
 	 * @param Block $block
 	 */
-	public static function _Make(&$chaindata,$txnHash,$txnFrom,$txnAmount,$txnData,$txnTimestamp,$txnSignature) {
+	public static function _Make(&$chaindata,$contractHash,$txnHash,$txnFrom,$txnAmount,$txnData) {
 
 		//Parse txn::data (contract code) to string
 		$contract_code = $txnData;
@@ -83,9 +84,6 @@ class SmartContract {
 
 		//Make funity defines
 		self::MakeFunityDefines();
-
-		//Get Contract Hash
-		$contractHash = PoW::hash($contract_code.$txnFrom.$txnTimestamp.$txnSignature);
 
 		#Contract status - Default not created
 		$run_status = 0;
@@ -150,8 +148,6 @@ class SmartContract {
 						$j4fvm_process->setVersion(J4FVMTools::GetFunityVersion($contract['code']));
 						$j4fvm_process->setFrom(Tools::str2hex($transaction->from));
 						$j4fvm_process->setAmount($transaction->amount);
-						$j4fvm_process->setTimestamp($transaction->timestamp);
-						$j4fvm_process->setSignature($transaction->signature);
 						$j4fvm_process->setData($transaction->data);
 
 						//Run contract
