@@ -86,7 +86,7 @@ class J4FVMBase {
 			$code_parsed = str_replace('-','--',$code_parsed);
 
 		//Get functions of contract with all info (params, returns, code)
-		$functions = J4FVM::getFunctions($code,true);
+		$functions = J4FVMTools::getFunctions($code,true);
 
 		//Check if is a J4FRC10
 		if (J4FVMTools::isJ4FRC10Standard($code)) {

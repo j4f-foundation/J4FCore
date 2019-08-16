@@ -158,4 +158,76 @@ class J4FVMTools {
 		return false;
 	}
 
+
+	/**
+	 * Function that return function name from MethodId
+	 *
+	 * @param string $code
+	 * @param string $functionToCall
+	 *
+	 * @return string
+	 */
+	public static function getFunctionFromMethod($code,$functionToCall) {
+		$functions = self::getFunctions($code,false);
+		if (!empty($functions['public'])) {
+			foreach ($functions['public'] as $function=>$params) {
+				if ('0x'.substr(PoW::hash(trim($function)),0,8) == $functionToCall) {
+					return $function;
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Function that get functions of contract
+	 *
+	 * @param string $code
+	 *
+	 * @return array
+	 */
+	public static function getFunctions($code,$withCode=false) {
+
+		$functions = array(
+			'public' => array(),
+			'private' => array(),
+		);
+
+		//Parse normal functions
+		$matches = array();
+		$regex = '/(\w*)\s*:\s*function\s*\((.*)\)\s*(?:(public|private)|)\s*(?:(returns\s*bool|returns\s*string|returns\s*uint256|returns\s*int|returns\s*uint|returns)|)\s*\K({((?>"(?:[^"\\\\]*+|\\\\.)*"|\'(?:[^\'\\\\]*+|\\\\.)*\'|\/\/.*$|\/\*[\s\S]*?\*\/|#.*$|<<<\s*["\']?(\w+)["\']?[^;]+\3;$|[^{}<\'"\/#]++|[^{}]++|(?5))*)})/m';
+		preg_match_all($regex,$code,$matches);
+		if (!empty($matches[1])) {
+			$i = 0;
+			foreach ($matches[1] as $match) {
+				$funcName = $matches[1][$i];
+				$funcType = 'private';
+				if (trim($matches[3][$i]) == 'public')
+					$funcType = 'public';
+
+				//Strip params if have
+				$parameters = array();
+				$e_params = array($matches[2][$i]);
+				if (strpos($matches[2][$i],',') !== false)
+					$e_params = explode(',',$matches[2][$i]);
+
+				foreach ($e_params as $param) {
+					$strip_param = explode(' ',trim($param));
+					if (count($strip_param) == 2) {
+						$parameters[$strip_param[1]] = $strip_param[0];
+					}
+				}
+
+				$functions[$funcType][$funcName]['params'] = $parameters;
+				$functions[$funcType][$funcName]['return'] = $matches[4][$i];
+				if ($withCode)
+					$functions[$funcType][$funcName]['code'] = $matches[5][$i];
+
+				$i++;
+			}
+		}
+
+		return $functions;
+	}
+
 }
