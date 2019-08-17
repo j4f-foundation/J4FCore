@@ -569,8 +569,6 @@ if ($id != null) {
 							$j4fvm_process->setVersion('1.0');
 							$j4fvm_process->setFrom('0');
 							$j4fvm_process->setAmount('0');
-							$j4fvm_process->setTimestamp('empty');
-							$j4fvm_process->setSignature('empty');
 							$j4fvm_process->setData($params['data']);
 
 							//Run contract
