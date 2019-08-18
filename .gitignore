@@ -12,6 +12,7 @@ web_*
 composer*
 index_node.php
 index.php
+!api/index.php
 funity/example_contract.php
 .htaccess
 tmp/*
