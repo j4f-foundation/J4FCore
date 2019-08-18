@@ -316,193 +316,117 @@ class DBBlocks extends DBContracts {
 				$txn_in_callContract .= "'".$txn."'";
 			}
 
-			//Get new contracts of this block
-			$sql_createContracts = "
-			SELECT contract_hash FROM smart_contracts WHERE txn_hash IN (".$txn_in_newContract.");
-			";
-			$tmp_createContracts = $this->db->query($sql_createContracts);
-			$newContracts = [];
-	        if (!empty($tmp_createContracts)) {
-	            while ($contractInfo = $tmp_createContracts->fetch_array(MYSQLI_ASSOC)) {
-	                $newContracts[] = $contractInfo;
-	            }
-	        }
-			//Remove stateMachine of this contracts
-			foreach ($newContracts as $contract) {
-				$stateMachine = SmartContractStateMachine::store($contract['contract_hash'],Tools::GetBaseDir().'data'.DIRECTORY_SEPARATOR.'db');
-				$stateMachine->deleteStates();
-			}
-			//Remove new SmartContracts of this block
-			$sqlRemoveSmartContracts = "
-			DELETE FROM smart_contracts WHERE txn_hash IN (".$txn_in_newContract.");
-			";
-			if (!$this->db->query($sqlRemoveSmartContracts))
-				$error = true;
-
-			//Reverse account status with this internal transactions of this smart contracts
-			$sql_selectRemoveInterntalTransactionsCreateContracts = "
-			SELECT * FROM smart_contracts_txn WHERE txn_hash IN (".$txn_in_newContract.");
-			";
-			$tmp_InternalTxns = $this->db->query($sql_selectRemoveInterntalTransactionsCreateContracts);
-			if (!empty($tmp_InternalTxns)) {
-	            while ($internalTxn = $tmp_InternalTxns->fetch_array(MYSQLI_ASSOC)) {
-
-					$sql_updateAccountTo = "
-					UPDATE accounts_j4frc10 SET
-					received = received - '".$internalTxn['amount']."'
-					WHERE contract_hash = '".$internalTxn['contract_hash']."'
-					AND hash = '".$internalTxn['wallet_to']."';
-					";
-					if (!$this->db->query($sql_updateAccountTo)) {
-						$error = true;
-						break;
-					}
-	            }
-	        }
-			//Remove internal transactions of this smart contracts
-			$sqlRemoveInterntalTransactionsCreateContracts = "
-			DELETE FROM smart_contracts_txn WHERE txn_hash IN (".$txn_in_newContract.");
-			";
-			if (!$this->db->query($sqlRemoveInterntalTransactionsCreateContracts))
-				$error = true;
-
-
-			//Reverse account status with this internal transactions token of this smart contracts
-			$sql_selectRemoveInterntalTransactionsCreateContracts = "
-			SELECT * FROM smart_contracts_txn_token WHERE txn_hash IN (".$txn_in_newContract.");
-			";
-			$tmp_InternalTxns = $this->db->query($sql_selectRemoveInterntalTransactionsCreateContracts);
-			if (!empty($tmp_InternalTxns)) {
-	            while ($internalTxn = $tmp_InternalTxns->fetch_array(MYSQLI_ASSOC)) {
-
-					$sql_updateAccountTo = "
-					DELETE FROM accounts_j4frc20 WHERE tokenId = '".$internalTxn['tokenId']."' AND contract_hash = '".$internalTxn['contract_hash']."';
-					";
-					if (!$this->db->query($sql_updateAccountTo)) {
-						$error = true;
-						break;
-					}
-	            }
-	        }
-			//Remove internal transactions tokens of this smart contracts
-			$sqlRemoveInterntalTransactionsTokenCreateContracts = "
-			DELETE FROM smart_contracts_txn_token WHERE txn_hash IN (".$txn_in_newContract.");
-			";
-			if (!$this->db->query($sqlRemoveInterntalTransactionsTokenCreateContracts))
-				$error = true;
-
-
-
-
-
-			//Get transactions call to contracts
-			$sql_callContracts = "
-			SELECT contract_hash, txn_hash
-			FROM smart_contracts WHERE txn_hash IN (".$txn_in_callContract.");
-			";
-			$tmp_callContracts = $this->db->query($sql_callContracts);
-			$callContracts = [];
-	        if (!empty($tmp_createContracts)) {
-	            while ($contractInfo = $tmp_callContracts->fetch_array(MYSQLI_ASSOC)) {
-	                $callContracts[] = $contractInfo;
-	            }
-	        }
-			//Reverse state of this contracts
-			foreach ($callContracts as $callContract) {
-				$stateMachine = SmartContractStateMachine::store($callContract['contract_hash'],Tools::GetBaseDir().'data'.DIRECTORY_SEPARATOR.'db');
-				$stateMachine->reverseState();
-			}
-
-			// J4FRC10
-			//Reverse account status with this internal transactions of this smart contracts
-			$sql_selectRemoveInterntalTransactionsCallContracts = "
-			SELECT * FROM smart_contracts_txn WHERE txn_hash IN (".$txn_in_callContract.");";
-			$tmp_InternalTxnsCalls = $this->db->query($sql_selectRemoveInterntalTransactionsCallContracts);
-			if (!empty($tmp_InternalTxnsCalls)) {
-				while ($internalTxnCall = $tmp_InternalTxnsCalls->fetch_array(MYSQLI_ASSOC)) {
-
-					$sql_updateAccountFrom = "
-					UPDATE accounts_j4frc10 SET
-					sended = sended - '".$internalTxnCall['amount']."'
-					WHERE contract_hash = '".$internalTxnCall['contract_hash']."'
-					AND hash = '".$internalTxnCall['wallet_from']."';
-					";
-					if (!$this->db->query($sql_updateAccountFrom)) {
-						$error = true;
-						break;
-					}
-
-					$sql_updateAccountTo = "
-					UPDATE accounts_j4frc10 SET
-					received = received - '".$internalTxnCall['amount']."'
-					WHERE contract_hash = '".$internalTxnCall['contract_hash']."'
-					AND hash = '".$internalTxnCall['wallet_to']."';
-					";
-					if (!$this->db->query($sql_updateAccountTo)) {
-						$error = true;
-						break;
-					}
-
-				}
-			}
-			//Remove internal transactions of this smart contracts
-			$sqlRemoveInterntalTransactionsCallContracts = "
-			DELETE FROM smart_contracts_txn WHERE txn_hash IN (".$txn_in_callContract.");
-			";
-			if (!$this->db->query($sqlRemoveInterntalTransactionsCallContracts))
-				$error = true;
-
-
-			// J4FRC20
-			//Reverse account status with this internal transactions token of this smart contracts
-			$sql_selectRemoveInterntalTransactionsCallContracts = "
-			SELECT * FROM smart_contracts_txn_token WHERE txn_hash IN (".$txn_in_callContract.");";
-			$tmp_InternalTxnsCalls = $this->db->query($sql_selectRemoveInterntalTransactionsCallContracts);
-			if (!empty($tmp_InternalTxnsCalls)) {
-				while ($internalTxnCall = $tmp_InternalTxnsCalls->fetch_array(MYSQLI_ASSOC)) {
-					$sql_removeTokenId = "
-					DELETE FROM accounts_j4frc20 WHERE tokenId = '".$internalTxnCall['tokenId']."' AND contract_hash = '".$internalTxnCall['contract_hash']."';
-					";
-					if (!$this->db->query($sql_removeTokenId)) {
-						$error = true;
-						break;
+			if (strlen($txn_in_newContract) > 0) {
+				//Get new contracts of this block
+				$sql_createContracts = "
+				SELECT contract_hash FROM smart_contracts WHERE txn_hash IN (".$txn_in_newContract.");
+				";
+				$tmp_createContracts = $this->db->query($sql_createContracts);
+				$newContracts = [];
+				if (!empty($tmp_createContracts)) {
+					while ($contractInfo = $tmp_createContracts->fetch_array(MYSQLI_ASSOC)) {
+						$newContracts[] = $contractInfo;
 					}
 				}
-			}
-			//Remove internal transactions of this smart contracts
-			$sqlRemoveInterntalTransactionsTokenCallContracts = "
-			DELETE FROM smart_contracts_txn_token WHERE txn_hash IN (".$txn_in_callContract.");
-			";
-			if (!$this->db->query($sqlRemoveInterntalTransactionsTokenCallContracts))
-				$error = true;
+				//Remove stateMachine of this contracts
+				foreach ($newContracts as $contract) {
+					$stateMachine = SmartContractStateMachine::store($contract['contract_hash'],Tools::GetBaseDir().'data'.DIRECTORY_SEPARATOR.'db');
+					$stateMachine->deleteStates();
+				}
+				//Remove new SmartContracts of this block
+				$sqlRemoveSmartContracts = "
+				DELETE FROM smart_contracts WHERE txn_hash IN (".$txn_in_newContract.");
+				";
+				if (!$this->db->query($sqlRemoveSmartContracts))
+					$error = true;
 
-			//Reverse account status of this transactions
-			$sql_selectTransactionsToReverse = "SELECT * FROM transactions WHERE block_hash = '".$infoBlock['block_hash']."';";
-			$tmp_TxnsToReverse = $this->db->query($sql_selectTransactionsToReverse);
-			if (!empty($tmp_TxnsToReverse)) {
-				while ($txnToReverse = $tmp_TxnsToReverse->fetch_array(MYSQLI_ASSOC)) {
+				//Reverse account status with this internal transactions of this smart contracts
+				$sql_selectRemoveInterntalTransactionsCreateContracts = "
+				SELECT * FROM smart_contracts_txn WHERE txn_hash IN (".$txn_in_newContract.");
+				";
+				$tmp_InternalTxns = $this->db->query($sql_selectRemoveInterntalTransactionsCreateContracts);
+				if (!empty($tmp_InternalTxns)) {
+					while ($internalTxn = $tmp_InternalTxns->fetch_array(MYSQLI_ASSOC)) {
 
-					//Mine txn
-					if ($txnToReverse['wallet_from'] == '') {
-						$sql_updateAccountFrom = "
-						UPDATE accounts SET
-						mined = mined - '".$txnToReverse['amount']."'
-						WHERE hash = '".$txnToReverse['wallet_to']."';
+						$sql_updateAccountTo = "
+						UPDATE accounts_j4frc10 SET
+						received = received - '".$internalTxn['amount']."'
+						WHERE contract_hash = '".$internalTxn['contract_hash']."'
+						AND hash = '".$internalTxn['wallet_to']."';
 						";
-						if (!$this->db->query($sql_updateAccountFrom)) {
+						if (!$this->db->query($sql_updateAccountTo)) {
 							$error = true;
 							break;
 						}
 					}
+				}
+				//Remove internal transactions of this smart contracts
+				$sqlRemoveInterntalTransactionsCreateContracts = "
+				DELETE FROM smart_contracts_txn WHERE txn_hash IN (".$txn_in_newContract.");
+				";
+				if (!$this->db->query($sqlRemoveInterntalTransactionsCreateContracts))
+					$error = true;
 
-					//Noram Txn
-					else {
+
+				//Reverse account status with this internal transactions token of this smart contracts
+				$sql_selectRemoveInterntalTransactionsCreateContracts = "
+				SELECT * FROM smart_contracts_txn_token WHERE txn_hash IN (".$txn_in_newContract.");
+				";
+				$tmp_InternalTxns = $this->db->query($sql_selectRemoveInterntalTransactionsCreateContracts);
+				if (!empty($tmp_InternalTxns)) {
+					while ($internalTxn = $tmp_InternalTxns->fetch_array(MYSQLI_ASSOC)) {
+
+						$sql_updateAccountTo = "
+						DELETE FROM accounts_j4frc20 WHERE tokenId = '".$internalTxn['tokenId']."' AND contract_hash = '".$internalTxn['contract_hash']."';
+						";
+						if (!$this->db->query($sql_updateAccountTo)) {
+							$error = true;
+							break;
+						}
+					}
+				}
+				//Remove internal transactions tokens of this smart contracts
+				$sqlRemoveInterntalTransactionsTokenCreateContracts = "
+				DELETE FROM smart_contracts_txn_token WHERE txn_hash IN (".$txn_in_newContract.");
+				";
+				if (!$this->db->query($sqlRemoveInterntalTransactionsTokenCreateContracts))
+					$error = true;
+			}
+
+
+
+			if (strlen($txn_in_callContract) > 0) {
+				//Get transactions call to contracts
+				$sql_callContracts = "
+				SELECT contract_hash, txn_hash
+				FROM smart_contracts WHERE txn_hash IN (".$txn_in_callContract.");
+				";
+				$tmp_callContracts = $this->db->query($sql_callContracts);
+				$callContracts = [];
+				if (!empty($tmp_createContracts)) {
+					while ($contractInfo = $tmp_callContracts->fetch_array(MYSQLI_ASSOC)) {
+						$callContracts[] = $contractInfo;
+					}
+				}
+				//Reverse state of this contracts
+				foreach ($callContracts as $callContract) {
+					$stateMachine = SmartContractStateMachine::store($callContract['contract_hash'],Tools::GetBaseDir().'data'.DIRECTORY_SEPARATOR.'db');
+					$stateMachine->reverseState();
+				}
+
+				// J4FRC10
+				//Reverse account status with this internal transactions of this smart contracts
+				$sql_selectRemoveInterntalTransactionsCallContracts = "
+				SELECT * FROM smart_contracts_txn WHERE txn_hash IN (".$txn_in_callContract.");";
+				$tmp_InternalTxnsCalls = $this->db->query($sql_selectRemoveInterntalTransactionsCallContracts);
+				if (!empty($tmp_InternalTxnsCalls)) {
+					while ($internalTxnCall = $tmp_InternalTxnsCalls->fetch_array(MYSQLI_ASSOC)) {
 
 						$sql_updateAccountFrom = "
-						UPDATE accounts SET
-						sended = sended - ".$txnToReverse['amount'].",
-						sended = sended - ".$txnToReverse['tx_fee']."
-						WHERE hash = '".$txnToReverse['wallet_from']."';
+						UPDATE accounts_j4frc10 SET
+						sended = sended - '".$internalTxnCall['amount']."'
+						WHERE contract_hash = '".$internalTxnCall['contract_hash']."'
+						AND hash = '".$internalTxnCall['wallet_from']."';
 						";
 						if (!$this->db->query($sql_updateAccountFrom)) {
 							$error = true;
@@ -510,16 +434,93 @@ class DBBlocks extends DBContracts {
 						}
 
 						$sql_updateAccountTo = "
-						UPDATE accounts SET
-						received = received - '".$txnToReverse['amount']."'
-						WHERE hash = '".$txnToReverse['wallet_to']."';
+						UPDATE accounts_j4frc10 SET
+						received = received - '".$internalTxnCall['amount']."'
+						WHERE contract_hash = '".$internalTxnCall['contract_hash']."'
+						AND hash = '".$internalTxnCall['wallet_to']."';
 						";
 						if (!$this->db->query($sql_updateAccountTo)) {
 							$error = true;
 							break;
 						}
-					}
 
+					}
+				}
+				//Remove internal transactions of this smart contracts
+				$sqlRemoveInterntalTransactionsCallContracts = "
+				DELETE FROM smart_contracts_txn WHERE txn_hash IN (".$txn_in_callContract.");
+				";
+				if (!$this->db->query($sqlRemoveInterntalTransactionsCallContracts))
+					$error = true;
+
+
+				// J4FRC20
+				//Reverse account status with this internal transactions token of this smart contracts
+				$sql_selectRemoveInterntalTransactionsCallContracts = "
+				SELECT * FROM smart_contracts_txn_token WHERE txn_hash IN (".$txn_in_callContract.");";
+				$tmp_InternalTxnsCalls = $this->db->query($sql_selectRemoveInterntalTransactionsCallContracts);
+				if (!empty($tmp_InternalTxnsCalls)) {
+					while ($internalTxnCall = $tmp_InternalTxnsCalls->fetch_array(MYSQLI_ASSOC)) {
+						$sql_removeTokenId = "
+						DELETE FROM accounts_j4frc20 WHERE tokenId = '".$internalTxnCall['tokenId']."' AND contract_hash = '".$internalTxnCall['contract_hash']."';
+						";
+						if (!$this->db->query($sql_removeTokenId)) {
+							$error = true;
+							break;
+						}
+					}
+				}
+				//Remove internal transactions of this smart contracts
+				$sqlRemoveInterntalTransactionsTokenCallContracts = "
+				DELETE FROM smart_contracts_txn_token WHERE txn_hash IN (".$txn_in_callContract.");
+				";
+				if (!$this->db->query($sqlRemoveInterntalTransactionsTokenCallContracts))
+					$error = true;
+
+				//Reverse account status of this transactions
+				$sql_selectTransactionsToReverse = "SELECT * FROM transactions WHERE block_hash = '".$infoBlock['block_hash']."';";
+				$tmp_TxnsToReverse = $this->db->query($sql_selectTransactionsToReverse);
+				if (!empty($tmp_TxnsToReverse)) {
+					while ($txnToReverse = $tmp_TxnsToReverse->fetch_array(MYSQLI_ASSOC)) {
+
+						//Mine txn
+						if ($txnToReverse['wallet_from'] == '') {
+							$sql_updateAccountFrom = "
+							UPDATE accounts SET
+							mined = mined - '".$txnToReverse['amount']."'
+							WHERE hash = '".$txnToReverse['wallet_to']."';
+							";
+							if (!$this->db->query($sql_updateAccountFrom)) {
+								$error = true;
+								break;
+							}
+						}
+
+						//Noram Txn
+						else {
+
+							$sql_updateAccountFrom = "
+							UPDATE accounts SET
+							sended = sended - ".$txnToReverse['amount'].",
+							sended = sended - ".$txnToReverse['tx_fee']."
+							WHERE hash = '".$txnToReverse['wallet_from']."';
+							";
+							if (!$this->db->query($sql_updateAccountFrom)) {
+								$error = true;
+								break;
+							}
+
+							$sql_updateAccountTo = "
+							UPDATE accounts SET
+							received = received - '".$txnToReverse['amount']."'
+							WHERE hash = '".$txnToReverse['wallet_to']."';
+							";
+							if (!$this->db->query($sql_updateAccountTo)) {
+								$error = true;
+								break;
+							}
+						}
+					}
 				}
 			}
 
@@ -556,7 +557,7 @@ class DBBlocks extends DBContracts {
 
         $infoBlock = $this->db->query("SELECT height FROM blocks WHERE hash = '".$hash."';")->fetch_assoc();
         if (!empty($infoBlock)) {
-			return self::RemoveBlock($infoBlock['height']);
+			return $this->RemoveBlock($infoBlock['height']);
 		}
 		return false;
     }
@@ -572,9 +573,10 @@ class DBBlocks extends DBContracts {
 
 		$lastBlock = $this->GetLastBlock();
 		if (@is_array($lastBlock) && !@empty($lastBlock)) {
-			if ($stepRemoveBlocks > 0) {
-				for ($i = $lastBlock['height']; $i > $height; $i--)
+			if ($height > 0) {
+				for ($i = $lastBlock['height']; $i > $height; $i--) {
 					$this->RemoveBlock($i);
+				}
 			}
 		}
 		return false;
