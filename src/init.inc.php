@@ -64,6 +64,7 @@ Display::print("Welcome to the %G%J4F node - Version: " . VERSION);
 date_default_timezone_set("UTC");
 
 ini_set('memory_limit', '512M');
+set_time_limit(0);
 
 //error_reporting(E_ALL & ~E_NOTICE);
 error_reporting(0);

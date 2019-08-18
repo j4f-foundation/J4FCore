@@ -34,7 +34,6 @@ class DB extends DBBase {
 				Display::_error("Press Enter to close close window");
 				readline();
 			}
-			exit();
 		}
     }
 

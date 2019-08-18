@@ -1,4 +1,4 @@
-![Just4Fun](https://j4f.dev/images/just4fun_96_new.png) Just4Fun
+![Just4Fun](https://j4f.dev/images/j4ficon.png) Just4Fun
 
 PHP Blockchain from scratch with Smart Contracts
 
@@ -84,7 +84,7 @@ If you have a fix or code change, feel free to submit it as a pull request direc
 Currency is still in early development phase, it may not be stable 100%
 ```
 The mainnet has not yet been released.
-The forecast for its launch is 4-6 months
+The forecast for its launch is 4 months
 ```
 
 # Development Fund
