@@ -18,7 +18,7 @@ Blocks every: Mainnet ?? (average) | Testnet: 20 sec (average)
 - Open ports for p2p connection
 - ReactPHP [See more](https://reactphp.org/)
 - OpenSSL
-- MySQL Server
+- MariaDB Server with RocksDB Engine
 - PHP 7.1 or higher
 - PHP Extensions:
   - php_mysqli
@@ -43,7 +43,7 @@ If you want to talk about the development of blockchain or need support to run a
 - Clone repository
 - Install react with composer
 	- composer require react/react:^1.0
-- Create a MySQL database UTF8
+- Create a MySQL database UTF8 RocksDB
 - Edit CONFIG.php and set MySQL info & PHP Run command
 - Navigate into bin folder and start node
 
