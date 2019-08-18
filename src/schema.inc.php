@@ -473,6 +473,104 @@ if ($dbversion == 12) {
     $dbversion++;
 }
 
+if ($dbversion == 13) {
+
+	$db->db->query("
+	ALTER TABLE `accounts`
+	MODIFY COLUMN `hash`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL FIRST ,
+	ENGINE=ROCKSDB;
+	");
+
+	$db->db->query("
+	ALTER TABLE `accounts_j4frc10`
+	MODIFY COLUMN `hash`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL FIRST ,
+	MODIFY COLUMN `contract_hash`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `hash`,
+	ENGINE=ROCKSDB;
+	");
+	$db->db->query("
+	ALTER TABLE `accounts_j4frc20`
+	MODIFY COLUMN `hash`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL FIRST ,
+	MODIFY COLUMN `contract_hash`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `hash`,
+	ENGINE=ROCKSDB;
+	");
+	$db->db->query("
+	ALTER TABLE `blocks`
+	MODIFY COLUMN `block_previous`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `height`,
+	MODIFY COLUMN `block_hash`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `block_previous`,
+	MODIFY COLUMN `root_merkle`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `block_hash`,
+	MODIFY COLUMN `nonce`  varchar(200) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `root_merkle`,
+	MODIFY COLUMN `timestamp_start_miner`  varchar(12) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `nonce`,
+	MODIFY COLUMN `timestamp_end_miner`  varchar(12) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `timestamp_start_miner`,
+	MODIFY COLUMN `difficulty`  varchar(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `timestamp_end_miner`,
+	MODIFY COLUMN `version`  varchar(10) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `difficulty`,
+	MODIFY COLUMN `info`  text CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `version`,
+	ENGINE=ROCKSDB;
+	");
+	$db->db->query("
+	ALTER TABLE `config`
+	MODIFY COLUMN `cfg`  varchar(200) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL FIRST ,
+	MODIFY COLUMN `val`  varchar(200) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `cfg`,
+	ENGINE=ROCKSDB;
+	");
+	$db->db->query("
+	ALTER TABLE `peers`
+	MODIFY COLUMN `ip`  varchar(120) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `id`,
+	MODIFY COLUMN `port`  varchar(8) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `ip`,
+	MODIFY COLUMN `blacklist`  varchar(12) CHARACTER SET utf8 COLLATE utf8_bin NULL DEFAULT '' AFTER `port`,
+	ENGINE=ROCKSDB;
+	");
+	$db->db->query("
+	ALTER TABLE `smart_contracts`
+	MODIFY COLUMN `contract_hash`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL FIRST ,
+	MODIFY COLUMN `txn_hash`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `contract_hash`,
+	ENGINE=ROCKSDB;
+	");
+	$db->db->query("
+	ALTER TABLE `smart_contracts_txn`
+	MODIFY COLUMN `txn_hash`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL FIRST ,
+	MODIFY COLUMN `contract_hash`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `txn_hash`,
+	MODIFY COLUMN `wallet_from`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `contract_hash`,
+	MODIFY COLUMN `wallet_to`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `wallet_from`,
+	MODIFY COLUMN `timestamp`  varchar(12) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `amount`,
+	ENGINE=ROCKSDB;
+	");
+	$db->db->query("
+	ALTER TABLE `smart_contracts_txn_token`
+	MODIFY COLUMN `txn_hash`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL FIRST ,
+	MODIFY COLUMN `contract_hash`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `txn_hash`,
+	MODIFY COLUMN `wallet_from`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `contract_hash`,
+	MODIFY COLUMN `wallet_to`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `wallet_from`,
+	MODIFY COLUMN `timestamp`  varchar(12) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `tokenId`,
+	ENGINE=ROCKSDB;
+	");
+	$db->db->query("
+	ALTER TABLE `transactions`
+	MODIFY COLUMN `txn_hash`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL FIRST ,
+	MODIFY COLUMN `block_hash`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `txn_hash`,
+	MODIFY COLUMN `wallet_from_key`  longtext CHARACTER SET utf8 COLLATE utf8_bin NULL AFTER `block_hash`,
+	MODIFY COLUMN `wallet_from`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NULL DEFAULT '' AFTER `wallet_from_key`,
+	MODIFY COLUMN `wallet_to`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `wallet_from`,
+	MODIFY COLUMN `signature`  longtext CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `amount`,
+	MODIFY COLUMN `timestamp`  varchar(12) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `data`,
+	ENGINE=ROCKSDB;
+	");
+	$db->db->query("
+	ALTER TABLE `txnpool`
+	MODIFY COLUMN `txn_hash`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL FIRST ,
+	MODIFY COLUMN `wallet_from_key`  longtext CHARACTER SET utf8 COLLATE utf8_bin NULL AFTER `txn_hash`,
+	MODIFY COLUMN `wallet_from`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NULL DEFAULT '' AFTER `wallet_from_key`,
+	MODIFY COLUMN `wallet_to`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `wallet_from`,
+	MODIFY COLUMN `signature`  longtext CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `amount`,
+	MODIFY COLUMN `timestamp`  varchar(12) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `data`,
+	ENGINE=ROCKSDB;
+	");
+
+    Display::print("Updating DB Schema #".$dbversion);
+
+    //Increment version to next stage
+    $dbversion++;
+}
+
 
 // update dbversion
 if ($dbversion != $_CONFIG['dbversion']) {

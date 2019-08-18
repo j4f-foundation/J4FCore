@@ -120,9 +120,21 @@ if (floatval(phpversion()) < 7.1) {
 
 // check DB connection
 $db = new DB();
-if ($db == null) {
+if ($db == null || ( (isset($db->db->connect_error) && strlen($db->db->connect_error) > 0) ) ) {
     Display::_error("Could not connect to the database");
     Display::_error("Check CONFIG.php and setup correct mysql data");
+
+	if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+		Display::_error("Press Enter to close close window");
+		readline();
+	}
+    exit();
+}
+
+// check if have RocksDB Engine
+if (!$db->HaveRocksDBEngine()) {
+	Display::_error("Could not detect RocksDB Engine on MySQL Server");
+    Display::_error("Please install MyRocksDB and try again");
 
 	if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
 		Display::_error("Press Enter to close close window");
