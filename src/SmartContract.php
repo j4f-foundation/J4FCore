@@ -98,7 +98,7 @@ class SmartContract {
 
 				//Run code
 				ob_start();
-				js::run($code_parsed,$contractHash);
+				js::run($code_parsed,PoW::hash($contractHash.rand().time()));
 				$output = ob_get_contents();
 				ob_end_clean();
 
@@ -217,7 +217,7 @@ class SmartContract {
 
 					//Run code
 					ob_start();
-					js::run($code_parsed,$contract['contract_hash']);
+					js::run($code_parsed,PoW::hash($contract['contract_hash'].rand().time()));
 					$output = ob_get_contents();
 					ob_end_clean();
 
@@ -303,7 +303,7 @@ class SmartContract {
 
 					//Run code
 					ob_start();
-					js::run($code_parsed,$contract['contract_hash']);
+					js::run($code_parsed,PoW::hash($contract['contract_hash'].rand().time()));
 					$output = ob_get_contents();
 					ob_end_clean();
 
