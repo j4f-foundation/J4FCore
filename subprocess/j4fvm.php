@@ -99,7 +99,7 @@ if ($typeCall != 'MAKE') {
 //If not exist this version, use latest version
 $J4FVMBaseDir = __DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'src'.DIRECTORY_SEPARATOR.'J4FVM'.DIRECTORY_SEPARATOR;
 $J4FVMBaseFile = $J4FVMBaseDir.$version.DIRECTORY_SEPARATOR.'J4FVMBase.php';
-if (file_exists($J4FVMBaseDir.$J4FVMBaseFile)) {
+if (file_exists($J4FVMBaseFile)) {
 	require($J4FVMBaseFile);
 }
 else {
