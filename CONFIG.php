@@ -19,10 +19,14 @@ define('SHOW_INFO_SUBPROCESS',          true);
 define('PHP_RUN_COMMAND',               'php');
 //define('PHP_RUN_COMMAND',             'C:\php\php.exe');
 
+//DEBUG
 define('DISPLAY_DEBUG',                 false);
 define('DISPLAY_DEBUG_LEVEL',           2); //Levels: 1-4
 
-// MXC BOOTSTRAP NODE INFO
+//DATABASE ENGINE
+define('FORCE_USE_ROCKSDB',				true);
+
+// J4F BOOTSTRAP NODE INFO
 define('NODE_BOOTSTRAP',                '137.74.50.40');
 define('NODE_BOOSTRAP_PORT',            6969);
 define('NODE_BOOTSTRAP_TESTNET',        '137.74.50.40');
@@ -30,5 +34,4 @@ define('NODE_BOOSTRAP_PORT_TESTNET',    6969);
 
 //OS INFO
 define('IS_WIN',                        (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') ? true:false);
-define('EXPLORER_TESTNET', true);
 ?>

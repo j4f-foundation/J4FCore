@@ -35,6 +35,7 @@ include('../src/Gossip.php');
 include('../src/Key.php');
 include('../src/Pki.php');
 include('../src/PoW.php');
+include('../src/REGEX.php');
 include('../src/Transaction.php');
 include('../src/GenesisBlock.php');
 include('../src/Peer.php');
@@ -566,7 +567,7 @@ if ($id != null) {
 							//Set info for J4FVM
 							$j4fvm_process->setContractHash($params['hash']);
 							$j4fvm_process->setTxnHash('empty');
-							$j4fvm_process->setVersion('1.0');
+							$j4fvm_process->setVersion(J4FVMTools::GetFunityVersion($contract['code']));
 							$j4fvm_process->setFrom('0');
 							$j4fvm_process->setAmount('0');
 							$j4fvm_process->setData($params['data']);

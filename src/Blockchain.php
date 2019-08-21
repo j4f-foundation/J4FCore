@@ -299,9 +299,6 @@ class Blockchain {
 			if ((is_array($currentBlock) && !empty($currentBlock)) && (is_array($previousBlock) && !empty($previousBlock))) {
 
 				if ($currentBlock['block_previous'] != $previousBlock['block_hash']) {
-					Display::print('CheckIntegrity -> PASO 1');
-					Display::print('Sanity from: ' . (($heightToStart-$i)-1));
-
 					self::SanityFromBlockHeight($chaindata,(($heightToStart-$i)-1));
 					return false;
 				}
@@ -311,14 +308,12 @@ class Blockchain {
 				if ($blockToCheck != null) {
 					//Check if rewarded transaction is valid, prevent hack money
 					if (!$blockToCheck->isValidReward($currentBlock['height'],$isTestNet)) {
-						Display::print('CheckIntegrity -> PASO 2');
 						self::SanityFromBlockHeight($chaindata,(($heightToStart-$i)-1));
 						return false;
 					}
 
 					//AddBlock to blockchain
 					if (!$blockToCheck->isValid($currentBlock['height'],$isTestNet)) {
-						Display::print('CheckIntegrity -> PASO 3');
 						self::SanityFromBlockHeight($chaindata,(($heightToStart-$i)-1));
 						return false;
 					}

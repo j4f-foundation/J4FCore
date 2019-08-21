@@ -36,7 +36,7 @@ class J4FVMBase {
 
 		//Parse normal functions
 		$matches = [];
-		preg_match_all('/(\w*)\s*:\s*function\s*\((.*)\)\s*(?:(public|private)|)\s*(?:(returns\s*bool|returns\s*string|returns\s*uint256|returns\s*uint|returns\s*int|returns)|\s*)/',$code_parsed,$matches);
+		preg_match_all(REGEX::ContractFunctionsSimple,$code_parsed,$matches);
 		if (!empty($matches[0])) {
 			$i = 0;
 			foreach ($matches[0] as $match) {
@@ -59,7 +59,7 @@ class J4FVMBase {
 	public static function _parseComments($code) {
 		$code_parsed = $code;
 		$matches = [];
-		preg_match_all('/\/\/.*/',$code_parsed,$matches);
+		preg_match_all(REGEX::Comments,$code_parsed,$matches);
 		if (!empty($matches[0]))
 			foreach ($matches[0] as $match)
 				$code_parsed = str_replace($match,'',$code_parsed);
@@ -133,9 +133,98 @@ class J4FVMBase {
 	}
 
 	/**
+     * Function that parse Interfaces
+     *
+     * @param string $code
+	 * @param bool $debug
+     *
+     * @return string
+     */
+	public static function _parseInterfaces($code_parsed,$debug=false) {
+
+		//Get Interface
+		$matches = [];
+		@preg_match_all(REGEX::InterfaceCode,$code_parsed,$matches);
+
+		$interfaces = [];
+		//Check if it a Interface
+		if (!empty($matches[0])) {
+			for ($i = 0; $i < count($matches[2]); $i++) {
+				$interfaceName = $matches[1][$i];
+				$interfaces[$interfaceName] = [];
+
+				//Get Interface Functions
+				$matchesFunctions = [];
+				@preg_match_all(REGEX::InterfaceFunctions,$matches[2][$i],$matchesFunctions);
+				if (!empty($matchesFunctions[0]))
+					for ($x = 0; $x < count($matchesFunctions[1]); $x++)
+						$interfaces[$interfaceName][$matchesFunctions[1][$x]] = $matchesFunctions[2][$x];
+
+				//Remove Funity Interface code
+				$code_parsed = str_replace($matches[0][$i],'',$code_parsed);
+			}
+
+			//Generate parsed Interface code
+			foreach ($interfaces as $interfaceName=>$interfaceFunctions) {
+
+				$interfaceFunctionsParsedCode = '';
+				foreach ($interfaceFunctions as $function => $params) {
+					$e_params = (strpos($params,',') !== false) ? explode(',',$params):[$params];
+
+					$paramsParsedCode = '';
+					foreach ($e_params as $param) {
+
+						$paramsParsedCode .= (strlen($paramsParsedCode) > 0) ? ',':'';
+
+						$param = str_replace('string ','',$param);
+						$param = str_replace('uint ','',$param);
+						$param = str_replace('uint256 ','',$param);
+						$paramsParsedCode .= trim($param);
+					}
+
+					if (strlen($interfaceFunctionsParsedCode) > 0)
+						$interfaceFunctionsParsedCode .= ',';
+
+					$interfaceFunctionsParsedCode .= $function.': function('.$paramsParsedCode.') {
+						return External.CallContract(this.addressInterface,"'.$function.'",['.$paramsParsedCode.']);
+					}
+					';
+
+				}
+				if (strlen($interfaceFunctionsParsedCode) > 0)
+					$interfaceFunctionsParsedCode = ','.$interfaceFunctionsParsedCode;
+
+				$code_parsed .= '
+				var '.$interfaceName.' = {
+
+					addressInterface: "",
+					'.$interfaceName.': function(contractAddress) {
+						this.addressInterface = contractAddress;
+						External.CheckIfExistsContract(contractAddress);
+						return this;
+					}
+
+					'.$interfaceFunctionsParsedCode.'
+				};
+				';
+
+				$interfaceCalls = [];
+				@preg_match_all('/=\s*'.$interfaceName.'\((.*)\)/',$code_parsed,$interfaceCalls);
+				if (!empty($interfaceCalls[0])) {
+					for ($i = 0; $i < count($interfaceCalls[0]); $i++) {
+						$code_parsed = str_replace($interfaceCalls[0][$i],'= '.$interfaceName.'.'.$interfaceName.'('.$interfaceCalls[1][$i].')',$code_parsed);
+					}
+				}
+			}
+		}
+		return $code_parsed;
+	}
+
+	/**
      * Function that clear funity code
      *
      * @param string $code
+	 * @param bool $debug
      *
      * @return string
      */
@@ -149,18 +238,21 @@ class J4FVMBase {
 
 		//Check if have Contract define struct
 		$matches = [];
-		preg_match("/[Cc]ontract\s{0,}([a-zA-Z0-9]*)\s{0,}(is J4FRC10|is J4FRC20|)\s{0,}\{/",$code_parsed,$matches);
+		preg_match(REGEX::ContractName,$code_parsed,$matches);
 		if (!empty($matches))
 			$code_parsed = str_replace($matches[0],'var '.$matches[1].' = {',$code_parsed);
 
 		//Class
 		$matches = [];
-		preg_match_all("/[Cc]lass\s{0,}+([a-zA-Z_\-]*)\s{0,}{/",$code_parsed,$matches);
+		preg_match_all(REGEX::ClassName,$code_parsed,$matches);
 		if (!empty($matches[0])) {
 			for ($i = 0; $i < count($matches[0]); $i++)
 				if (!empty($matches[0]))
 					$code_parsed = str_replace($matches[0][$i],'var '.$matches[1][$i].' = {',$code_parsed);
 		}
+
+		//Parse Interfaces
+		$code_parsed = self::_parseInterfaces($code_parsed,$debug);
 
 		//Parse functions Funity to JS
 		$code_parsed = self::_parseFunctions($code_parsed);
@@ -168,7 +260,7 @@ class J4FVMBase {
 		//Parse prints
 		if ($debug === false) {
 			$matches = [];
-			preg_match_all("/print\((.*)\);/",$code_parsed,$matches);
+			preg_match_all(REGEX::PrintCode,$code_parsed,$matches);
 			foreach ($matches as $match) {
 				if (count($match) > 0)
 					if (strpos($match[0],'print') !== false)
@@ -181,7 +273,7 @@ class J4FVMBase {
 
 		//mapping(address => uint256) balances,
 		$matches = [];
-		preg_match_all("/mapping\(address => uint256\) (.*),/",$code_parsed,$matches);
+		preg_match_all(REGEX::Mapping,$code_parsed,$matches);
 		if (!empty($matches[0])) {
 			for ($i = 0; $i < count($matches[0]); $i++)
 				$code_parsed = str_replace($matches[0][$i],$matches[1][$i].': contract.table_uint256("'.$matches[1][$i].'"),',$code_parsed);
@@ -189,7 +281,7 @@ class J4FVMBase {
 
 		//Special unmapping::balances(address => uint256)
 		$matches = [];
-		preg_match_all("/unmapping::(.*)\(address => uint256\);/",$code_parsed,$matches);
+		preg_match_all(REGEX::Unmapping,$code_parsed,$matches);
 		if (!empty($matches[0])) {
 			for ($i = 0; $i < count($matches[0]); $i++)
 				$code_parsed = str_replace($matches[0][$i],'contract.table_set("'.$matches[1][$i].'",this.'.$matches[1][$i].');',$code_parsed);
@@ -197,7 +289,7 @@ class J4FVMBase {
 
 		//Special set::$var
 		$matches = [];
-		preg_match_all("/set::(.*) (.*);/",$code_parsed,$matches);
+		preg_match_all(Regex::Set,$code_parsed,$matches);
 		if (!empty($matches[0])) {
 			for ($i = 0; $i < count($matches[0]); $i++)
 				$code_parsed = str_replace($matches[0][$i],'contract.set("'.$matches[1][$i].'",'.$matches[2][$i].');',$code_parsed);
@@ -205,7 +297,7 @@ class J4FVMBase {
 
 		//Special get::$var
 		$matches = [];
-		preg_match_all("/get::([a-zA-Z]{0,})/",$code_parsed,$matches);
+		preg_match_all(Regex::Get,$code_parsed,$matches);
 		if (!empty($matches[0])) {
 			for ($i = 0; $i < count($matches[0]); $i++)
 				$code_parsed = str_replace($matches[0][$i],'contract.get("'.$matches[1][$i].'")',$code_parsed);
@@ -213,7 +305,7 @@ class J4FVMBase {
 
 		//Special wrapping(address => uint256) balances {receiver};
 		$matches = [];
-		preg_match_all("/wrapping\(address => uint256\) (.*) {(.*)};/",$code_parsed,$matches);
+		preg_match_all(REGEX::Wrapping,$code_parsed,$matches);
 		if (!empty($matches[0])) {
 			for ($i = 0; $i < count($matches[0]); $i++) {
 
@@ -229,7 +321,7 @@ class J4FVMBase {
 		//Special define::var
 		$token = J4FVMTools::getTokenDefine($code);
 		$matches = [];
-		preg_match_all("/define::([a-zA-Z]{0,})([;\)])/",$code_parsed,$matches);
+		preg_match_all(REGEX::Define,$code_parsed,$matches);
 		//echo '<pre>'.print_r($matches,true).'</pre>';
 		if (!empty($matches[0])) {
 			for ($i = 0; $i < count($matches[0]); $i++) {
@@ -242,7 +334,7 @@ class J4FVMBase {
 
 		//Special return('message')
 		$matches = [];
-		preg_match_all("/[^\w]return\((.*)\)/",$code_parsed,$matches);
+		preg_match_all(REGEX::Return,$code_parsed,$matches);
 		//echo '<pre>'.print_r($matches,true).'</pre>';
 		if (!empty($matches[0])) {
 			for ($i = 0; $i < count($matches[0]); $i++) {
@@ -257,7 +349,7 @@ class J4FVMBase {
 
 		//Special error('message')
 		$matches = [];
-		preg_match_all("/[^\w]error\((.*)\)/",$code_parsed,$matches);
+		preg_match_all(REGEX::Error,$code_parsed,$matches);
 		//echo '<pre>'.print_r($matches,true).'</pre>';
 		if (!empty($matches[0])) {
 			for ($i = 0; $i < count($matches[0]); $i++) {
@@ -272,7 +364,7 @@ class J4FVMBase {
 
 		//Special address(0)
 		$matches = [];
-		preg_match_all("/address\(0\)/",$code_parsed,$matches);
+		preg_match_all(REGEX::Address0,$code_parsed,$matches);
 		if (!empty($matches[0])) {
 			for ($i = 0; $i < count($matches[0]); $i++)
 				$code_parsed = str_replace($matches[0][$i],'"J4F00000000000000000000000000000000000000000000000000000000"',$code_parsed);
@@ -313,33 +405,6 @@ class J4FVMBase {
 		$string = str_replace("#",'',$string);
 		$string = str_replace(" ",'',$string);
 		return $string;
-	}
-
-	/**
-     * Function that parse call contract
-     *
-     * @param string $callCode
-     *
-     * @return string
-     */
-	public static function _parseCall($callCode) {
-
-		$call_parsed = array(
-			'func' => '',
-			'func_params' => array()
-		);
-		$e_callCode = explode(' ',$callCode);
-
-		//Save function to call
-		$call_parsed['func'] = $e_callCode[0];
-
-		//Save parameters
-		for ($i=1;$i<count($e_callCode);$i++) {
-			$call_parsed['func_params'][] = $e_callCode[$i];
-		}
-
-		return $call_parsed;
-
 	}
 
 	/**
@@ -737,6 +802,69 @@ class J4FVMBase {
 	//CRYPTO
 	public static function js_sha3($str) {
 		return js_str(PoW::hash(php_str($str)));
+	}
+
+	//EXTERNAL CALLS -> INTERFACE
+	public static function external_callContract($contractHash,$functionName,$params) {
+		$contractHash = php_str($contractHash);
+		$functionName = php_str($functionName);
+
+		$params = php_array($params);
+
+		$callCode['Method'] = '0x'.substr(PoW::hash(trim($functionName)),0,8);
+		$callCode['Params'] = [];
+
+		//Parse params
+		if (!empty($params)) {
+			foreach ($params as $param) {
+				if (strlen(trim($param)) > 0) {
+					$callCode['Params'][count($callCode['Params'])] = Tools::str2hex(trim($param));
+				}
+			}
+		}
+		$callCodeParsed = Tools::str2hex(@json_encode($callCode));
+
+		//Start Chaindata pointer
+		$chaindata = new DB();
+		//Get contract by hash
+		$contract = $chaindata->GetContractByHash($contractHash);
+		if ($contract != null) {
+			$j4fvm_process = new J4FVMSubprocess('READ');
+
+			//Set info for J4FVM
+			$j4fvm_process->setContractHash($contractHash);
+			$j4fvm_process->setTxnHash('empty');
+			$j4fvm_process->setVersion(J4FVMTools::GetFunityVersion($contract['code']));
+			$j4fvm_process->setFrom('0');
+			$j4fvm_process->setAmount('0');
+			$j4fvm_process->setData($callCodeParsed);
+
+			//Run contract
+			$statusRun = $j4fvm_process->run();
+			if ($statusRun !== true) {
+				die('<strong class="text-danger">J4FVM_Interface</strong> Internal error running Interface');
+			}
+			else {
+				$outputCall = '';
+				foreach ($j4fvm_process->output() as $line)
+					$outputCall .= $line;
+
+				return js_str(Tools::hex2str($outputCall));
+			}
+		}
+		else {
+			die("<strong class='text-danger'>J4FVM_Interface</strong> - Contract with that hash not defined");
+		}
+	}
+	public static function external_existsContract($contractHash) {
+		$contractHash = php_str($contractHash);
+
+		//Start Chaindata pointer
+		$chaindata = new DB();
+		//Get contract by hash
+		$contract = $chaindata->GetContractByHash($contractHash);
+		if ($contract == null)
+			die("<strong class='text-danger'>J4FVM_Interface</strong> - Contract with that hash not defined");
 	}
 }
 ?>

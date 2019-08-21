@@ -93,70 +93,70 @@ class Gas {
 
 		if ($function != null) {
 
-			//Every param +50 gas
-			$totalGasUsed += (@count($function['params']) * 50);
+			//Params
+			$totalGasUsed += (@count($function['params']) * 500);
 
-			//Every get/set +120 gas
+			//Get vars
 			@preg_match_all('/contract\.(get|table)\(/',$function['code'],$matches);
 			if (!@empty($matches) && !@empty($matches[0])) {
-				$totalGasUsed += (@count($matches[0]) * 120);
+				$totalGasUsed += (@count($matches[0]) * 1200);
 			}
 
-			//Every table get/set +240 gas
+			//Set vars
 			@preg_match_all('/contract\.(set|table_set)\(/',$function['code'],$matches);
 			if (!@empty($matches) && !@empty($matches[0])) {
-				$totalGasUsed += (@count($matches[0]) * 240);
+				$totalGasUsed += (@count($matches[0]) * 2400);
 			}
 
-			//Every math|uint256.X +450 gas
+			//Maths
 			@preg_match_all('/(math|uint256)\.(add|sub|mul|div|mod|pow|sqrt|powmod|comp|float)\(/',$function['code'],$matches);
-			if (!@empty($matches) && !@empty($matches[0])) {
-				$totalGasUsed += (@count($matches[0]) * 450);
-			}
-
-			//Every math.random +550 gas
-			@preg_match_all('/(math|uint256)\.(random)\(/',$function['code'],$matches);
-			if (!@empty($matches) && !@empty($matches[0])) {
-				$totalGasUsed += (@count($matches[0]) * 550);
-			}
-
-			//Every substr +120 gas
-			@preg_match_all('/substr\(/',$function['code'],$matches);
-			if (!@empty($matches) && !@empty($matches[0])) {
-				$totalGasUsed += (@count($matches[0]) * 120);
-			}
-
-			//Every math +675 gas
-			@preg_match_all('/(blockchain|contract)\.(Transfer|TransferToken|withdraw)\(/',$function['code'],$matches);
-			if (!@empty($matches) && !@empty($matches[0])) {
-				$totalGasUsed += (@count($matches[0]) * 675);
-			}
-
-			//Every Class +150 gas
-			@preg_match_all('/Class\s{0,}(.*)\s{0,}{/',$function['code'],$matches);
-			if (!@empty($matches) && !@empty($matches[0])) {
-				$totalGasUsed += (@count($matches[0]) * 150);
-			}
-
-			//Every Class +150 gas
-			@preg_match_all('/Interface\s{0,}(.*)\s{0,}{/',$function['code'],$matches);
 			if (!@empty($matches) && !@empty($matches[0])) {
 				$totalGasUsed += (@count($matches[0]) * 4500);
 			}
 
+			//Random number
+			@preg_match_all('/(math|uint256)\.(random)\(/',$function['code'],$matches);
+			if (!@empty($matches) && !@empty($matches[0])) {
+				$totalGasUsed += (@count($matches[0]) * 5500);
+			}
+
+			//Substr
+			@preg_match_all('/substr\(/',$function['code'],$matches);
+			if (!@empty($matches) && !@empty($matches[0])) {
+				$totalGasUsed += (@count($matches[0]) * 1200);
+			}
+
+			//Transfer/TransferToken/Withdraw
+			@preg_match_all('/(blockchain|contract)\.(Transfer|TransferToken|withdraw)\(/',$function['code'],$matches);
+			if (!@empty($matches) && !@empty($matches[0])) {
+				$totalGasUsed += (@count($matches[0]) * 6750);
+			}
+
+			//Class
+			@preg_match_all('/Class\s{0,}(.*)\s{0,}{/',$function['code'],$matches);
+			if (!@empty($matches) && !@empty($matches[0])) {
+				$totalGasUsed += (@count($matches[0]) * 1500);
+			}
+
+			//Interface +150 gas
+			@preg_match_all('/Interface\s{0,}(.*)\s{0,}{/',$function['code'],$matches);
+			if (!@empty($matches) && !@empty($matches[0])) {
+				$totalGasUsed += (@count($matches[0]) * 45000);
+			}
+
 			//-- Recursive --
-			//Every function call recursive +250 gas
+			//Every function call recursive
 			foreach ($functions['public'] as $func=>$_) {
 				@preg_match_all('/'.$func.'\(/',$function['code'],$matches);
 				if (!@empty($matches) && !@empty($matches[0])) {
-					$totalGasUsed += (@count($matches[0]) * 250);
+					$totalGasUsed += (@count($matches[0]) * 2500);
 					$totalGasUsed = self::GetGas($func,$functions,$totalGasUsed);
 				}
 			}
 			foreach ($functions['private'] as $func=>$_) {
 				@preg_match_all('/'.$func.'\(/',$function['code'],$matches);
 				if (!@empty($matches) && !@empty($matches[0])) {
-					$totalGasUsed += (@count($matches[0]) * 250);
+					$totalGasUsed += (@count($matches[0]) * 2500);
 					$totalGasUsed = self::GetGas($func,$functions,$totalGasUsed);
 				}
 			}

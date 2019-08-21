@@ -5,7 +5,7 @@ PHP Blockchain from scratch with Smart Contracts
 ```
 PoW sha3-256d + sha3-512
 Total coins: Unlimited
-Blocks every: Mainnet ?? (average) | Testnet: 20 sec (average)
+Blocks every: Mainnet ?? (average) | Testnet: 10 sec (average)
 ```
 
 ![php >= 7.1](https://img.shields.io/badge/php-%3E%3D%207.1-blue)

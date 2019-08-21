@@ -35,6 +35,7 @@ include(__DIR__.'/Gossip.php');
 include(__DIR__.'/Key.php');
 include(__DIR__.'/Pki.php');
 include(__DIR__.'/PoW.php');
+include(__DIR__.'/REGEX.php');
 include(__DIR__.'/Transaction.php');
 include(__DIR__.'/Miner.php');
 include(__DIR__.'/GenesisBlock.php');
@@ -132,7 +133,7 @@ if ($db == null || ( (isset($db->db->connect_error) && strlen($db->db->connect_e
 }
 
 // check if have RocksDB Engine
-if (!$db->HaveRocksDBEngine()) {
+if (FORCE_USE_ROCKSDB && !$db->HaveRocksDBEngine()) {
 	Display::_error("Could not detect RocksDB Engine on MySQL Server");
     Display::_error("Please install MyRocksDB and try again");
 

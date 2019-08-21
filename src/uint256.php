@@ -27,14 +27,12 @@ Class uint256 {
 	public static function parse($number) {
 		preg_match_all('/^(\d+\.\d*?[0-9])0{0,}$/',$number,$matches);
 		if (!isset($matches[1][0]))
-			return $number;
+			return (string) $number;
 		$numParsed = $matches[1][0];
 		if ($numParsed == '0.0')
 			return '0';
-
 		if (preg_match("/\.\d$/",$numParsed))
 			$numParsed = str_replace('.0','',$numParsed);
-
 		return $numParsed;
 	}
 
@@ -183,7 +181,7 @@ Class uint256 {
      */
 	private static function float($num) {
 		$matches = array();
-		preg_match_all("/\.([1-9].*|(?:0{0,})[1-9].*|)/",$num,$matches);
+		preg_match_all(REGEX::FloatValue,$num,$matches);
 		if (strlen($matches[1][0]) > 1) {
 			$e_num = explode('.',$num);
 			$convert = $e_num[0].'.'.$e_num[1];

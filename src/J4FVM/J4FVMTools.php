@@ -32,7 +32,7 @@ class J4FVMTools {
 			$code = Tools::hex2str($code);
 
 		$matches = [];
-		preg_match("/#pragma funity ([0-9]{0,}\.[0-9]{0,}\.[0-9]{0,})/",$code,$matches);
+		preg_match(REGEX::FunityVersion,$code,$matches);
 		if (!empty($matches))
 			return (isset($matches[0])) ? $matches[1]:'-1';
 		else
@@ -48,7 +48,7 @@ class J4FVMTools {
      */
 	public static function GetContractName($code) {
 		$matches = [];
-		preg_match("/[Cc]ontract\s{0,}([a-zA-Z0-9]*)\s{0,}(is J4FRC10|is J4FRC20|)\s{0,}\{/",$code,$matches);
+		preg_match(REGEX::ContractName,$code,$matches);
 		if (!empty($matches))
 			return (isset($matches[0])) ? $matches[1]:'';
 		else
@@ -77,7 +77,7 @@ class J4FVMTools {
 
 			//Check if have define Token
 			$matches = [];
-			preg_match("/[Dd]efine Token (.*)/",$code,$matches);
+			preg_match(REGEX::DefineToken,$code,$matches);
 			if (count($matches) < 2) {
 				return 'Error parsing Contract struct name';
 			}
@@ -85,7 +85,7 @@ class J4FVMTools {
 
 			//Check if have define Name
 			$matches = [];
-			preg_match("/[Dd]efine Name (.*)/",$code,$matches);
+			preg_match(REGEX::DefineName,$code,$matches);
 			if (count($matches) < 2) {
 				return 'Error parsing Contract struct name';
 			}
@@ -93,7 +93,7 @@ class J4FVMTools {
 
 			//Check if have define totalSupply
 			$matches = [];
-			preg_match("/[Dd]efine TotalSupply (.*)/",$code,$matches);
+			preg_match(REGEX::DefineSupply,$code,$matches);
 			if (count($matches) >= 2) {
 				$token['TotalSupply'] = $matches[1];
 				if ($token['TotalSupply'] > 1000000000000000) {
@@ -106,7 +106,7 @@ class J4FVMTools {
 
 			//Check if have define Precision
 			$matches = [];
-			preg_match("/[Dd]efine Precision (.*)/",$code,$matches);
+			preg_match(REGEX::DefinePrecision,$code,$matches);
 			if (count($matches) >= 2) {
 				$token['Precision'] = $matches[1];
 				if ($token['Precision'] > 18) {
@@ -135,7 +135,7 @@ class J4FVMTools {
 	 */
 	public static function isJ4FRC10Standard($code) {
 		$matches = [];
-		preg_match('/[Cc]ontract\s{0,}([a-zA-Z0-9]*)\s{0,}(is J4FRC10|)\s{0,}\{/',$code,$matches);
+		preg_match(REGEX::isJ4FRC10,$code,$matches);
 		if (!empty($matches))
 			if (trim($matches[2]) == 'is J4FRC10')
 				return true;
@@ -151,13 +151,12 @@ class J4FVMTools {
 	 */
 	public static function isJ4FRC20Standard($code) {
 		$matches = [];
-		preg_match('/[Cc]ontract\s{0,}([a-zA-Z0-9]*)\s{0,}(is J4FRC20|)\s{0,}\{/',$code,$matches);
+		preg_match(REGEX::isJ4FRC20,$code,$matches);
 		if (!empty($matches))
 			if ($matches[2] == 'is J4FRC20')
 				return true;
 		return false;
 	}
-
 
 	/**
 	 * Function that return function name from MethodId
@@ -195,8 +194,7 @@ class J4FVMTools {
 
 		//Parse normal functions
 		$matches = array();
-		$regex = '/(\w*)\s*:\s*function\s*\((.*)\)\s*(?:(public|private)|)\s*(?:(returns\s*bool|returns\s*string|returns\s*uint256|returns\s*int|returns\s*uint|returns)|)\s*\K({((?>"(?:[^"\\\\]*+|\\\\.)*"|\'(?:[^\'\\\\]*+|\\\\.)*\'|\/\/.*$|\/\*[\s\S]*?\*\/|#.*$|<<<\s*["\']?(\w+)["\']?[^;]+\3;$|[^{}<\'"\/#]++|[^{}]++|(?5))*)})/m';
-		preg_match_all($regex,$code,$matches);
+		preg_match_all(REGEX::ContractFunctions,$code,$matches);
 		if (!empty($matches[1])) {
 			$i = 0;
 			foreach ($matches[1] as $match) {
