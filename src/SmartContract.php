@@ -468,6 +468,14 @@ class SmartContract {
 			array()
 		);
 
+		js::define("External",
+			array(
+				"CallContract" => "J4FVM::external_callContract",
+				"CheckIfExistsContract" => "J4FVM::external_existsContract",
+			),
+			array()
+		);
+
 	}
 
 }

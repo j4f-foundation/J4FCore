@@ -18,6 +18,7 @@
 
 class J4FVMBase {
 
+	const VERSION = '0.0.2';
 	public static $var_types = array('address','uint256','int','uint','string','tokenId');
 	public static $data = [];
 	public static $txn_hash = '';
