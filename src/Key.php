@@ -25,7 +25,7 @@ class Key {
      * Key constructor.
      * @param $keys
      */
-    public function __construct($keys)
+    public function __construct(array $keys)
     {
         $this->pubKey = $keys['public'];
         $this->privKey = $keys['private'];

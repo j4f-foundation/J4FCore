@@ -21,11 +21,11 @@ class Wallet {
     /**
      * Load or create new wallet
      *
-     * @param $account
-     * @param $password
+	 * @param string $account
+     * @param string $password
      * @return array|mixed
      */
-    public static function LoadOrCreate($account,$password) {
+    public static function LoadOrCreate(string $account,string $password) : array {
 
         if ($password != null && $password == 'null')
             $password = null;
@@ -54,11 +54,10 @@ class Wallet {
     /**
      * Load or create new wallet
      *
-     * @param $account
-     * @param $password
+     * @param string $account
      * @return array|mixed
      */
-    public static function Load($account) {
+    public static function Load(string $account) : array {
 
         $wallet_file = Tools::GetBaseDir().DIRECTORY_SEPARATOR."data".DIRECTORY_SEPARATOR."wallets".DIRECTORY_SEPARATOR.$account.".dat";
 
@@ -72,9 +71,9 @@ class Wallet {
     /**
      * Get all wallets
      *
-     * @return bool|mixed
+     * @return array
      */
-    public static function GetAccounts() {
+    public static function GetAccounts() : array {
 
         $accounts = array();
 
@@ -98,28 +97,28 @@ class Wallet {
     /**
      * Get coinbase info
      *
-     * @return bool|mixed
+     * @return array
      */
-    public static function GetCoinbase() {
+    public static function GetCoinbase() : array {
         $wallet_file = Tools::GetBaseDir().DIRECTORY_SEPARATOR."data".DIRECTORY_SEPARATOR."wallets".DIRECTORY_SEPARATOR."coinbase.dat";
         if (file_exists($wallet_file)) {
             return unserialize(@file_get_contents($wallet_file));
         }
-        return false;
+        return null;
     }
 
     /**
      * Get wallet info
      *
      * @param $address
-     * @return bool|mixed
+     * @return array
      */
-    public static function GetWallet($address) {
+    public static function GetWallet(string $address) : array {
         $wallet_file = Tools::GetBaseDir().DIRECTORY_SEPARATOR."data".DIRECTORY_SEPARATOR."wallets".DIRECTORY_SEPARATOR.$address.".dat";
         if (file_exists($wallet_file)) {
             return unserialize(@file_get_contents($wallet_file));
         }
-        return false;
+        return null;
     }
 
     /**
@@ -127,9 +126,9 @@ class Wallet {
      *
      * @param $address
      * @param $isTestNet
-     * @return int|mixed
+     * @return float
      */
-    public static function GetBalance($address,$isTestNet=false) {
+    public static function GetBalance(string $address,bool $isTestNet=false) : float {
 
         if ($address == "coinbase") {
             $wallet_from_info = self::GetCoinbase();
@@ -170,9 +169,9 @@ class Wallet {
      *
      * @param $address
      * @param $isTestNet
-     * @return int|mixed
+     * @return float
      */
-    public static function API_GetBalance($address,$isTestNet=false) {
+    public static function API_GetBalance(string $address,bool $isTestNet=false) : float {
 
         if ($address == "coinbase") {
             $wallet_from_info = self::GetCoinbase();
@@ -213,9 +212,9 @@ class Wallet {
      *
      * @param $address
      * @param $isTestNet
-     * @return int|mixed
+     * @return float
      */
-    public static function API_GetPendingBalance($address,$isTestNet=false) {
+    public static function API_GetPendingBalance(string $address,bool $isTestNet=false) : float {
 
         if ($address == "coinbase") {
             $wallet_from_info = self::GetCoinbase();
@@ -249,10 +248,10 @@ class Wallet {
      * Get Balance of wallet
      *
      * @param DB $chaindata
-     * @param $address
-     * @return int|mixed
+     * @param string $address
+     * @return float
      */
-    public static function GetBalanceWithChaindata(&$chaindata,$address) {
+    public static function GetBalanceWithChaindata(DB &$chaindata,string $address) : float {
 
         if ($address == "coinbase") {
             $wallet_from_info = self::GetCoinbase();
@@ -273,10 +272,10 @@ class Wallet {
     /**
      * Gets the wallet address of a public key
      *
-     * @param $pubKey
-     * @return mixed
+     * @param string $pubKey
+     * @return string
      */
-    public static function GetWalletAddressFromPubKey($pubKey) {
+    public static function GetWalletAddressFromPubKey($pubKey) : string {
         $pubKey = self::ParsePubKey($pubKey);
         if (strlen($pubKey) == 451) {
 			return "J4F".hash('sha3-224',$pubKey);
@@ -288,12 +287,12 @@ class Wallet {
     /**
      * Return number of transactions and total amount sended by wallet
      *
-     * @param $wallet
-     * @param $isTestNet
+     * @param string $wallet
+     * @param bool $isTestNet
      *
-     * @return mixed
+     * @return array
      */
-    public static function GetSendedTransactionsCount($wallet,$isTestNet=false) {
+    public static function GetSendedTransactionsCount(string $wallet,bool $isTestNet=false) : array {
 
         //Instantiate DB
         $chaindata = new DB();
@@ -324,9 +323,9 @@ class Wallet {
      * @param $wallet
      * @param $isTestNet
      *
-     * @return mixed
+     * @return array
      */
-    public static function GetPendingSendedTransactionsCount($wallet,$isTestNet=false) {
+    public static function GetPendingSendedTransactionsCount(string $wallet,bool $isTestNet=false) : array {
 
         //Instantiate DB
         $chaindata = new DB();
@@ -353,10 +352,10 @@ class Wallet {
     /**
      * Parse public key
      *
-     * @param $pubKey
-     * @return null|string
+     * @param string $pubKey
+     * @return string
      */
-    public static function ParsePubKey($pubKey) {
+    public static function ParsePubKey(string $pubKey) : string {
 
         //Clear PUBLIC START END KEY
         $pubKey = str_replace('-----BEGIN PUBLIC KEY-----','',$pubKey);
@@ -390,10 +389,10 @@ class Wallet {
     /**
      * Given a direction, get the wallet
      *
-     * @param $address
+     * @param string $address
      * @return string
      */
-    public static function GetWalletAddressFromAddress($address) {
+    public static function GetWalletAddressFromAddress(string $address) : string {
         if (strpos("J4F",$address) === false)
             return "J4F".$address;
         else
@@ -403,16 +402,16 @@ class Wallet {
     /**
      * Send a transaction
      *
-     * @param $wallet_from
-     * @param $wallet_from_password
-     * @param $wallet_to
-     * @param $amount
-	 * @param $data
-     * @param $isTestNet
-     * @param $cli
+     * @param string $wallet_from
+     * @param string $wallet_from_password
+     * @param string $wallet_to
+     * @param string $amount
+	 * @param string $data
+     * @param bool $isTestNet
+     * @param bool $cli
      * @return string
      */
-    public static function SendTransaction($wallet_from,$wallet_from_password,$wallet_to,$amount,$data,$isTestNet=false,$cli=true) {
+    public static function SendTransaction(string $wallet_from,string $wallet_from_password,string $wallet_to,string $amount,string $data,bool $isTestNet=false,bool $cli=true) : string {
 
         //Instance the pointer to the chaindata
         $chaindata = new DB();
@@ -536,16 +535,16 @@ class Wallet {
 	/**
      * Send a transaction called by API
      *
-     * @param $wallet_from
-     * @param $wallet_from_password
-     * @param $wallet_to
-     * @param $amount
-	 * @param $data
-     * @param $isTestNet
-     * @param $cli
+     * @param string $wallet_from
+     * @param string $wallet_from_password
+     * @param string $wallet_to
+     * @param string $amount
+	 * @param string $data
+     * @param bool $isTestNet
+     * @param bool $cli
      * @return string
      */
-    public static function API_SendTransaction($wallet_from,$wallet_from_password,$wallet_to,$amount,$data,$isTestNet=false,$cli=true) {
+    public static function API_SendTransaction(string $wallet_from,string $wallet_from_password,string $wallet_to,string $amount,string $data,bool $isTestNet=false,bool $cli=true) : string {
 
         //Instance the pointer to the chaindata
         $chaindata = new DB();
@@ -660,7 +659,7 @@ class Wallet {
      * @param DB $chaindata
      * @param Transaction $transaction
      */
-	public static function sendTxnToNetwork(&$chaindata,$transaction) {
+	public static function sendTxnToNetwork(DB &$chaindata,Transaction $transaction) : void {
 		$peers = $chaindata->GetAllPeers();
 		$config = $chaindata->GetAllConfig();
 		foreach ($peers as $peer) {

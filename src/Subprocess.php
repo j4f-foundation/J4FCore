@@ -35,7 +35,7 @@ class Subprocess {
      * @param array|string $params
      * @param int $id
      */
-    public static function newProcess($directory,$fileProcess,$params,$id=0) {
+    public static function newProcess(string $directory,string $fileProcess, array $params, int $id=0) : void {
         if (is_array($params))
             $params = implode(" ",$params);
 
@@ -54,13 +54,13 @@ class Subprocess {
     /**
      * Restart a miner thread
      *
-     * @param $lastBlock
-     * @param $directoryProcessFile
-     * @param $isTestnet
-     * @param $difficulty
+     * @param array $lastBlock
+     * @param string $directoryProcessFile
+     * @param bool $isTestnet
+     * @param string $difficulty
      * @param int $id
      */
-    public static function RestartMinerThread($lastBlock,$directoryProcessFile,$isTestnet,$difficulty,$id=0) {
+    public static function RestartMinerThread(array $lastBlock,string $directoryProcessFile,bool $isTestnet,string $difficulty,int $id=0) : void {
 
         $network = "mainnet";
         if ($isTestnet)

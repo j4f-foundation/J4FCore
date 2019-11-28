@@ -27,7 +27,7 @@ class GenesisBlock {
      * @param bool $isTestNet
      * @param int $amount
      */
-    public static function make(&$chaindata,$coinbase,$privKey,$isTestNet,$amount=50) {
+    public static function make(DB &$chaindata,string $coinbase,string $privKey,bool $isTestNet,int $amount=50) : void {
 
         @unlink(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
         @unlink(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR.Subprocess::$FILE_MINERS_STARTED);
@@ -68,9 +68,9 @@ class GenesisBlock {
      * @param int $amount
      * @param bool $isTestNet
      */
-	public static function makeMainThread(&$chaindata,$coinbase, $privKey,$amount,$isTestNet) {
+	public static function makeMainThread(DB &$chaindata,string $coinbase,string $privKey,int $amount,bool $isTestNet) : void {
 		//We created the GENESIS block on mainthread
-		$transactions = array(new Transaction(null,$coinbase,$amount,$privKey,"","","If you want different results, do not do the same things"));
+		$transactions = array(new Transaction("",$coinbase,$amount,$privKey,"","","If you want different results, do not do the same things"));
 		$genesisBlock = $chaindata->GetGenesisBlock();
 		$lastBlock = $chaindata->GetLastBlock();
 
@@ -119,7 +119,7 @@ class GenesisBlock {
      * @param int $amount
      * @param bool $isTestNet
      */
-	public static function makeWithSubprocess(&$chaindata,$coinbase, $privKey,$amount,$isTestNet) {
+	public static function makeWithSubprocess(DB &$chaindata,string $coinbase,string $privKey,int $amount,bool $isTestNet) : void {
 		Block::createGenesis($coinbase, $privKey,$amount,$isTestNet);
 		while(true) {
 
@@ -173,7 +173,7 @@ class GenesisBlock {
      * @param DB $chaindata
      * @return bool
      */
-    public static function makeFromPeer($genesis_block_bootstrap,&$chaindata) {
+    public static function makeFromPeer(DB &$chaindata, array $genesis_block_bootstrap) : bool {
         $transactions = array();
         if (!empty($genesis_block_bootstrap['transactions'])) {
             foreach ($genesis_block_bootstrap['transactions'] as $transactionInfo) {
@@ -181,8 +181,8 @@ class GenesisBlock {
                     $transactionInfo['wallet_from_key'],
                     $transactionInfo['wallet_to'],
                     $transactionInfo['amount'],
-                    null,
-                    null,
+                    "",
+                    "",
 					'',
 					$transactionInfo['data'],
                     true,

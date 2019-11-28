@@ -23,7 +23,7 @@ class SmartContractStateMachine {
 	public $storePath = '';
 
 	// Initialize the state.
-	function __construct( $dataDir = '', $configurations = [] ) {
+	function __construct( string $dataDir = '', array $configurations = [] ) {
 		// Define the root path of State.
 		$this->root = __DIR__;
 		// Add data dir.
@@ -36,7 +36,7 @@ class SmartContractStateMachine {
 	}
 
 	// Initialize the store.
-	public static function store($contractHash = false, $dataDir, $options = false ) {
+	public static function store(string $contractHash = "",string  $dataDir,array $options = [] ) : SmartContractStateMachine {
 		if ( !$contractHash OR empty( $contractHash ) ) throw new \Exception( 'ContractHash was not valid' );
 		$_dbInstance = new self($dataDir, $options);
 		$_dbInstance->contractHash = $contractHash;
@@ -54,7 +54,7 @@ class SmartContractStateMachine {
 
 	// Creates a new object in the store.
 	// The object is a plaintext JSON document.
-	public function insert($txnHash='',$state = false) {
+	public function insert(string $txnHash='',$state = false) {
 		// Handle invalid data
 		if (!$state OR empty($state)) throw new \Exception( 'No state found to store' );
 
@@ -72,7 +72,7 @@ class SmartContractStateMachine {
 	}
 
 	// Deletes a store and wipes all the data and cache it contains.
-    public function reverseState() {
+    public function reverseState() : void {
 		$statesDir = $this->storePath.DIRECTORY_SEPARATOR.'states'.DIRECTORY_SEPARATOR;
 		$h = opendir($statesDir);
 		while (false !== ($fileName = readdir($h))) {
@@ -103,7 +103,7 @@ class SmartContractStateMachine {
 	}
 
     // Deletes a store and wipes all the data and cache it contains.
-    public function deleteStates() {
+    public function deleteStates() : bool {
 		$it = new \RecursiveDirectoryIterator( $this->storePath, \RecursiveDirectoryIterator::SKIP_DOTS );
 		$files = new \RecursiveIteratorIterator( $it, \RecursiveIteratorIterator::CHILD_FIRST );
 		foreach( $files as $file ) {
@@ -114,7 +114,7 @@ class SmartContractStateMachine {
 	}
 
 
-	private function init() {
+	private function init() : void {
 
 		// Check for valid configurations.
 		if (empty($this->config) OR !is_array($this->config)) throw new \Exception('Invalid configurations was found.');
@@ -145,7 +145,7 @@ class SmartContractStateMachine {
 	} // End of init()
 
 	// Method to init a store.
-	private function initStore() {
+	private function initStore() : void {
 
 		$store = substr(trim($this->contractHash),0,32);
 
@@ -178,14 +178,15 @@ class SmartContractStateMachine {
 		return $txnHash;
 	}
 	// Return the last created store object ID.
-	private function getLastState() {
+	private function getLastState() : string {
 		$counterPath = $this->storePath.'state.sdb';
 		if (file_exists($counterPath)) {
 			return @file_get_contents($counterPath);
 		}
 	}
+
 	// Get a store by its system id. "_id"
-	private function getStateById($id) {
+	private function getStateById(string $id) : array {
 		$stateFile = $this->storePath . 'states' . DIRECTORY_SEPARATOR . $id . '.sdb';
 		if (file_exists($stateFile)) {
 			$state = @json_decode(@gzuncompress(@hex2bin(@file_get_contents($stateFile))), true);
@@ -195,7 +196,7 @@ class SmartContractStateMachine {
 	}
 
 	// Writes an object in a store.
-	private function writeState($txnHash,$state) {
+	private function writeState(string $txnHash,$state) {
 
 		$txnHash = substr($txnHash,0,32);
 

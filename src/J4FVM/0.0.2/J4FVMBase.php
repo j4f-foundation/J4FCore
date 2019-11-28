@@ -31,7 +31,7 @@ class J4FVMBase {
      *
      * @return string
      */
-	public static function _parseFunctions($code) {
+	public static function _parseFunctions(string $code) : string {
 
 		$code_parsed = $code;
 
@@ -57,7 +57,7 @@ class J4FVMBase {
      *
      * @return string
      */
-	public static function _parseComments($code) {
+	public static function _parseComments(string $code) : string {
 		$code_parsed = $code;
 		$matches = [];
 		preg_match_all(REGEX::Comments,$code_parsed,$matches);
@@ -74,7 +74,7 @@ class J4FVMBase {
      *
      * @return array
      */
-	public static function _checkSyntaxError($code) {
+	public static function _checkSyntaxError(string $code) : array {
 
 		$errors = [];
 
@@ -141,7 +141,7 @@ class J4FVMBase {
      *
      * @return string
      */
-	public static function _parseInterfaces($code_parsed,$debug=false) {
+	public static function _parseInterfaces(string $code_parsed,bool $debug=false) : string {
 
 		//Get Interface
 		$matches = [];
@@ -229,7 +229,7 @@ class J4FVMBase {
      *
      * @return string
      */
-	public static function _parse($code,$debug=false) {
+	public static function _parse(string $code,bool $debug=false) : string {
 
 		//Check Syntax Error
 		$returnCheckSyntax = self::_checkSyntaxError($code);
@@ -388,7 +388,7 @@ class J4FVMBase {
      *
      * @return string
      */
-	public static function parseSpecialChars($string) {
+	public static function parseSpecialChars(string $string) : string {
 		$string = str_replace('(','',$string);
 		$string = str_replace(')','',$string);
 		$string = str_replace('"','',$string);
@@ -415,7 +415,7 @@ class J4FVMBase {
      *
      * @return mixed
      */
-	public static function _get($key) {
+	public static function _get(string $key) {
 		if (isset(self::$data[$key]))
 			return self::$data[$key];
 		return 'null';
@@ -427,7 +427,7 @@ class J4FVMBase {
      * @param string $key
 	 * @param string $value
      */
-	public static function _set($key,$value) {
+	public static function _set(string $key,string $value) : void {
 		self::$data[$key] = $value;
 	}
 
@@ -438,7 +438,7 @@ class J4FVMBase {
 	 *
 	 * @return string
      */
-	public static function js_get($str) {
+	public static function js_get(string $str) : string {
 		return js_str(self::_get(php_str($str)));
 	}
 
@@ -450,7 +450,7 @@ class J4FVMBase {
 	 *
 	 * @return string
      */
-	public static function js_set($str,$value) {
+	public static function js_set(string $str,string $value) : string {
 		return js_str(self::_set(php_str($str),php_str($value)));
 	}
 
@@ -460,7 +460,7 @@ class J4FVMBase {
      * @param string $index
 	 * @param array $value
      */
-	public static function js_table_set($index,$value) {
+	public static function js_table_set(string $index,array $value) : void {
 		$index = php_str($index);
 		$array_value =  php_array($value);
 		self::$data[$index] = $array_value;
@@ -473,7 +473,7 @@ class J4FVMBase {
 	 * @param array $value
 	 * @param string $subindex
      */
-	public static function js_table_set_sub($index,$value,$subindex) {
+	public static function js_table_set_sub(string $index, array $value, string$subindex) : void {
 
 		$index = php_str($index);
 		$subindex = php_str($subindex);
@@ -489,7 +489,7 @@ class J4FVMBase {
 	 *
 	 * @return array
      */
-	public static function js_table($table) {
+	public static function js_table(string $table) : object {
 		$table = php_str($table);
 
 		if (isset(self::$data[$table]))
@@ -508,7 +508,7 @@ class J4FVMBase {
 	 *
 	 * @return mixed
      */
-	public static function js_table_get($table,$index) {
+	public static function js_table_get(string $table,string $index) : object {
 
 		$table = php_str($table);
 		$index = php_str($index);
@@ -520,11 +520,10 @@ class J4FVMBase {
      * Function that called from Funity to get data of array uint256 in storedData of contract
      *
      * @param string $table
-	 * @param string $index
 	 *
 	 * @return mixed
      */
-	public static function js_table_uint256($table) {
+	public static function js_table_uint256(string $table) : object {
 		$table = php_str($table);
 
 		if (isset(J4FVM::$data[$table])) {
@@ -545,7 +544,7 @@ class J4FVMBase {
 	 *
 	 * @return mixed
      */
-	public static function js_table_get_sub($table,$index,$subindex) {
+	public static function js_table_get_sub(string $table,string $index,string $subindex) : object {
 
 		$table = php_str($table);
 		$index = php_str($index);
@@ -563,7 +562,7 @@ class J4FVMBase {
      * @param float $amount
      * @return bool
      */
-	public static function blockchain_transfer($sender,$receiver,$amount) {
+	public static function blockchain_transfer(string $sender,string $receiver,float $amount) : bool {
 
 		if (self::$contract_hash != null && strlen(self::$contract_hash) == 128) {
 			//Parsing jsvars to phpvars
@@ -602,7 +601,7 @@ class J4FVMBase {
      * @param float $amount
      * @return bool
      */
-	public static function blockchain_transfer_token($sender,$receiver,$tokenId) {
+	public static function blockchain_transfer_token(string $sender,string $receiver,float $tokenId) : bool {
 
 		echo 'blockchain_transfer_token';
 
@@ -637,10 +636,9 @@ class J4FVMBase {
      * Write Internal Transaction of contract
      *
      * @param string $receiver
-     * @param float $amount
      * @return bool
      */
-	public static function blockchain_transferWithdraw($receiver=null) {
+	public static function blockchain_transferWithdraw($receiver=null) : bool {
 
 		if (self::$contract_hash != null && strlen(self::$contract_hash) == 128) {
 			if (self::$txn_hash != '' && strlen(self::$txn_hash) == 128) {
@@ -657,11 +655,14 @@ class J4FVMBase {
 
 	/**
 	 * Destruct Function
+	 * @param string $receiver
+	 * @return bool
      */
-	public static function contract_destruct($receiver) {
+	public static function contract_destruct($receiver) : bool {
 
 		if (self::$contract_hash != null && strlen(self::$contract_hash) == 128) {
 			if (self::$txn_hash != '' && strlen(self::$txn_hash) == 128) {
+
 				//Parsing jsvars to phpvars
 				if ($receiver != null && !is_string($receiver))
 					$receiver = php_str($receiver);
@@ -681,104 +682,104 @@ class J4FVMBase {
      * @param float $amount
      * @return bool
      */
-	public static function blockchain_transfer_compiler($sender,$receiver,$amount) {
+	public static function blockchain_transfer_compiler(string $sender,string $receiver,float $amount) : string {
 		return '';
 	}
 
 	//UINT256 MATHS
-	public static function uint256_parse($num1) {
+	public static function uint256_parse(object $num1) : object {
 		return js_str(uint256::parse(@number_format(php_str($num1),0,null,'')));
 	}
 
-	public static function uint256_toDec($num1) {
+	public static function uint256_toDec(object $num1) : object {
 		return js_str(uint256::toDec(@number_format(php_str($num1),0,null,'')));
 	}
 
-	public static function uint256_add($num1,$num2) {
+	public static function uint256_add(object $num1, object $num2) : object {
 		return js_str(uint256::add(@number_format(php_str($num1),0,null,''),@number_format(php_str($num2),0,null,'')));
 	}
 
-	public static function uint256_sub($num1,$num2) {
+	public static function uint256_sub(object $num1,object $num2) : object {
 		return js_str(uint256::sub(@number_format(php_str($num1),0,null,''),@number_format(php_str($num2),0,null,'')));
 	}
 
-	public static function uint256_compare($num1,$num2) {
+	public static function uint256_compare(object $num1,object $num2) : object {
 		return js_str(uint256::comp(@number_format(php_str($num1),0,null,''),@number_format(php_str($num2),0,null,'')));
 	}
 
-	public static function uint256_mul($num1,$num2) {
+	public static function uint256_mul(object $num1,object $num2) : object {
 		return js_str(uint256::mul(@number_format(php_str($num1),0,null,''),@number_format(php_str($num2),0,null,'')));
 	}
 
-	public static function uint256_div($num1,$num2) {
+	public static function uint256_div(object $num1,object $num2) : object {
 		return js_str(uint256::div(@number_format(php_str($num1),0,null,''),@number_format(php_str($num2),0,null,'')));
 	}
 
-	public static function uint256_pow($num1,$num2) {
+	public static function uint256_pow(object $num1,object $num2) : object {
 		return js_str(uint256::pow(@number_format(php_str($num1),0,null,''),@number_format(php_str($num2),0,null,'')));
 	}
 
-	public static function uint256_mod($num1,$num2) {
+	public static function uint256_mod(object $num1,object $num2) : object {
 		return js_str(uint256::mod(@number_format(php_str($num1),0,null,''),@number_format(php_str($num2),0,null,'')));
 	}
 
-	public static function uint256_sqrt($num1) {
+	public static function uint256_sqrt(object $num1) : object {
 		return js_str(uint256::sqrt(@number_format(php_str($num1),0,null,'')));
 	}
 
-	public static function uint256_powmod($num1,$num2,$mod) {
+	public static function uint256_powmod(object $num1,object $num2,object $mod) : object {
 		return js_str(uint256::powmod(number_format(php_str($num1),0,null,''),@number_format(php_str($num2),0,null,''),@number_format(php_str($mod),0,null,'')));
 	}
 
 	//TABLE
-	public static function table_count($table) {
+	public static function table_count(object $table) : object {
 		$table = php_str($table);
 		return (isset(self::$data[$table])) ? js_str(count(self::$data[$table])):js_str("0");
 	}
 
 	//MATHS
-	public static function math_parse($num1) {
+	public static function math_parse(object $num1) : object {
 		return js_str(uint256::parse(bcadd(php_str($num1),"0",18)));
 	}
-	public static function math_add($num1,$num2) {
+	public static function math_add(object $num1,object $num2) : object {
 		return js_str(uint256::parse(@bcadd(php_str($num1),php_str($num2),18)));
 	}
 
-	public static function math_sub($num1,$num2) {
+	public static function math_sub(object $num1, object $num2) : object {
 		return js_str(uint256::parse(@bcsub(php_str($num1),php_str($num2),18)));
 	}
 
-	public static function math_compare($num1,$num2) {
+	public static function math_compare(object $num1,object $num2) : object {
 		$num1 = php_str($num1);
 		$num2 = php_str($num2);
 		return js_int(@bccomp($num1,$num2));
 	}
 
-	public static function math_mul($num1,$num2) {
+	public static function math_mul(object $num1,object $num2) : object {
 		return js_str(uint256::parse(@bcmul(php_str($num1),php_str($num2),18)));
 	}
 
-	public static function math_div($num1,$num2) {
+	public static function math_div(object $num1,object $num2) : object {
 		return js_str(uint256::parse(@bcdiv(php_str($num1),php_str($num2),18)));
 	}
 
-	public static function math_pow($num1,$num2) {
+	public static function math_pow(object $num1,object $num2) : object {
 		return js_str(uint256::parse(@bcpow(php_str($num1),php_str($num2),18)));
 	}
 
-	public static function math_mod($num1,$num2) {
+	public static function math_mod(object $num1,object $num2) : object {
 		return js_str(uint256::parse(@bcmod(php_str($num1),php_str($num2),18)));
 	}
 
-	public static function math_sqrt($num1) {
+	public static function math_sqrt(object $num1) : object {
 		return js_str(self::math_parse(@bcsqrt(php_str($num1),18)));
 	}
 
-	public static function math_powmod($num1,$num2,$mod) {
+	public static function math_powmod(object $num1,object $num2,object $mod) : object {
 		return js_str(self::math_parse(@bcpowmod(php_str($num1),php_str($num2),php_str($mod))));
 	}
 
-	public static function math_random($length=32) {
+	public static function math_random(int $length=32) : object {
 		if (is_numeric($length))
 			$randomNum = substr(Tools::hex2dec(PoW::hash(time().rand())),0,$length);
 		else
@@ -787,11 +788,11 @@ class J4FVMBase {
 	}
 
 	//JSON
-	public static function json_stringify($array) {
+	public static function json_stringify(object $array) : object {
 		return js_str(@json_encode(php_array($array)));
 	}
 
-	public static function json_parse($jsonString) {
+	public static function json_parse(object $jsonString) : object {
 		$json = @json_encode(php_str($jsonString));
 		if (is_array($json) && !empty($json))
 			$object = js_object($json);
@@ -801,12 +802,12 @@ class J4FVMBase {
 	}
 
 	//CRYPTO
-	public static function js_sha3($str) {
+	public static function js_sha3(object $str) : object {
 		return js_str(PoW::hash(php_str($str)));
 	}
 
 	//EXTERNAL CALLS -> INTERFACE
-	public static function external_callContract($contractHash,$functionName,$params) {
+	public static function external_callContract(object $contractHash,object $functionName,object $params) : object {
 		$contractHash = php_str($contractHash);
 		$functionName = php_str($functionName);
 
@@ -827,6 +828,7 @@ class J4FVMBase {
 
 		//Start Chaindata pointer
 		$chaindata = new DB();
+
 		//Get contract by hash
 		$contract = $chaindata->GetContractByHash($contractHash);
 		if ($contract != null) {
@@ -857,7 +859,7 @@ class J4FVMBase {
 			die("<strong class='text-danger'>J4FVM_Interface</strong> - Contract with that hash not defined");
 		}
 	}
-	public static function external_existsContract($contractHash) {
+	public static function external_existsContract(object $contractHash) : void {
 		$contractHash = php_str($contractHash);
 
 		//Start Chaindata pointer

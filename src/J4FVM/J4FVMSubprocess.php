@@ -1,4 +1,21 @@
 <?php
+// Copyright 2018 MaTaXeToS
+// Copyright 2019 The Just4Fun Authors
+// This file is part of the J4FCore library.
+//
+// The J4FCore library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The J4FCore library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the J4FCore library. If not, see <http://www.gnu.org/licenses/>.
+
 Class J4FVMSubprocess {
 
 	public $contractHash;
@@ -12,7 +29,7 @@ Class J4FVMSubprocess {
 	public $output;
 	public $typeCall;
 
-	public function __construct($typeCall='READ') {
+	public function __construct(string $typeCall='READ') {
 
 		if (strtoupper($typeCall) == 'MAKE')
 			$this->typeCall = 'MAKE';
@@ -24,31 +41,31 @@ Class J4FVMSubprocess {
 			$this->typeCall = 'READ';
 	}
 
-	public function setTxnHash($txnHash) {
+	public function setTxnHash(string $txnHash) : void {
 		$this->txnHash = $txnHash;
 	}
 
-	public function setContractHash($contractHash) {
+	public function setContractHash(string $contractHash) : void {
 		$this->contractHash = $contractHash;
 	}
 
-	public function setFrom($from) {
+	public function setFrom(string $from) : void {
 		$this->txnFrom = $from;
 	}
 
-	public function setAmount($amount) {
+	public function setAmount(string $amount) : void {
 		$this->txnAmount = $amount;
 	}
 
-	public function setVersion($version) {
+	public function setVersion(string $version) : void {
 		$this->version = $version;
 	}
 
-	public function setData($data) {
+	public function setData(string $data) : void {
 		$this->txnData = $data;
 	}
 
-	public function run() {
+	public function run() : string {
 
 		if ($this->contractHash == null)
 			return 'Error, ContractHash not defined';
@@ -94,7 +111,7 @@ Class J4FVMSubprocess {
 		}
 	}
 
-	public function output() {
+	public function output() : string {
 		return $this->output;
 	}
 }

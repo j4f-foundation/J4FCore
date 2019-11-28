@@ -21,26 +21,26 @@ class DBTransactions {
     /**
      * Returns a transaction given a hash
      *
-     * @param $hash
-     * @return mixed
+     * @param string $hash
+     * @return array
      */
-    public function GetTransactionByHash($hash) {
+    public function GetTransactionByHash($hash) : array {
         $sql = "SELECT * FROM transactions WHERE txn_hash = '".$hash."';";
         $info_txn = $this->db->query($sql)->fetch_assoc();
         if (!empty($info_txn)) {
             return $info_txn;
         }
-        return null;
+        return [];
     }
 
     /**
      * Returns all the transactions of a wallet
      *
-     * @param $wallet
-     * @param $limit
+     * @param string $wallet
+     * @param int $limit
      * @return array
      */
-    public function GetTransactionsByWallet($wallet,$limit=50) {
+    public function GetTransactionsByWallet(string $wallet,int $limit=50) : array {
         $transactions_chaindata = $this->db->query("SELECT * FROM transactions WHERE wallet_to = '".$wallet."' OR wallet_from = '".$wallet."' ORDER BY timestamp DESC LIMIT ".$limit.";");
         $transactions = array();
         if (!empty($transactions_chaindata)) {
@@ -48,17 +48,16 @@ class DBTransactions {
                 $transactions[] = $transactionInfo;
             }
         }
-
         return $transactions;
     }
 
     /**
      * Return count transactions in block
      *
-     * @param $blockHash
+     * @param string $blockHash
      * @return int
      */
-    public function GetBlockTransactionsCountByHash($blockHash) {
+    public function GetBlockTransactionsCountByHash(string $blockHash) : int {
         $transactionsCount = $this->db->query("SELECT count(txn_hash) as countTransactions FROM transactions WHERE block_hash = '".$blockHash."';")->fetch_assoc();
         if (!empty($transactionsCount)) {
             return $transactionsCount['countTransactions'];
@@ -72,7 +71,7 @@ class DBTransactions {
      * @param $height
      * @return int
      */
-    public function GetBlockTransactionsCountByHeight($height) {
+    public function GetBlockTransactionsCountByHeight(int $height) : int {
         $transactionsCount = $this->db->query("SELECT count(txn_hash) as countTransactions FROM transactions WHERE block_hash = (SELECT block_hash FROM blocks WHERE height = ".$height.");")->fetch_assoc();
         if (!empty($transactionsCount)) {
             return $transactionsCount['countTransactions'];
@@ -85,7 +84,7 @@ class DBTransactions {
      *
      * @return array
      */
-    public function GetTxnFromPool($limit=511) {
+    public function GetTxnFromPool(int $limit=511) : array {
         $txs = array();
         $txs_chaindata = $this->db->query("SELECT * FROM txnpool WHERE wallet_from <> wallet_to ORDER BY tx_fee DESC, timestamp DESC LIMIT " . $limit);
         if (!empty($txs_chaindata)) {
@@ -100,10 +99,10 @@ class DBTransactions {
     /**
      * Add pending transactions received by a peer
      *
-     * @param $transactionsByPeer
+     * @param array $transactionsByPeer
      * @return bool
      */
-    public function addTxnsToPoolByPeer($transactionsByPeer) {
+    public function addTxnsToPoolByPeer(array $transactionsByPeer) : bool {
 
         foreach ($transactionsByPeer as $tx) {
 
@@ -124,11 +123,11 @@ class DBTransactions {
 	/**
 	 * Add a pending transaction received by a peer
 	 *
-	 * @param $txHash
-	 * @param $transaction
+	 * @param string $txHash
+	 * @param array $transaction
 	 * @return bool
 	 */
-	public function addTxnToPoolByPeer($txHash,$transaction) {
+	public function addTxnToPoolByPeer(string $txHash,array $transaction) : bool {
 		$infoTxnPool = $this->db->query("SELECT txn_hash FROM txnpool WHERE txn_hash = '".$txHash."' ORDER BY tx_fee DESC, timestamp DESC;")->fetch_assoc();
 		if (empty($infoTxnPool)) {
 
@@ -155,11 +154,11 @@ class DBTransactions {
 	/**
 	 * Add a pending transaction
 	 *
-	 * @param $txHash
-	 * @param $transaction
+	 * @param string $txHash
+	 * @param Transaction $transaction
 	 * @return bool
 	 */
-	public function addTxnToPool($txHash,$transaction) {
+	public function addTxnToPool(string $txHash,Transaction $transaction) : bool {
 		$infoTxnPool = $this->db->query("SELECT txn_hash FROM txnpool WHERE txn_hash = '".$txHash."' ORDER BY tx_fee DESC, timestamp DESC;")->fetch_assoc();
 		if (empty($infoTxnPool)) {
 
@@ -192,9 +191,9 @@ class DBTransactions {
     /**
      * Delete a transaction from pool
      *
-     * @param $txHash
+     * @param string $txHash
      */
-    public function removeTxnFromPool($txHash) {
+    public function removeTxnFromPool(string $txHash) : void {
         $this->db->query("DELETE FROM txnpool WHERE txn_hash='".$txHash."';");
     }
 
@@ -203,8 +202,8 @@ class DBTransactions {
      *
      * @return array
      */
-    public function GetAllTxnFromPool() {
-        $txs = array();
+    public function GetAllTxnFromPool() : array {
+        $txs = [];
         $txs_chaindata = $this->db->query("SELECT * FROM txnpool ORDER BY tx_fee DESC, timestamp DESC");
         if (!empty($txs_chaindata)) {
             while ($tx_chaindata = $txs_chaindata->fetch_array(MYSQLI_ASSOC)) {
@@ -217,16 +216,16 @@ class DBTransactions {
 	/**
      * Return array with all pending transactions to send
      *
-	 * @param $txHash
+	 * @param string $txHash
 	 *
-     * @return mixed
+     * @return array
      */
-    public function GetTxnFromPoolByHash($txHash) {
+    public function GetTxnFromPoolByHash(string $txHash) : array {
         $txnInfo = $this->db->query("SELECT * FROM txnpool WHERE txn_hash = '".$txHash."'")->fetch_assoc();
         if (!empty($txnInfo)) {
             return $txnInfo;
         }
-        return null;
+        return [];
     }
 }
 

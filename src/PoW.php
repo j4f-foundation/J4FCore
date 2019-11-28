@@ -21,22 +21,22 @@ class PoW {
      * @param $message
      * @return string
      */
-    public static function hash($message) {
+    public static function hash(string $message) : string {
 		return hash('sha3-512', hash('sha3-256',hash('sha3-256', $message)));
     }
 
     /**
      * POW to find the hash that matches the current difficulty
      *
-     * @param $idMiner
-     * @param $message
-     * @param $difficulty
-     * @param $startNonce
-     * @param $incrementNonce
-	 * @param $isMultiThread
-     * @return mixed
+     * @param int $idMiner
+     * @param string $message
+     * @param string $difficulty
+     * @param string $startNonce
+     * @param string $incrementNonce
+	 * @param bool $isMultiThread
+     * @return string
      */
-    public static function findNonce($idMiner,$message,$difficulty,$startNonce,$incrementNonce,$isMultiThread=true) {
+    public static function findNonce($idMiner,$message,$difficulty,$startNonce,$incrementNonce,$isMultiThread=true) : string {
         $max_difficulty = "000FFFFFF00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
 
 		$nonce = "0";
@@ -144,7 +144,7 @@ class PoW {
      * @param $maxDifficulty
      * @return bool
      */
-    public static function isValidNonce($message,$nonce,$difficulty,$maxDifficulty) {
+    public static function isValidNonce(string $message,string $nonce,string $difficulty,string $maxDifficulty) : bool {
 
 		$difficulty = ($difficulty < 0) ? 1:$difficulty;
 		$hash = PoW::hash($message.$nonce);

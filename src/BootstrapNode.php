@@ -24,9 +24,9 @@ class BootstrapNode {
      *
      * @param DB $chaindata
      * @param $isTestNet
-     * @return int|mixed
+     * @return array
      */
-    public static function GetPeers(&$chaindata,$isTestNet=false) {
+    public static function GetPeers(DB &$chaindata,bool $isTestNet=false) : array {
 
         if ($isTestNet) {
             $ip = NODE_BOOTSTRAP_TESTNET;
@@ -35,8 +35,6 @@ class BootstrapNode {
             $ip = NODE_BOOTSTRAP;
             $port = NODE_BOOSTRAP_PORT;
         }
-
-        $bootstrapNode = $chaindata->GetBootstrapNode();
         //Nos comunicamos con el BOOTSTRAP_NODE
         $infoToSend = array(
             'action' => 'GETPEERS'
@@ -46,7 +44,7 @@ class BootstrapNode {
 		if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1)
 			return $infoPOST['result'];
 		else
-			return 0;
+			return null;
     }
 
     /**
@@ -57,7 +55,7 @@ class BootstrapNode {
      * @param $isTestNet
      * @return int|mixed
      */
-    public static function GetPendingTransactions(&$chaindata,$isTestNet=false) {
+    public static function GetPendingTransactions(DB &$chaindata,bool $isTestNet=false) {
 
         if ($isTestNet) {
             $ip = NODE_BOOTSTRAP_TESTNET;
@@ -66,8 +64,6 @@ class BootstrapNode {
             $ip = NODE_BOOTSTRAP;
             $port = NODE_BOOSTRAP_PORT;
         }
-
-        $bootstrapNode = $chaindata->GetBootstrapNode();
         //Nos comunicamos con el BOOTSTRAP_NODE
         $infoToSend = array(
             'action' => 'GETPENDINGTRANSACTIONS'
@@ -77,7 +73,7 @@ class BootstrapNode {
 		if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1)
 			return $infoPOST['result'];
 		else
-			return 0;
+			return null;
     }
 
     /**
@@ -88,7 +84,7 @@ class BootstrapNode {
      * @param $isTestNet
      * @return int
      */
-    public static function GetLastBlockNum(&$chaindata,$isTestNet=false) {
+    public static function GetLastBlockNum(DB &$chaindata,bool $isTestNet=false) {
 
         if ($isTestNet) {
             $ip = NODE_BOOTSTRAP_TESTNET;
@@ -97,8 +93,6 @@ class BootstrapNode {
             $ip = NODE_BOOTSTRAP;
             $port = NODE_BOOSTRAP_PORT;
         }
-
-        $bootstrapNode = $chaindata->GetBootstrapNode();
         //Nos comunicamos con el BOOTSTRAP_NODE
         $infoToSend = array(
             'action' => 'LASTBLOCKNUM'
@@ -108,7 +102,7 @@ class BootstrapNode {
 		if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1)
 			return $infoPOST['result'];
 		else
-			return 0;
+			return null;
     }
 
     /**
@@ -119,7 +113,7 @@ class BootstrapNode {
      * @param $isTestNet
      * @return mixed
      */
-    public static function GetGenesisBlock(&$chaindata,$isTestNet=false) {
+    public static function GetGenesisBlock(DB &$chaindata,bool $isTestNet=false) {
 
         if ($isTestNet) {
             $ip = NODE_BOOTSTRAP_TESTNET;
@@ -128,8 +122,6 @@ class BootstrapNode {
             $ip = NODE_BOOTSTRAP;
             $port = NODE_BOOSTRAP_PORT;
         }
-
-        $bootstrapNode = $chaindata->GetBootstrapNode();
         //Nos comunicamos con el BOOTSTRAP_NODE
         $infoToSend = array(
             'action' => 'GETGENESIS'
@@ -138,7 +130,7 @@ class BootstrapNode {
 		if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1)
 			return $infoPOST['result'];
 		else
-			return 0;
+			return null;
     }
 
     /**
@@ -150,7 +142,7 @@ class BootstrapNode {
      * @param bool $isTestNet
      * @return mixed
      */
-    public static function SyncNextBlocksFrom($lastBlockOnLocalBlockChain,$isTestNet=false) {
+    public static function SyncNextBlocksFrom(int $lastBlockOnLocalBlockChain,bool $isTestNet=false) {
 
         if ($isTestNet) {
             $ip = NODE_BOOTSTRAP_TESTNET;

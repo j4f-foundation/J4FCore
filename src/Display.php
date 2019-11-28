@@ -21,7 +21,7 @@ class Display {
     /**
      * Clean the screen
      */
-    public static function ClearScreen() {
+    public static function ClearScreen() : void {
         echo "\033[2J";
     }
 
@@ -29,9 +29,9 @@ class Display {
      * Replace the colors of a string for the CMD
      *
      * @param $string
-     * @return mixed
+     * @return string
      */
-    public static function _replaceColors($string) {
+    public static function _replaceColors($string) : string {
         $string = str_replace("%B%",ColorsCLI::$FG_BLACK,$string);
         $string = str_replace("%DG%",ColorsCLI::$FG_DARK_GRAY,$string);
         $string = str_replace("%R%",ColorsCLI::$FG_RED,$string);
@@ -55,7 +55,7 @@ class Display {
      * Write a line in the CMD
      * @param $string
      */
-    public static function print($string) {
+    public static function print(string $string) : void {
 		$date = new DateTime();
         echo self::_replaceColors("%G%INFO%W% [".$date->format("m-d|H:i:s")."] ".$string."%W%").self::_br();
         ob_flush();
@@ -65,7 +65,7 @@ class Display {
      * Write a line in the CMD (CLI)
      * @param $string
      */
-    public static function printCLI($string) {
+    public static function printCLI(string $string) : void {
     	echo self::_replaceColors($string."%W%").self::_br();
         ob_flush();
     }
@@ -74,7 +74,7 @@ class Display {
      * Write a debug line in the CMD
      * @param $string
      */
-    public static function _debug($string) {
+    public static function _debug(string $string) : void {
 		if (DISPLAY_DEBUG) {
 			$date = new DateTime();
 			echo self::_replaceColors("%Y%DEBUG%W% [".$date->format("m-d|H:i:s")."] ".$string."%W%").self::_br();
@@ -86,7 +86,7 @@ class Display {
      * Write a Error line in the CMD
      * @param $string
      */
-    public static function _error($string) {
+    public static function _error(string $string) : void {
         $date = new DateTime();
         echo self::_replaceColors("%LR%ERROR%W% [".$date->format("m-d|H:i:s")."] ".$string."%W%").self::_br();
         ob_flush();
@@ -96,7 +96,7 @@ class Display {
      * Write a Error line in the CMD
      * @param $string
      */
-    public static function errorCLI($string) {
+    public static function errorCLI(string $string) : void {
         echo self::_replaceColors("%LR%ERROR%W% ".$string."%W%").self::_br();
         ob_flush();
     }
@@ -105,7 +105,7 @@ class Display {
      * Write a Warning line in the CMD
      * @param $string
      */
-    public static function _warning($string) {
+    public static function _warning(string $string) : void {
         $date = new DateTime();
         echo self::_replaceColors("%LR%WARN%W% [".$date->format("m-d|H:i:s")."] ".$string."%W%").self::_br();
         ob_flush();
@@ -125,7 +125,7 @@ class Display {
 	 * @param int $height
      * @param Block $blockMined
      */
-    public static function ShowMessageNewBlock($type,$height,$blockMined) {
+    public static function ShowMessageNewBlock(string $type,int $height, Block $blockMined) : void {
 
         $mini_hash = substr($blockMined->hash,-12);
         $mini_hash_previous = substr($blockMined->previous,-12);

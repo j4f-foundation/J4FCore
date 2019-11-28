@@ -26,7 +26,7 @@ class Blockchain {
      *
      * @return array
      */
-    public static function checkDifficulty(&$chaindata,$height = null,$isTestNet=false) {
+    public static function checkDifficulty(DB &$chaindata, int $height = null, bool $isTestNet=false) : array {
 
         // Get last block or by height
         $currentBlock = ($height == null) ? $chaindata->GetLastBlock(false):$chaindata->GetBlockByHeight($height,false);
@@ -75,7 +75,7 @@ class Blockchain {
      * @param bool $isTestNet
      * @return string
      */
-    public static function getRewardByHeight($currentHeight,$isTestNet=false) {
+    public static function getRewardByHeight(int $currentHeight,bool $isTestNet=false) : string {
         // static reward
         return bcadd("2","0",18);
     }
@@ -87,9 +87,9 @@ class Blockchain {
      * @param DB $chaindata
      * @param Block $lastBlock
      * @param Block $blockMinedByPeer
-     * @return bool
+     * @return string
      */
-    public static function isValidBlockMinedByPeer(&$chaindata,$lastBlock, $blockMinedByPeer) {
+    public static function isValidBlockMinedByPeer(DB &$chaindata, array $lastBlock, array $blockMinedByPeer) : string {
 
 		//If dont have new block
         if ($blockMinedByPeer == null)
@@ -139,14 +139,14 @@ class Blockchain {
     /**
      * Calc total fees of pending transactions to add on new block
      *
-     * @param $pendingTransactions
+     * @param array $pendingTransactions
      * @return string
      */
-    public static function GetFeesOfTransactions($pendingTransactions) {
+    public static function GetFeesOfTransactions(array $pendingTransactions) : string {
 
         $totalFees = bcadd("0","0",18);
         foreach ($pendingTransactions as $txn) {
-            $new_txn = new Transaction($txn['wallet_from_key'],$txn['wallet_to'], $txn['amount'], null,null, $txn['tx_fee'],$txn['data'],true, $txn['txn_hash'], $txn['signature'], $txn['timestamp']);
+            $new_txn = new Transaction($txn['wallet_from_key'],$txn['wallet_to'], $txn['amount'], "","", $txn['tx_fee'],$txn['data'],true, $txn['txn_hash'], $txn['signature'], $txn['timestamp']);
             if ($new_txn->isValid()) {
 				$totalFees = bcadd($totalFees,$new_txn->tx_fee,18);
             }
@@ -159,11 +159,11 @@ class Blockchain {
      * if it is valid, add the block to the temporary table so that the main process adds it to the blockchain
      *
      * @param DB $chaindata
-     * @param Block $lastBlock
-     * @param Block $blockMinedByPeer
-     * @return bool
+     * @param array $lastBlock
+     * @param array $blockMinedByPeer
+     * @return string
      */
-    public static function isValidBlockMinedByPeerInSameHeight(&$chaindata,$lastBlock, $blockMinedByPeer) {
+    public static function isValidBlockMinedByPeerInSameHeight(DB &$chaindata, array $lastBlock, array $blockMinedByPeer) : string {
 
         //If dont have new block
         if ($blockMinedByPeer == null)
@@ -229,9 +229,9 @@ class Blockchain {
 	 *
 	 * @param array $blockArray
 	 *
-	 * @return bool
+	 * @return Block
 	 */
-	public static function BlockArrayToObject($blockArray) {
+	public static function BlockArrayToObject(array $blockArray) : Block {
 		if (is_array($blockArray) && !empty($blockArray)) {
 			$infoBlock = @unserialize($blockArray['info']);
 
@@ -241,8 +241,8 @@ class Blockchain {
 					$transactionInfo['wallet_from_key'],
 					$transactionInfo['wallet_to'],
 					$transactionInfo['amount'],
-					null,
-					null,
+					"",
+					"",
 					(isset($transactionInfo['tx_fee'])) ? $transactionInfo['tx_fee']:'',
 					$transactionInfo['data'],
 					true,
@@ -258,10 +258,10 @@ class Blockchain {
 				$blockArray['block_previous'],
 				$blockArray['difficulty'],
 				$transactions,
-				'',
-				'',
-				'',
-				'',
+				null,
+				null,
+				-1,
+				-1,
 				true,
 				$blockArray['block_hash'],
 				$blockArray['nonce'],
@@ -285,7 +285,7 @@ class Blockchain {
 	 *
 	 * @return bool
 	 */
-	public static function checkIntegrity(&$chaindata,$heightToStart=null,$blocksToCheck=20) {
+	public static function checkIntegrity(DB &$chaindata,int $heightToStart=null,int $blocksToCheck=20) : bool {
 
 		$isTestNet = ($chaindata->GetNetwork() == "testnet") ? true:false;
 
@@ -332,7 +332,7 @@ class Blockchain {
      * @param int $numBlocksToRemove
      * @return bool
      */
-    public static function SanityFromBlockHeight(&$chaindata,$numBlocksToRemove=1) {
+    public static function SanityFromBlockHeight(DB &$chaindata, int $numBlocksToRemove=1) : bool {
 
 		//Get Last block without transactions
 		$lastBlock = $chaindata->GetLastBlock(false);

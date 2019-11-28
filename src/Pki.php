@@ -23,7 +23,7 @@ class Pki {
      * @param $password
      * @return array
      */
-    public static function generateKeyPair($password) {
+    public static function generateKeyPair(string $password) : array {
         $res = openssl_pkey_new([
             'private_key_bits' => 2048,
             'private_key_type' => OPENSSL_KEYTYPE_RSA
@@ -40,19 +40,19 @@ class Pki {
     /**
      * We encrypt a message with the private key
      *
-     * @param $message
-     * @param $privKey
+     * @param string $message
+     * @param string $privKey
      * @param string $password
      * @return bool|string
      */
-    public static function encrypt($message,$privKey,$password="") {
+    public static function encrypt(string $message,string $privKey, string $password="") : string {
 
         if (strlen($password) > 0) {
             if (@openssl_pkey_get_private($privKey, $password)) {
                 @openssl_private_encrypt($message, $crypted, @openssl_pkey_get_private($privKey, $password));
             }
             else {
-                return false;
+                return "";
             }
         }
         else
@@ -68,7 +68,7 @@ class Pki {
      * @param $pubKey
      * @return mixed
      */
-    public static function decrypt($crypted,$pubKey) {
+    public static function decrypt(string $crypted,string $pubKey) {
         @openssl_public_decrypt(base64_decode($crypted),$decrypted,$pubKey);
         return $decrypted;
     }
@@ -81,7 +81,7 @@ class Pki {
      * @param $pubKey
      * @return bool
      */
-    public static function isValid($message,$crypted,$pubKey) {
+    public static function isValid(string $message,string $crypted,string $pubKey) {
         return $message == self::decrypt($crypted,$pubKey);
     }
 

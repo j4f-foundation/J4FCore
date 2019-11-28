@@ -42,7 +42,7 @@ class DB extends DBBase {
      *
      * @return string
      */
-    public function GetNetwork() {
+    public function GetNetwork() : string {
         $currentNetwork = $this->db->query("SELECT val FROM config WHERE cfg = 'network';")->fetch_assoc();
         if (!empty($currentNetwork))
             return strtolower($currentNetwork['val']);
@@ -50,14 +50,14 @@ class DB extends DBBase {
     }
 
     /**
-     * @return bool|mixed
+     * @return array
      */
-    public function GetBootstrapNode() {
+    public function GetBootstrapNode() : array {
         $info_mined_blocks_by_peer = $this->db->query("SELECT * FROM peers ORDER BY id ASC LIMIT 1;")->fetch_assoc();
         if (!empty($info_mined_blocks_by_peer)) {
             return $info_mined_blocks_by_peer;
         }
-        return false;
+        return null;
     }
 
     /**
@@ -67,7 +67,7 @@ class DB extends DBBase {
      * @param $port
      * @return bool
      */
-    public function addPeer($ip,$port) {
+    public function addPeer(string $ip,string $port) : bool {
         $info_mined_blocks_by_peer = $this->db->query("SELECT ip FROM peers WHERE ip = '".$ip."' AND port = '".$port."';")->fetch_assoc();
         if (empty($info_mined_blocks_by_peer)) {
             $this->db->query("INSERT INTO peers (ip,port) VALUES ('".$ip."', '".$port."');");
@@ -83,7 +83,7 @@ class DB extends DBBase {
      * @param $port
      * @return bool
      */
-    public function haveThisPeer($ip,$port) {
+    public function haveThisPeer(string $ip,string $port) : bool {
         $info_mined_blocks_by_peer = $this->db->query("SELECT ip FROM peers WHERE ip = '".$ip."' AND port = '".$port."';")->fetch_assoc();
         if (!empty($info_mined_blocks_by_peer)) {
             return true;
@@ -96,7 +96,7 @@ class DB extends DBBase {
      *
      * @param $ipAndPort
      */
-    public function addPeerToBlackList($ipAndPort) {
+    public function addPeerToBlackList(string $ipAndPort) : void {
 		/*
         //Get IP and Port
         $tmp = explode(':',$ipAndPort);
@@ -125,7 +125,7 @@ class DB extends DBBase {
      * @param $port
      * @return bool
      */
-    public function removePeer($ip,$port) {
+    public function removePeer(string $ip,string $port) : bool {
         $info_mined_blocks_by_peer = $this->db->query("SELECT ip FROM peers WHERE ip = '".$ip."' AND port = '".$port."';")->fetch_assoc();
         if (!empty($info_mined_blocks_by_peer)) {
             if ($this->db->query("DELETE FROM peers WHERE ip = '".$ip."' AND port= '".$port."';"))
@@ -139,8 +139,8 @@ class DB extends DBBase {
      *
      * @return array
      */
-    public function GetAllPeers() {
-        $peers = array();
+    public function GetAllPeers() : array {
+        $peers = [];
         $peers_chaindata = $this->db->query("SELECT * FROM peers WHERE blacklist IS NULL OR blacklist < ".time()." ORDER BY id");
         if (!empty($peers_chaindata)) {
             while ($peer = $peers_chaindata->fetch_array(MYSQLI_ASSOC)) {
@@ -165,8 +165,8 @@ class DB extends DBBase {
      *
      * @return array
      */
-    public function GetAllPeersWithoutBootstrap() {
-        $peers = array();
+    public function GetAllPeersWithoutBootstrap() : array {
+        $peers = [];
         $peers_chaindata = $this->db->query("SELECT * FROM peers WHERE blacklist IS NULL OR blacklist < ".time()." ORDER BY id");
         if (!empty($peers_chaindata)) {
             while ($peer = $peers_chaindata->fetch_array(MYSQLI_ASSOC)) {
@@ -188,8 +188,8 @@ class DB extends DBBase {
      *
      * @return array
      */
-    public function GetPeers() {
-        $peers = array();
+    public function GetPeers() : array {
+        $peers = [];
         $peers_chaindata = $this->db->query("SELECT * FROM peers WHERE blacklist IS NULL OR blacklist < ".time()." LIMIT 25");
         if (!empty($peers_chaindata)) {
             while ($peer = $peers_chaindata->fetch_array(MYSQLI_ASSOC)) {
@@ -206,10 +206,10 @@ class DB extends DBBase {
 	/**
      * Returns the information of a wallet
      *
-     * @param $wallet
+     * @param string $wallet
      * @return array
      */
-    public function GetWalletInfo($wallet) {
+    public function GetWalletInfo(string $wallet) : array {
 
 		$totalSpend = $totalReceivedReal = $current = $totalReceived = 0;
 
@@ -234,12 +234,12 @@ class DB extends DBBase {
 	/**
 	 * Returns the tokens of a wallet
 	 *
-	 * @param $wallet
+	 * @param string $wallet
 	 * @return array
 	 */
-	public function GetWalletTokens($wallet) {
+	public function GetWalletTokens(string $wallet) : array {
 
-		$tokens = array();
+		$tokens = [];
 
 		$tokensAccount = $this->db->query("SELECT * FROM accounts_j4frc10 WHERE hash = '".$wallet."';");
 		if (!empty($tokensAccount)) {

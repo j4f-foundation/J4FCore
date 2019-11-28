@@ -25,7 +25,7 @@ class J4FVMTools {
 	 *
 	 * @return string
 	 */
-	public static function GetFunityVersion($code) {
+	public static function GetFunityVersion(string $code) : string {
 
 		$isCodeEncrypted = strpos($code,'0x');
 		if ($isCodeEncrypted !== false && $isCodeEncrypted == 0)
@@ -46,7 +46,7 @@ class J4FVMTools {
      *
      * @return string
      */
-	public static function GetContractName($code) {
+	public static function GetContractName(string $code) : string {
 		$matches = [];
 		preg_match(REGEX::ContractName,$code,$matches);
 		if (!empty($matches))
@@ -62,7 +62,7 @@ class J4FVMTools {
 	 *
 	 * @return array
      */
-	public static function getTokenDefine($code) {
+	public static function getTokenDefine(string $code) : array {
 
 		$token = null;
 
@@ -133,7 +133,7 @@ class J4FVMTools {
 	 *
 	 * @return bool
 	 */
-	public static function isJ4FRC10Standard($code) {
+	public static function isJ4FRC10Standard(string $code) : bool {
 		$matches = [];
 		preg_match(REGEX::isJ4FRC10,$code,$matches);
 		if (!empty($matches))
@@ -149,7 +149,7 @@ class J4FVMTools {
 	 *
 	 * @return bool
 	 */
-	public static function isJ4FRC20Standard($code) {
+	public static function isJ4FRC20Standard(string $code) : bool {
 		$matches = [];
 		preg_match(REGEX::isJ4FRC20,$code,$matches);
 		if (!empty($matches))
@@ -166,7 +166,7 @@ class J4FVMTools {
 	 *
 	 * @return string
 	 */
-	public static function getFunctionFromMethod($code,$functionToCall) {
+	public static function getFunctionFromMethod(string $code, string $functionToCall) : string {
 		$functions = self::getFunctions($code,false);
 		if (!empty($functions['public'])) {
 			foreach ($functions['public'] as $function=>$params) {
@@ -175,7 +175,7 @@ class J4FVMTools {
 				}
 			}
 		}
-		return false;
+		return "";
 	}
 
 	/**
@@ -185,7 +185,7 @@ class J4FVMTools {
 	 *
 	 * @return array
 	 */
-	public static function getFunctions($code,$withCode=false) {
+	public static function getFunctions(string $code,bool $withCode=false) : array {
 
 		$functions = array(
 			'public' => array(),

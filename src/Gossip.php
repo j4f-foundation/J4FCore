@@ -18,7 +18,7 @@
 
 use React\Socket\ConnectionInterface;
 
-class Gossip {
+final class Gossip {
 
     public $name;
     public $key;
@@ -59,8 +59,7 @@ class Gossip {
      * @param bool      $bootstrap_node
      * @param bool      $isTestNet
      */
-    public function __construct($db, $name, $ip, $port, $enable_mine, $make_genesis_block=false, $bootstrap_node = false, $isTestNet=false, $sanityBlockchain=-1)
-    {
+    public function __construct(DB $db,string $name,string $ip,string $port,bool $enable_mine,bool $make_genesis_block=false,bool $bootstrap_node = false,bool $isTestNet=false, int $sanityBlockchain=-1) {
 		//Clear screen
 		Display::ClearScreen();
 
@@ -131,7 +130,7 @@ class Gossip {
 		$this->pending_transactions = array();
 
 		//We create the Wallet for the node
-		$this->key = new Key(Wallet::LoadOrCreate('coinbase',null));
+		$this->key = new Key(Wallet::LoadOrCreate('coinbase',"null"));
 
 		if (strlen($this->key->pubKey) != 451) {
 			Display::_error("Can't get the public/private key");
@@ -275,7 +274,7 @@ class Gossip {
 				if ($lastBlock_LocalNode == 0) {
 					//Make Genesis from Peer
 					$genesis_block_peer = Peer::GetGenesisBlock($ipAndPort);
-					$genesisMakeBlockStatus = GenesisBlock::makeFromPeer($genesis_block_peer,$gossip->chaindata);
+					$genesisMakeBlockStatus = GenesisBlock::makeFromPeer($gossip->chaindata,$genesis_block_peer);
 
 					if ($genesisMakeBlockStatus)
 						Display::print("%Y%Imported%W% GENESIS block header               %G%count%W%=1");
@@ -464,14 +463,15 @@ class Gossip {
 		    )
 		));
 
-		Display::print("%LP%Network%W% Listening on		%G%{$gossip->ip}%W%:%G%{$gossip->port}%W%");
+		$address = $socket->getAddress();
+		Display::print("%LP%Network%W% Listening on		%G%{$socket->getAddress()}%W%");
 
 		//Gossip
 		$socket->on('connection', function(ConnectionInterface $connection) use (&$gossip) {
 
 			$dataFromPeer = '';
 
-			$connection->on('data', function($data) use (&$connection, &$dataFromPeer, &$gossip){
+			$connection->on('data', function($data) use (&$connection, &$dataFromPeer, &$gossip) : void {
 				if (strlen($data) > 0) {
 					//Concatenate data from peer
 					$dataFromPeer .= $data;
@@ -837,6 +837,12 @@ class Gossip {
 					}
 				}
 		    });
+
+			//Remove peer when disconnect
+			$connection->on('close', function () use ($connection): void {
+	            //unset($this->peers[$connection->getRemoteAddress()]);
+	        });
+
 		});
 
 		//Start node
@@ -849,7 +855,7 @@ class Gossip {
      *
      * @return  bool
      */
-    public function _addBootstrapNode(&$gossip) {
+    public function _addBootstrapNode(Gossip &$gossip) : void {
 
         if ($gossip->isTestNet) {
             $ip = NODE_BOOTSTRAP_TESTNET;
@@ -899,7 +905,7 @@ class Gossip {
      * @param   bool      $displayMessage
      * @return  bool
      */
-    public function _addPeer($ip, $port,$displayMessage=true) {
+    public function _addPeer(string $ip,string $port, bool $displayMessage=true) : bool {
 
         if (!$this->chaindata->haveThisPeer($ip,$port) && ($this->ip != $ip || ($this->ip == $ip && $this->port != $port))) {
 
@@ -929,7 +935,7 @@ class Gossip {
     /**
      * Check the connection with the peers, if they do not respond remove them
      */
-    public function CheckConnectionWithPeers(&$gossip) {
+    public function CheckConnectionWithPeers(Gossip &$gossip) : void {
 
         //Run subprocess peerAlive per peer
         $peers = $gossip->chaindata->GetAllPeersWithoutBootstrap();
@@ -942,14 +948,14 @@ class Gossip {
             Tools::writeLog('Checking status of peers count='.count($peers));
 
             //Run subprocess propagation
-            Subprocess::newProcess(Tools::GetBaseDir()."subprocess".DIRECTORY_SEPARATOR,'peerAlive',"",-1);
+            Subprocess::newProcess(Tools::GetBaseDir()."subprocess".DIRECTORY_SEPARATOR,'peerAlive',[],-1);
         }
     }
 
     /**
      * Set the title of the process with useful information
      */
-    public function SetTitleProcess() {
+    public function SetTitleProcess() : void {
         $title = "J4F Node";
         $title .= " | PeerID: " . substr(PoW::hash($this->ip . $this->port), 0, 18);
         if ($this->connected_to_bootstrap || $this->bootstrap_node)
@@ -977,7 +983,7 @@ class Gossip {
     /**
      * We get the pending transactions from BootstrapNode
      */
-    public function GetPendingTransactions() {
+    public function GetPendingTransactions() : void {
         if (!$this->bootstrap_node) {
 
             //Get transactions from peer
@@ -993,7 +999,7 @@ class Gossip {
     /**
      * Show subprocess miners log
      */
-    public function ShowInfoSubprocessMiners() {
+    public function ShowInfoSubprocessMiners() : void {
 
         //Check if miners are enabled
         if (@!file_exists(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR.Subprocess::$FILE_MINERS_STARTED))
@@ -1040,7 +1046,7 @@ class Gossip {
     /**
      * Show subprocess propagation log
      */
-    public function ShowLogSubprocess() {
+    public function ShowLogSubprocess() : void {
         $logFile = Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."log";
         if (@file_exists($logFile)) {
             $currentLog = @file($logFile);
@@ -1056,7 +1062,7 @@ class Gossip {
 	/**
 	 * Mine process
 	 */
-	public function mineProcess() {
+	public function mineProcess() : void {
 		//Enable Miners if not enabled
 		if (@!file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MINERS_STARTED)) {
 
@@ -1180,7 +1186,7 @@ class Gossip {
      *
      * @param   int    $numBlocksToRemove
      */
-	public function SanityFromBlockHeight($numBlocksToRemove=1) {
+	public function SanityFromBlockHeight(int $numBlocksToRemove=1) : void {
 		Display::print("%LR%SANITY Started %W%- Removing blocks (%G%" . $numBlocksToRemove . "%W%)");
 		Blockchain::SanityFromBlockHeight($this->chaindata,$numBlocksToRemove);
 		Display::print("%LR%SANITY Finished %W%- Restart your client");

@@ -27,41 +27,43 @@ class Gas {
 	 *
 	 * @return int
 	 */
-	public static function calculateGasTxn(&$chaindata, $contractHash, $txnData) {
+	public static function calculateGasTxn(DB &$chaindata, string $contractHash, string $txnData) : int {
 
 		//Default, use 21000 of gas
 		$totalGasUsed = 21000;
 
 		//Check if this txn run a contract
-		if (@strlen($contractHash) == 128) {
+		if (@strlen($contractHash) != 128)
+			return $totalGasUsed;
 
-			//Check if have data
-			if (@strlen($txnData) > 0 && $txnData != '0x') {
-				$contractInfo = $chaindata->GetContractByHash($contractHash);
+		//Check if have data
+		if (@strlen($txnData) == 0 || $txnData == '0x')
+			return $totalGasUsed;
 
-				//Check if have info about this contract
-				if (@is_array($contractInfo) && !@empty($contractInfo)) {
+		//Get contract
+		$contractInfo = $chaindata->GetContractByHash($contractHash);
 
-					//Parse contractCode and callCode
-					$code = Tools::hex2str($contractInfo['code']);
-					$callCode = @json_decode(Tools::hex2str($txnData),true);
+		//Check if have info about this contract
+		if (@is_array($contractInfo) && !@empty($contractInfo)) {
 
-					//Check if callCode parsed its OK
-					if (@is_array($callCode) && !@empty($callCode)) {
+			//Parse contractCode and callCode
+			$code = Tools::hex2str($contractInfo['code']);
+			$callCode = @json_decode(Tools::hex2str($txnData),true);
 
-						//Get functionName from callCode
-						$functionToCall = J4FVMTools::getFunctionFromMethod($code,$callCode['Method']);
+			//Check if callCode parsed its OK
+			if (@is_array($callCode) && !@empty($callCode)) {
 
-						//if found this function
-						if (@strlen($functionToCall) > 0) {
+				//Get functionName from callCode
+				$functionToCall = J4FVMTools::getFunctionFromMethod($code,$callCode['Method']);
 
-							//Get all functions from contract
-							$functions = J4FVMTools::getFunctions($code,true);
+				//if found this function
+				if (@strlen($functionToCall) > 0) {
 
-							//Get gas from callFunction (Recursive)
-							$totalGasUsed = self::GetGas($functionToCall,$functions,$totalGasUsed);
-						}
-					}
+					//Get all functions from contract
+					$functions = J4FVMTools::getFunctions($code,true);
+
+					//Get gas from callFunction (Recursive)
+					$totalGasUsed = self::GetGas($functionToCall,$functions,$totalGasUsed);
 				}
 			}
 		}
@@ -79,7 +81,7 @@ class Gas {
 	 *
 	 * @return int
 	 */
-	private static function GetGas($funcCalled,$functions,$totalGasUsed) {
+	private static function GetGas(string $funcCalled,array $functions,int $totalGasUsed) : int {
 
 		$function = null;
 

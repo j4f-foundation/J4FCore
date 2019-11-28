@@ -29,7 +29,7 @@ class Peer {
      *
      * @return bool
      */
-    public static function SyncBlocks(&$gossip,$nextBlocksToSyncFromPeer,$currentBlocks,$totalBlocks,$ipAndPort) {
+    public static function SyncBlocks(Gossip &$gossip,array $nextBlocksToSyncFromPeer,int $currentBlocks,int $totalBlocks,string $ipAndPort) {
         $blocksSynced = 0;
         $blockSynced = null;
         $transactionsSynced = null;
@@ -156,7 +156,7 @@ class Peer {
 						$gossip->syncing = true;
 						$gossip->isBusy = false;
 						return null;
-					}	
+					}
 				}
             }
         }
@@ -174,8 +174,10 @@ class Peer {
 
 	/**
 	 * Select peer to sync with it
+	 *
+	 * @return string
 	 */
-	public static function SelectPeerToSync(&$gossip) {
+	public static function SelectPeerToSync(Gossip &$gossip) : string {
 
 		$highestChain = -1;
 
@@ -241,7 +243,7 @@ class Peer {
      * @param $ipAndPort
      * @return mixed
      */
-    public static function GetGenesisBlock($ipAndPort) {
+    public static function GetGenesisBlock(string $ipAndPort) : array {
 
         //Get IP and Port
         $tmp = explode(':',$ipAndPort);
@@ -256,7 +258,7 @@ class Peer {
         if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1)
             return $infoPOST['result'];
         else
-            return 0;
+            return [];
     }
 
     /**
@@ -267,7 +269,7 @@ class Peer {
      * @param $isTestNet
      * @return int
      */
-    public static function GetLastBlockNum($ipAndPort) {
+    public static function GetLastBlockNum(string $ipAndPort) : int {
 
         //Get IP and Port
         $tmp = explode(':',$ipAndPort);
@@ -293,7 +295,7 @@ class Peer {
      * @param string $lastBlockOnLocal
      * @return mixed
      */
-    public static function SyncNextBlocksFrom($ipAndPort,$lastBlockOnLocal) {
+    public static function SyncNextBlocksFrom(string $ipAndPort,int $lastBlockOnLocal) : array {
 
         //Get IP and Port
         $tmp = explode(':',$ipAndPort);
@@ -309,7 +311,7 @@ class Peer {
 		if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1)
             return $infoPOST['result'];
         else
-            return 0;
+            return [];
     }
 
 }

@@ -36,8 +36,9 @@ class Block {
 
     /**
      * Block constructor.
-     * @param $previous
-     * @param $difficulty
+	 * @param int $height
+     * @param string $previous
+     * @param int $difficulty
      * @param array $transactions
      * @param null $lastBlock
      * @param null $genesisBlock
@@ -50,9 +51,8 @@ class Block {
      * @param null|string $timestamp_end
      * @param null|string $merkle
      * @param null|array $info
-     * @param null|int $height
      */
-    public function __construct($height=-1,$previous,$difficulty,$transactions = array(), $lastBlock=null, $genesisBlock=null, $startNonce=0, $incrementNonce=1, $mined=false, $hash=null, $nonce=0, $timestamp=null, $timestamp_end=null, $merkle=null, $info = null) {
+    public function __construct(int $height=-1,string $previous, string $difficulty,array $transactions = array(), array $lastBlock=null, array $genesisBlock=null, int $startNonce=0, int $incrementNonce=1, bool $mined=false, string $hash=null, int $nonce=0, string $timestamp=null, string $timestamp_end=null, string $merkle=null, array $info = null) {
 
         $this->height = $height;
         $this->transactions = $transactions;
@@ -87,14 +87,14 @@ class Block {
     /**
      * Generates the first block in the network
      *
-     * @param $coinbase
-     * @param $privKey
-     * @param $amount
-     * @param $isTestNet
+     * @param string $coinbase
+     * @param string $privKey
+	 * @param int $amount
+     * @param bool $isTestNet
      *
      */
-    public static function createGenesis($coinbase, $privKey, $amount, $isTestNet=false) {
-        $transactions = array(new Transaction(null,$coinbase,$amount,$privKey,"","","If you want different results, do not do the same things"));
+    public static function createGenesis(string $coinbase, string $privKey, int $amount, bool $isTestNet=false) {
+        $transactions = array(new Transaction("",$coinbase,$amount,$privKey,"","","If you want different results, do not do the same things"));
         //$genesisBlock = new Block("",1, $transactions);
 
         Display::print("Start minning GENESIS block with " . count($transactions) . " txns - SubProcess: " . MINER_MAX_SUBPROCESS);
@@ -124,7 +124,6 @@ class Block {
         }
     }
 
-
     /**
      * Function that prepares the creation of a block and mine
      * Group all transactions of the block + the previous hash
@@ -134,11 +133,10 @@ class Block {
      * If it is not valid, it will continue to undermine
      *
      * @param int $idMiner
-     * @param int $height
      * @param bool $isTestnet
 	 * @param bool $isMultiThread
      */
-    public function mine($idMiner,$isTestnet,$isMultiThread=true) {
+    public function mine(int $idMiner,bool $isTestnet,bool $isMultiThread=true) {
 
         $this->timestamp = Tools::GetGlobalTime();
 
@@ -156,7 +154,7 @@ class Block {
 
         //We started mining
         $this->nonce = PoW::findNonce($idMiner,$data,$this->difficulty,$this->startNonce,$this->incrementNonce,$isMultiThread);
-        if ($this->nonce !== false) {
+        if ($this->nonce != "") {
             //Make hash and merkle for this block
             $this->hash = PoW::hash($data.$this->nonce);
             $this->merkle = PoW::hash($data.$this->nonce.$this->hash);
@@ -175,7 +173,7 @@ class Block {
      *
      * @return bool|mixed
      */
-    public function GetMinerTransaction() {
+    public function GetMinerTransaction() : object {
         foreach ($this->transactions as $transaction) {
             if ($transaction->from == "") {
                 if ($transaction->isValid()) {
@@ -191,7 +189,7 @@ class Block {
      *
      * @return string
      */
-    public function GetFeesOfTransactions() {
+    public function GetFeesOfTransactions() : string {
         $totalFees = bcadd("0","0",18);
         foreach ($this->transactions as $transaction) {
             if ($transaction->isValid()) {
@@ -206,11 +204,11 @@ class Block {
     /**
      * Check if reward miner is valid
      *
-     * @param $heightBlock
+     * @param int $heightBlock
      * @param bool $isTestNet
      * @return bool
      */
-    public function isValidReward($heightBlock,$isTestNet=false) {
+    public function isValidReward(int $heightBlock, bool $isTestNet=false) : bool {
 
         //Get miner transaction
         $minerTransaction = $this->GetMinerTransaction();
@@ -241,7 +239,7 @@ class Block {
      *
      * @return bool
      */
-    public function isValid($height,$isTestnet) {
+    public function isValid(int $height,bool $isTestnet) : bool {
 
         //Define data to check
         $data = "";
@@ -258,7 +256,7 @@ class Block {
         //Add previous block
         $data .= $this->previous;
 
-        return PoW::isValidNonce($data,$this->nonce,$this->difficulty, $this->info['max_difficulty']);
+        return PoW::isValidNonce($data,$this->nonce, $this->difficulty, $this->info['max_difficulty']);
     }
 }
 ?>

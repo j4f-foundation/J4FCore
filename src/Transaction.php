@@ -17,6 +17,7 @@
 // along with the J4FCore library. If not, see <http://www.gnu.org/licenses/>.
 
 class Transaction {
+
     public $hash;
     public $from;
     public $to;
@@ -28,21 +29,21 @@ class Transaction {
 
     /**
      * Transaction constructor.
-     * @param $from
-     * @param $to
-     * @param $amount
-     * @param $privKey
+     * @param string $from
+     * @param string $to
+     * @param string $amount
+     * @param string $privKey
      * @param string $password
      * @param int $tx_fee
      * @param bool $signed
-     * @param null $hash
-     * @param null $signature
-     * @param null $timestamp
+     * @param string $hash
+     * @param string $signature
+     * @param string $timestamp
      */
-    public function __construct($from,$to,$amount,$privKey,$password="",$tx_fee,$data='',$signed=false,$hash=null,$signature=null,$timestamp=null)
+    public function __construct(string $from,string $to, string $amount,string $privKey,string $password="",string $tx_fee,string $data='',bool $signed=false,string $hash=null,string $signature=null,string $timestamp=null)
     {
         $this->tx_fee = ($tx_fee != null) ? bcadd($tx_fee,"0",18):bcadd("0","0",18);
-        $this->from = $from;
+		$this->from = ($from == "") ? null:$from;
         $this->to = $to;
 		$this->amount = bcadd($amount,"0",18);
 
@@ -77,7 +78,7 @@ class Transaction {
      *
      * @return string
      */
-    public function message() {
+    public function message() : string {
         return PoW::hash($this->from.$this->to.$this->amount.$this->tx_fee.$this->timestamp.$this->data);
     }
 
@@ -86,7 +87,7 @@ class Transaction {
      *
      * @return bool
      */
-    public function isValid() {
+    public function isValid() : bool {
         return !$this->from || Pki::isValid($this->message(), $this->signature, $this->from);
     }
 }

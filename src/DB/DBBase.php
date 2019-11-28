@@ -19,10 +19,10 @@
 class DBBase extends DBBlocks {
 
     /**
-     * @param $table
+     * @param string $table
      * @return bool
      */
-    public function truncate($table) {
+    public function truncate(string $table) : bool {
         if ($this->db->query("TRUNCATE TABLE " . $table.";"))
             return true;
         return false;
@@ -33,7 +33,7 @@ class DBBase extends DBBlocks {
      *
      * @return bool`
      */
-    public function HaveRocksDBEngine() {
+    public function HaveRocksDBEngine() : bool {
 		try {
 			$query = $this->db->query("SHOW ENGINES;");
 	        if (!empty($query)) {
@@ -52,7 +52,7 @@ class DBBase extends DBBlocks {
      *
      * @return array
      */
-    public function GetAllConfig() {
+    public function GetAllConfig() : array {
         $_CONFIG = array();
         $query = $this->db->query("SELECT cfg, val FROM config");
         if (!empty($query)) {
@@ -68,21 +68,21 @@ class DBBase extends DBBlocks {
      * @param $key
      * @return string
      */
-    public function GetConfig($key) {
+    public function GetConfig(string $key) : string {
         $currentConfig = $this->db->query("SELECT val FROM config WHERE cfg = '".$key."';")->fetch_assoc();
         if (!empty($currentConfig)) {
             return $currentConfig['val'];
         }
-        return null;
+        return "";
     }
 
     /**
      * Save config on database
      *
-     * @param $key
-     * @param $value
+     * @param string $key
+     * @param string $value
      */
-    public function SetConfig($key,$value) {
+    public function SetConfig(string $key,string $value) : void {
         $currentConfig = $this->db->query("SELECT val FROM config WHERE cfg = '".$key."';")->fetch_assoc();
         if (empty($currentConfig)) {
             $this->db->query("INSERT INTO config (cfg,val) VALUES ('".$key."', '".$value."');");

@@ -27,7 +27,7 @@ class DBContracts extends DBTransactions {
 	 * @param string $dataHexBytes
      * @return bool
      */
-    public function addSmartContract($contractHash,$txn_hash,$codeHexBytes,$dataHexBytes) {
+    public function addSmartContract(string $contractHash,string $txn_hash,string $codeHexBytes,string $dataHexBytes) : bool {
 
         $error = false;
 
@@ -70,7 +70,7 @@ class DBContracts extends DBTransactions {
      * @param string $contractHash
      * @return bool
      */
-	public function removeSmartContract($contractHash) {
+	public function removeSmartContract(string $contractHash) : bool {
 		$error = false;
 
         $info_contract_chaindata = $this->db->query("SELECT contract_hash FROM smart_contracts WHERE contract_hash = '".$contractHash."';")->fetch_assoc();
@@ -113,7 +113,7 @@ class DBContracts extends DBTransactions {
 	 * @param string $dataHexBytes
      * @return bool
      */
-    public function updateStoredDataContract($contractHash,$txnHash,$dataHexBytes) {
+    public function updateStoredDataContract(string $contractHash,string $txnHash,string $dataHexBytes) : bool {
 		//NoSQL Update storedData of Contract
 		$stateMachine = SmartContractStateMachine::store($contractHash,Tools::GetBaseDir().'data'.DIRECTORY_SEPARATOR.'db');
 		$stateMachine->insert($txnHash,["state" => $dataHexBytes]);
@@ -123,42 +123,42 @@ class DBContracts extends DBTransactions {
     /**
      * Returns a contract given a transaction hash
      *
-     * @param $txn_hash
-     * @return mixed
+     * @param string $txn_hash
+     * @return array
      */
-    public function GetContractByTxn($txn_hash) {
+    public function GetContractByTxn(string $txn_hash) : array {
 
         $sql = "SELECT * FROM smart_contracts WHERE txn_hash = '".$txn_hash."';";
         $info_contract = $this->db->query($sql)->fetch_assoc();
         if (!empty($info_contract)) {
             return $info_contract;
         }
-        return null;
+        return [];
 	}
 
     /**
      * Returns a contract given a hash
      *
-     * @param $txn_hash
-     * @return mixed
+     * @param string $txn_hash
+     * @return array
      */
-    public function GetContractByHash($contract_hash) {
+    public function GetContractByHash(string $contract_hash) : array {
 
         $sql = "SELECT * FROM smart_contracts WHERE contract_hash = '".$contract_hash."';";
         $info_contract = $this->db->query($sql)->fetch_assoc();
         if (!empty($info_contract)) {
             return $info_contract;
         }
-        return null;
+        return [];
 	}
 
 	/**
      * Returns a owner of contract given a hash
      *
-     * @param $txn_hash
-     * @return mixed
+     * @param string $txn_hash
+     * @return string
      */
-    public function GetOwnerContractByHash($contract_hash) {
+    public function GetOwnerContractByHash(string $contract_hash) : string {
 
         $sql = "
 		SELECT t.wallet_from
@@ -170,7 +170,7 @@ class DBContracts extends DBTransactions {
         if (!empty($info_contract)) {
             return $info_contract['wallet_from'];
         }
-        return null;
+        return "";
 	}
 
     /**
@@ -180,10 +180,10 @@ class DBContracts extends DBTransactions {
 	 * @param string $contract_hash
 	 * @param string $wallet_from
 	 * @param string $wallet_to
-	 * @param int $amount
+	 * @param float $amount
      * @return bool
      */
-	public function addInternalTransaction($txn_hash,$contract_hash,$wallet_from,$wallet_to,$amount) {
+	public function addInternalTransaction(string $txn_hash,string $contract_hash,string $wallet_from,string $wallet_to,float $amount) : bool {
 
 		$error = false;
 
@@ -281,7 +281,7 @@ class DBContracts extends DBTransactions {
 	 * @param int $tokenId
      * @return bool
      */
-	public function addInternalTransactionToken($txn_hash,$contract_hash,$wallet_from,$wallet_to,$tokenId) {
+	public function addInternalTransactionToken(string $txn_hash,string $contract_hash,string $wallet_from,string $wallet_to,int $tokenId) : bool {
 
 		$error = false;
 
@@ -345,14 +345,14 @@ class DBContracts extends DBTransactions {
      * @param string $txn_hash
      * @return mixed
      */
-    public function GetInternalTransactionByTxnHash($contract_hash,$txn_hash) {
+    public function GetInternalTransactionByTxnHash(string $contract_hash,string $txn_hash) : array {
 
         $sql = "SELECT * FROM smart_contracts_txn WHERE txn_hash = '".$txn_hash."' AND contract_hash = '".$contract_hash."';";
         $info_internalTxn = $this->db->query($sql)->fetch_assoc();
         if (!empty($info_internalTxn)) {
             return $info_internalTxn;
         }
-        return null;
+        return [];
 	}
 
 	/**
@@ -362,14 +362,14 @@ class DBContracts extends DBTransactions {
      * @param string $txn_hash
      * @return mixed
      */
-    public function GetInternalTransactionTokenByTxnHash($contract_hash,$txn_hash) {
+    public function GetInternalTransactionTokenByTxnHash(string $contract_hash,string $txn_hash) : array {
 
         $sql = "SELECT * FROM smart_contracts_txn_token WHERE txn_hash = '".$txn_hash."' AND contract_hash = '".$contract_hash."';";
         $info_internalTxn = $this->db->query($sql)->fetch_assoc();
         if (!empty($info_internalTxn)) {
             return $info_internalTxn;
         }
-        return null;
+        return [];
 	}
 }
 

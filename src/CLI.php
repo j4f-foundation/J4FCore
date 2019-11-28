@@ -22,7 +22,7 @@ class CLI {
      * Set a Title for Wallet CLI
      *
      */
-	public static function Title() {
+	public static function Title() : void {
 		Display::ClearScreen();
 		Display::printCLI("%G%J4F CLI Wallet - Version 0.0.1");
 		Display::_br();
@@ -32,7 +32,7 @@ class CLI {
      * Show MainMenu Wallet CLI
      *
      */
-	public static function MainMenu() {
+	public static function MainMenu() : void {
 		self::Title();
 
 		Display::printCLI("Menu actions:");
@@ -72,7 +72,7 @@ class CLI {
      * Show NewWallet Menu
      *
      */
-	public static function NewWallet() {
+	public static function NewWallet() : void {
 		self::Title();
 
 		Display::printCLI("Create new J4F Wallet");
@@ -163,7 +163,7 @@ class CLI {
      * Show Balance Menu Wallet CLI
      *
      */
-	public static function GetBalance() {
+	public static function GetBalance() : void {
 		self::Title();
 
 		Display::printCLI("GetBalance of J4F Wallet");
@@ -201,7 +201,7 @@ class CLI {
      * Show SendTransaction Menu Wallet CLI
      *
      */
-	public static function SendMoney() {
+	public static function SendMoney() : void {
 		self::Title();
 
 		Display::printCLI("Send J4F to other Wallet");
@@ -380,7 +380,7 @@ class CLI {
      * Show Balance Menu Wallet CLI
      *
      */
-	public static function EncryptData() {
+	public static function EncryptData() : void {
 		self::Title();
 
 		Display::printCLI("Encrypt data");
@@ -412,7 +412,7 @@ class CLI {
      * Read Input data from CLI
      *
      */
-	public static function ReadInput() {
+	public static function ReadInput() : string {
 		$handle = fopen ("php://stdin","r");
 		$line = fgets($handle);
 		return trim($line);

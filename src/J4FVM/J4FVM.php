@@ -22,10 +22,11 @@ class J4FVM extends J4FVMBase {
      * Function that parse code for init contract
      *
      * @param string $code
+	 * @param bool $debug
      *
      * @return string
      */
-	public static function _init($code,$debug=false) {
+	public static function _init(string $code, bool $debug=false) : string {
 
 		self::$data = [];
 
@@ -51,7 +52,7 @@ class J4FVM extends J4FVMBase {
      *
      * @return string
      */
-	public static function call($code,$callCode,$debug=false) {
+	public static function call(string $code,string $callCode,bool $debug=false) : string {
 
 		//Decrypt/parse call code
 		$callCode = @json_decode(Tools::hex2str($callCode),true);
@@ -98,7 +99,7 @@ class J4FVM extends J4FVMBase {
      *
      * @return string
      */
-	public static function readCall($code,$callCode,$debug=false) {
+	public static function readCall(string $code,string $callCode,bool $debug=false) : string {
 
 		//Decrypt/parse call code
 		$callCode = @json_decode(Tools::hex2str($callCode),true);
@@ -142,9 +143,9 @@ class J4FVM extends J4FVMBase {
      * @param string $code
 	 * @param string $functionToCall
      *
-     * @return string
+     * @return bool
      */
-	public static function canCallThisFunction($code,$functionToCall) {
+	public static function canCallThisFunction(string $code,string $functionToCall) : bool {
 		$functions = J4FVMTools::getFunctions($code,false);
 		if (!empty($functions['public'])) {
 			foreach ($functions['public'] as $function=>$params) {
@@ -163,7 +164,7 @@ class J4FVM extends J4FVMBase {
 	 *
 	 * @return string
      */
-	public static function CheckJ4FRC10Standard($code) {
+	public static function CheckJ4FRC10Standard(string $code) : string {
 
 		$return = '';
 
@@ -196,7 +197,7 @@ class J4FVM extends J4FVMBase {
 	 *
 	 * @return string
 	 */
-	public static function CheckJ4FRC20Standard($code) {
+	public static function CheckJ4FRC20Standard(string $code) : string {
 
 		$return = '';
 

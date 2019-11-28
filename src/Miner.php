@@ -24,7 +24,7 @@ class Miner {
      * @param Gossip $gossip
      * @return bool
      */
-    public static function MineNewBlock(&$gossip) {
+    public static function MineNewBlock(Gossip &$gossip) : bool {
 
         //Clear stop file of miners
         @unlink(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
@@ -51,7 +51,7 @@ class Miner {
 
         if ($totalFees == null) {
             Display::_error("Can't get total fees of transactions. Cancelling mining");
-            return null;
+            return false;
         }
 
         //Add fees
@@ -64,14 +64,14 @@ class Miner {
 		$total_amount_to_miner = bcadd($total_amount_to_miner,strval($currentReward),18);
 
         //We created the mining reward txn + fees txns
-        $tx = new Transaction(null,$gossip->coinbase, $total_amount_to_miner, $gossip->key->privKey,"",null);
+        $tx = new Transaction("",$gossip->coinbase, $total_amount_to_miner, $gossip->key->privKey,"","0");
 
         //We take all pending transactions
         $transactions = array($tx);
 
         //We add pending transactions
         foreach ($transactions_pending as $txn) {
-            $new_txn = new Transaction($txn['wallet_from_key'],$txn['wallet_to'], $txn['amount'], null,null, $txn['tx_fee'], $txn['data'], true, $txn['txn_hash'], $txn['signature'], $txn['timestamp']);
+            $new_txn = new Transaction($txn['wallet_from_key'],$txn['wallet_to'], $txn['amount'], "", "", $txn['tx_fee'], $txn['data'], true, $txn['txn_hash'], $txn['signature'], $txn['timestamp']);
             if ($new_txn->isValid())
 				$transactions[] = $new_txn;
         }
@@ -105,6 +105,8 @@ class Miner {
             );
             Subprocess::newProcess($directoryProcessFile,'miner',$params,$i);
         }
+
+		return true;
     }
 
 }

@@ -115,6 +115,7 @@ class Tools {
      */
     public static function GetIdFromIpAndPort($ip,$port) {
         return substr(PoW::hash($ip.$port),0,18);
+		//return $ip.":".$port;
     }
 
     /**

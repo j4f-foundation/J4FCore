@@ -29,10 +29,9 @@ class Socket {
 	 * @return bool
      */
 
-    public static function sendMessage($ip='127.0.0.1',$port='6969', $data = array())
-    {
+    public static function sendMessage(string $ip='127.0.0.1',string $port='6969', array $data = []) : bool {
 		if (!self::isAlive($ip,$port))
-			return 'socket server offline';
+			return ['socket server offline'];
 
 		$loop = React\EventLoop\Factory::create();
 		$connector = new React\Socket\Connector($loop, array(
@@ -55,12 +54,12 @@ class Socket {
      * @param string $ip
      * @param string $port
      * @param array $data
+	 * @param int $data
 	 * @return array|null
      */
-    public static function sendMessageWithReturn($ip='127.0.0.1',$port='6969', $data, $timeout=5)
-    {
+    public static function sendMessageWithReturn(string $ip='127.0.0.1', string $port='6969', array $data, int $timeout=5) : array {
 		if (!self::isAlive($ip,$port))
-			return 'socket server offline';
+			return ['socket server offline'];
 
 		$loop = React\EventLoop\Factory::create();
 		$connector = new React\Socket\Connector($loop, array(
@@ -69,7 +68,7 @@ class Socket {
 
 		$dataParsed = @json_encode($data);
 		$dataFromPeer = '';
-		$return = false;
+		$return = [];
 
 		//Display::_debug('SEND MESSAGE: ' . $dataParsed);
 
@@ -97,7 +96,7 @@ class Socket {
 		});
 		$loop->run();
 		$promise->cancel();
-		return $return;
+		return (is_array($return)) ? $return:[];
     }
 
 	/**
@@ -107,7 +106,7 @@ class Socket {
 	 * @param string $port
 	 * @return bool
 	 */
-	public static function isAlive($ip='127.0.0.1',$port='6969') {
+	public static function isAlive(string $ip='127.0.0.1',string $port='6969') : bool {
 		$fp = @fsockopen($ip, $port, $errno, $errstr, 2);
 	    if ($fp != null && @is_resource($fp)) {
 			@fclose($fp);

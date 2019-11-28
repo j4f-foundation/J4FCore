@@ -25,7 +25,7 @@ class SmartContract {
      * @param DB $chaindata
      * @param Block $block
      */
-    public static function Make(&$chaindata,$block) {
+    public static function Make(DB &$chaindata,Block $block) : void {
 
 		foreach ($block->transactions as $transaction) {
 
@@ -60,9 +60,13 @@ class SmartContract {
 	 * All nodes create smart contracts on blockchain (local)
 	 *
 	 * @param DB $chaindata
-	 * @param Block $block
+	 * @param string $contractHash
+	 * @param string $txnHash
+	 * @param string $txnFrom
+	 * @param string $txnAmount
+	 * @param string $txnData
 	 */
-	public static function _Make(&$chaindata,$contractHash,$txnHash,$txnFrom,$txnAmount,$txnData) {
+	public static function _Make(DB &$chaindata,string $contractHash,string $txnHash,string $txnFrom,string $txnAmount,string $txnData) : void {
 
 		//Parse txn::data (contract code) to string
 		$contract_code = $txnData;
@@ -128,7 +132,7 @@ class SmartContract {
 	 * @param DB $chaindata
 	 * @param Block $block
 	 */
-	public static function CallFunction(&$chaindata,$block) {
+	public static function CallFunction(DB &$chaindata, Block $block) : void {
 
 		foreach ($block->transactions as $transaction) {
 
@@ -168,19 +172,19 @@ class SmartContract {
 	 * @param string $txnAmount
 	 * @param string $txnData
 	 */
-	public static function _CallFunction(&$chaindata,$contract,$txnHash,$txnFrom,$txnAmount,$txnData) {
+	public static function _CallFunction(DB &$chaindata,array $contract,string $txnHash,string $txnFrom,string $txnAmount,string $txnData) : string {
 
 		if (is_array($contract) && !empty($contract)) {
 
 			//Parse txn::data (call code) to string
 			$call_code = Tools::hex2str($txnData);
 			if (strlen($call_code) == 0)
-				return;
+				return "";
 
 			//Parse contract code to string
 			$code_contract = Tools::hex2str($contract['code']);
 			if (strlen($code_contract) == 0)
-				return;
+				return "";
 
 			//Parse code Funity::Call_Contract
 			$code_parsed = J4FVM::call($code_contract,$txnData);
@@ -251,78 +255,78 @@ class SmartContract {
 	 *
 	 * @param DB $chaindata
 	 * @param array $contract
+	 * @param string $callFunctionHex
 	 *
 	 * @return string
 	 */
-	public static function CallReadFunction(&$chaindata,$contract,$callFunctionHex) {
+	public static function CallReadFunction(DB &$chaindata,array $contract,string $callFunctionHex) : string {
 
-		//Obteemos todas las transacciones del bloque
-		//Si alguna transaccion va dirigida a 00000
-		if ($contract != null) {
-			//Display::print('CONTRACT HASH: ' . $contract->contract_hash);
+		if (empty($contract))
+			return "Contract null";
 
-			//Parse txn::data (call code) to string
-			$callCode = Tools::hex2str($callFunctionHex);
-			if (strlen($callCode) == 0)
-				return;
+		//Parse txn::data (call code) to string
+		$callCode = Tools::hex2str($callFunctionHex);
+		if (strlen($callCode) == 0)
+			return "";
 
-			//Parse contract code to string
-			$code_contract = Tools::hex2str($contract['code']);
-			if (strlen($code_contract) == 0)
-				return 'Error reading source code of Smart Contract';
+		//Parse contract code to string
+		$code_contract = Tools::hex2str($contract['code']);
+		if (strlen($code_contract) == 0)
+			return 'Error reading source code of Smart Contract';
 
-			//Parse code Funity::Call_Contract
-			$code_parsed = J4FVM::readCall($code_contract,$callFunctionHex,true);
+		//Parse code Funity::Call_Contract
+		$code_parsed = J4FVM::readCall($code_contract,$callFunctionHex,true);
 
-			//Define msg sender Object
-			js::define("msg",
-				array(),
-				array(
-					"sender"=> '',
-					"amount"=> '0',
-				)
-			);
+		//Define msg sender Object
+		js::define("msg",
+			array(),
+			array(
+				"sender"=> '',
+				"amount"=> '0',
+			)
+		);
 
-			//Make funity defines
-			self::MakeFunityDefines();
+		//Make funity defines
+		self::MakeFunityDefines();
 
-			//Contract Output
-			$output = '';
+		//Contract Output
+		$output = '';
 
-			//Check if parsedCode have COMPILER_ERROR
-			if (strpos($code_parsed,'J4FVM_COMPILER_ERROR') === false) {
-				try {
+		//Check if parsedCode have COMPILER_ERROR
+		if (strpos($code_parsed,'J4FVM_COMPILER_ERROR') === false) {
+			try {
 
-					//Set TXN that call contract
-					J4FVM::$txn_hash = null;
-					J4FVM::$contract_hash = $contract['contract_hash'];
+				//Set TXN that call contract
+				J4FVM::$txn_hash = null;
+				J4FVM::$contract_hash = $contract['contract_hash'];
 
-					//Set data of contract
-					$stateMachine = SmartContractStateMachine::store($contract['contract_hash'],Tools::GetBaseDir().'data'.DIRECTORY_SEPARATOR.'db');
-					J4FVM::$data = @json_decode(Tools::hex2str($stateMachine->last()['state']),true);
+				//Set data of contract
+				$stateMachine = SmartContractStateMachine::store($contract['contract_hash'],Tools::GetBaseDir().'data'.DIRECTORY_SEPARATOR.'db');
+				J4FVM::$data = @json_decode(Tools::hex2str($stateMachine->last()['state']),true);
 
-					//Run code
-					ob_start();
-					js::run($code_parsed,PoW::hash($contract['contract_hash'].rand().time()));
-					$output = ob_get_contents();
-					ob_end_clean();
+				//Run code
+				ob_start();
+				js::run($code_parsed,PoW::hash($contract['contract_hash'].rand().time()));
+				$output = ob_get_contents();
+				ob_end_clean();
 
-				} catch (Exception $e) {
-					$output = 'undefined';
-				}
+			} catch (Exception $e) {
+				$output = 'undefined';
 			}
-			return Tools::str2hex($output);
 		}
+		return Tools::str2hex($output);
 	}
 
 	/**
 	 * Contract Function (withdraw)
      * Write Internal Transaction of contract
      *
-     * @param string $receiver
+     * @param string $txnHash
+	 * @param string $contractHash
+	 * @param string $receiver
      * @return bool
      */
-	public static function Withdraw($txnHash,$contractHash,$receiver=null) {
+	public static function Withdraw(string $txnHash,string $contractHash,string $receiver=null) : bool {
 
 		if ($contractHash != null && strlen($contractHash) == 128) {
 
@@ -359,9 +363,11 @@ class SmartContract {
 	/**
      * Remove contract and all information and withdraw to owner
      *
-     * @param string $contractHash
+	 * @param string $txnHash
+	 * @param string $contractHash
+	 * @param string $receiver
      */
-	public static function Destruct($txnHash,$contractHash,$receiver=null) {
+	public static function Destruct(string $txnHash,string $contractHash,string $receiver=null) : void {
 		//Instance DB
 		$db = new DB();
 		if ($db != null) {
@@ -377,7 +383,7 @@ class SmartContract {
 	/**
      * Make Funity defines for contract
      */
-	public static function MakeFunityDefines() {
+	public static function MakeFunityDefines() : void {
 		//Define blockchain Object
 		js::define("blockchain",
 			array(

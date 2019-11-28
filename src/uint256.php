@@ -24,7 +24,7 @@ Class uint256 {
      * @param $number
      * @return string
      */
-	public static function parse($number) {
+	public static function parse(string $number) : string {
 		preg_match_all('/^(\d+\.\d*?[0-9])0{0,}$/',$number,$matches);
 		if (!isset($matches[1][0]))
 			return (string) $number;

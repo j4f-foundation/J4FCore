@@ -21,24 +21,24 @@ class DBBlocks extends DBContracts {
     /**
      * Get miner of block
      *
-     * @param $hash
-     * @return mixed
+     * @param string $hash
+     * @return object
      */
-    public function GetMinerOfBlockByHash($hash) {
-        $minerTransaction = $this->db->query("SELECT * FROM transactions WHERE block_hash = '".$hash."' AND wallet_from = '' ORDER BY tx_fee DESC, timestamp DESC LIMIT 1;")->fetch_assoc();
+    public function GetMinerOfBlockByHash(string $hash) : string {
+        $minerTransaction = $this->db->query("SELECT wallet_to FROM transactions WHERE block_hash = '".$hash."' AND wallet_from = '' ORDER BY tx_fee DESC, timestamp DESC LIMIT 1;")->fetch_assoc();
         if (!empty($minerTransaction))
             return $minerTransaction['wallet_to'];
-        return null;
+        return "";
     }
 
     /**
      * Returns a block given a hash
      *
-     * @param $hash
-     * @param $withTransactions
+     * @param string $hash
+     * @param bool $withTransactions
      * @return array
      */
-    public function GetBlockByHash($hash,$withTransactions=false) {
+    public function GetBlockByHash(string $hash,bool $withTransactions=false) : array {
         $sql = "SELECT * FROM blocks WHERE block_hash = '".$hash."'";
         $info_block = $this->db->query($sql)->fetch_assoc();
         if (!empty($info_block)) {
@@ -86,31 +86,31 @@ class DBBlocks extends DBContracts {
 
             return $info_block;
         }
-        return null;
+        return [];
     }
 
     /**
      * Returns a block given a hash
      *
-     * @param $hash
-     * @return array
+     * @param string $hash
+     * @return int
      */
-    public function GetBlockHeightByHash($hash) {
+    public function GetBlockHeightByHash($hash) : int {
         $sql = "SELECT height FROM blocks WHERE block_hash = '".$hash."' LIMIT 1;";
         $info_block = $this->db->query($sql)->fetch_assoc();
         if (!empty($info_block))
-            return $info_block['height'];
-        return null;
+            return intval($info_block['height']);
+        return -1;
     }
 
     /**
      * Returns a block given a height
      *
-     * @param $height
-     * @param $withTransactions
-     * @return mixed
+     * @param string $height
+     * @param bool $withTransactions
+     * @return array
      */
-    public function GetBlockByHeight($height,$withTransactions=true) {
+    public function GetBlockByHeight(int $height,bool $withTransactions=true) : array {
 
         $sql = "SELECT * FROM blocks WHERE height = ".$height.";";
         $info_block = $this->db->query($sql)->fetch_assoc();
@@ -157,7 +157,7 @@ class DBBlocks extends DBContracts {
 
             return $info_block;
         }
-        return null;
+        return [];
     }
 
     /**
@@ -167,7 +167,7 @@ class DBBlocks extends DBContracts {
      * @param Block $blockInfo
      * @return bool
      */
-    public function addBlock($blockNum,$blockInfo) {
+    public function addBlock(int $blockNum,Block $blockInfo) : bool {
 
         $error = false;
 
@@ -269,7 +269,7 @@ class DBBlocks extends DBContracts {
      * @param int $height
      * @return bool
      */
-    public function RemoveBlock($height) {
+    public function RemoveBlock(int $height) : bool {
 
         $error = false;
 
@@ -551,7 +551,7 @@ class DBBlocks extends DBContracts {
      * @param string $hash
      * @return bool
      */
-    public function RemoveBlockByHash($hash) {
+    public function RemoveBlockByHash(string $hash) : bool {
 
         $error = false;
 
@@ -563,20 +563,18 @@ class DBBlocks extends DBContracts {
     }
 
     /**
-     * Remove block, transactions, smart contract, internal transactions
+     * Remove block, transactions, smart contract, internal transactions given a height
      *
      * @param int $height
      */
-    public function RemoveLastBlocksFrom($height) {
-
-		$error = false;
-
+    public function RemoveLastBlocksFrom(int $height) : bool {
 		$lastBlock = $this->GetLastBlock();
 		if (@is_array($lastBlock) && !@empty($lastBlock)) {
 			if ($height > 0) {
 				for ($i = $lastBlock['height']; $i > $height; $i--) {
 					$this->RemoveBlock($i);
 				}
+				return true;
 			}
 		}
 		return false;
@@ -586,18 +584,18 @@ class DBBlocks extends DBContracts {
      * Returns the next block number in the block chain
      * Must be the number entered in the next block
      *
-     * @return mixed
+     * @return int
      */
-    public function GetNextBlockNum() {
-        return $this->db->query("SELECT COUNT(height) as NextBlockNum FROM blocks")->fetch_assoc()['NextBlockNum'];
+    public function GetNextBlockNum() : int {
+        return intval($this->db->query("SELECT COUNT(height) as NextBlockNum FROM blocks")->fetch_assoc()['NextBlockNum']);
     }
 
     /**
      * Returns the GENESIS block
      *
-     * @return mixed
+     * @return array
      */
-    public function GetGenesisBlock() {
+    public function GetGenesisBlock() : array {
         $genesis_block = null;
         $blocks_chaindata = $this->db->query("SELECT * FROM blocks WHERE height = 0");
         //If we have block information, we will import them into a new BlockChain
@@ -631,11 +629,11 @@ class DBBlocks extends DBContracts {
     /**
      * Returns last block
      *
-     * @param $withTransactions
+     * @param bool $withTransactions
      *
-     * @return mixed
+     * @return array
      */
-    public function GetLastBlock($withTransactions=true) {
+    public function GetLastBlock(bool $withTransactions=true) : array {
         $lastBlock = null;
         $infoLastBlock = $this->db->query("SELECT * FROM blocks ORDER BY height DESC LIMIT 1");
         //If we have block information, we will import them into a new BlockChain
@@ -687,10 +685,10 @@ class DBBlocks extends DBContracts {
     /**
      * Returns the blocks to be synchronized from the block passed by parameter
      *
-     * @param $fromBlock
+     * @param int $fromBlock
      * @return array
      */
-    public function SyncBlocks($fromBlock) {
+    public function SyncBlocks(int $fromBlock) : array {
         $blocksToSync = array();
         $blocks_chaindata = $this->db->query("SELECT * FROM blocks ORDER BY height ASC LIMIT ".$fromBlock.",100");
 
@@ -723,14 +721,13 @@ class DBBlocks extends DBContracts {
         return $blocksToSync;
     }
 
-
 	/**
      * Get Avg time block from height
      *
      * @param $height
-     * @return int
+     * @return float
      */
-	public function GetAvgBlockTime($height) {
+	public function GetAvgBlockTime(int $height) : float {
 
 		$totalTimeMined = 0;
 		$numBlocks = 0;

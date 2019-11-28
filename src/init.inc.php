@@ -67,9 +67,11 @@ date_default_timezone_set("UTC");
 ini_set('memory_limit', '512M');
 set_time_limit(0);
 
-//error_reporting(E_ALL & ~E_NOTICE);
-error_reporting(0);
-ini_set('display_errors', "off");
+error_reporting(E_ALL & ~E_NOTICE);
+ini_set('display_errors', "on");
+
+//error_reporting(0);
+//ini_set('display_errors', "off");
 
 if (DB_PASS == "DEFINE_YOUR_PASSWORD") {
     Display::print("%LR%ERROR%W%    Database password not defined");
