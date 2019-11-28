@@ -89,7 +89,7 @@ class Blockchain {
      * @param Block $blockMinedByPeer
      * @return string
      */
-    public static function isValidBlockMinedByPeer(DB &$chaindata, array $lastBlock, array $blockMinedByPeer) : string {
+    public static function isValidBlockMinedByPeer(DB &$chaindata, array $lastBlock, Block $blockMinedByPeer) : string {
 
 		//If dont have new block
         if ($blockMinedByPeer == null)

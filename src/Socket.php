@@ -26,12 +26,12 @@ class Socket {
      * @param string $ip
      * @param string $port
      * @param array $data
-	 * @return bool
+	 * @return array
      */
 
     public static function sendMessage(string $ip='127.0.0.1',string $port='6969', array $data = []) : bool {
 		if (!self::isAlive($ip,$port))
-			return ['socket server offline'];
+			return false;
 
 		$loop = React\EventLoop\Factory::create();
 		$connector = new React\Socket\Connector($loop, array(
@@ -55,7 +55,7 @@ class Socket {
      * @param string $port
      * @param array $data
 	 * @param int $data
-	 * @return array|null
+	 * @return array
      */
     public static function sendMessageWithReturn(string $ip='127.0.0.1', string $port='6969', array $data, int $timeout=5) : array {
 		if (!self::isAlive($ip,$port))
