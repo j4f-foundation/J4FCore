@@ -8,7 +8,7 @@ Total coins: Unlimited
 Blocks every: Mainnet ?? (average) | Testnet: 10 sec (average)
 ```
 
-![php >= 7.1](https://img.shields.io/badge/php-%3E%3D%207.1-blue)
+![php >= 7.3](https://img.shields.io/badge/php-%3E%3D%207.1-blue)
 ![GPL 3.0](https://img.shields.io/badge/license-GPL%203.0-orange)
 
 # Requisites
@@ -19,7 +19,7 @@ Blocks every: Mainnet ?? (average) | Testnet: 10 sec (average)
 - ReactPHP [See more](https://reactphp.org/)
 - OpenSSL
 - MariaDB Server with RocksDB Engine
-- PHP 7.1 or higher
+- PHP 7.3 or higher
 - PHP Extensions:
   - php_mysqli
   - php_bcmath
