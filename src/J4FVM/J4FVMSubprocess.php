@@ -111,8 +111,11 @@ Class J4FVMSubprocess {
 		}
 	}
 
-	public function output() : string {
-		return $this->output;
+	public function output() : array {
+		if (is_string($this->output))
+			return [$this->output];
+		else
+			return $this->output;
 	}
 }
 ?>

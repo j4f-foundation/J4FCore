@@ -173,7 +173,7 @@ class Block {
      *
      * @return bool|mixed
      */
-    public function GetMinerTransaction() : object {
+    public function GetMinerTransaction() {
         foreach ($this->transactions as $transaction) {
             if ($transaction->from == "") {
                 if ($transaction->isValid()) {

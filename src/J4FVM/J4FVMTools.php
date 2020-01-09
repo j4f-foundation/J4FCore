@@ -34,9 +34,9 @@ class J4FVMTools {
 		$matches = [];
 		preg_match(REGEX::FunityVersion,$code,$matches);
 		if (!empty($matches))
-			return (isset($matches[0])) ? $matches[1]:'-1';
+			return (isset($matches[0])) ? $matches[1]:'0.0.1';
 		else
-			return '-1';
+			return '0.0.1';
 	}
 
 	/**
@@ -64,7 +64,7 @@ class J4FVMTools {
      */
 	public static function getTokenDefine(string $code) : array {
 
-		$token = null;
+		$token = [];
 
 		if (strpos($code,'define Token') !== false || strpos($code,'define Name') !== false) {
 
@@ -79,7 +79,7 @@ class J4FVMTools {
 			$matches = [];
 			preg_match(REGEX::DefineToken,$code,$matches);
 			if (count($matches) < 2) {
-				return 'Error parsing Contract struct name';
+				return ['error' => 'Error parsing Contract struct name'];
 			}
 			$token['Token'] = $matches[1];
 
@@ -87,7 +87,7 @@ class J4FVMTools {
 			$matches = [];
 			preg_match(REGEX::DefineName,$code,$matches);
 			if (count($matches) < 2) {
-				return 'Error parsing Contract struct name';
+				return ['error' => 'Error parsing Contract struct name'];
 			}
 			$token['Name'] = $matches[1];
 
@@ -97,10 +97,10 @@ class J4FVMTools {
 			if (count($matches) >= 2) {
 				$token['TotalSupply'] = $matches[1];
 				if ($token['TotalSupply'] > 1000000000000000) {
-					return '<strong class="text-danger">J4FVM_DEFINE_ERROR</strong> parsing <strong>TotalSupply</strong> max value: <strong>1000000000000000</strong>';
+					return ['error' => '<strong class="text-danger">J4FVM_DEFINE_ERROR</strong> parsing <strong>TotalSupply</strong> max value: <strong>1000000000000000</strong>'];
 				}
 				else if ($token['TotalSupply'] < 1) {
-					return '<strong class="text-danger">J4FVM_DEFINE_ERROR</strong> parsing <strong>TotalSupply</strong> min value: <strong>1</strong>';
+					return ['error' => '<strong class="text-danger">J4FVM_DEFINE_ERROR</strong> parsing <strong>TotalSupply</strong> min value: <strong>1</strong>'];
 				}
 			}
 
@@ -110,10 +110,10 @@ class J4FVMTools {
 			if (count($matches) >= 2) {
 				$token['Precision'] = $matches[1];
 				if ($token['Precision'] > 18) {
-					return '<strong class="text-danger">J4FVM_DEFINE_ERROR</strong> parsing <strong>Precision</strong> max value: <strong>18</strong>';
+					return ['error' => '<strong class="text-danger">J4FVM_DEFINE_ERROR</strong> parsing <strong>Precision</strong> max value: <strong>18</strong>'];
 				}
 				if ($token['Precision'] < 0) {
-					return '<strong class="text-danger">J4FVM_DEFINE_ERROR</strong> parsing <strong>Precision</strong> min value: <strong>0</strong>';
+					return ['error' => '<strong class="text-danger">J4FVM_DEFINE_ERROR</strong> parsing <strong>Precision</strong> min value: <strong>0</strong>'];
 				}
 			}
 		}

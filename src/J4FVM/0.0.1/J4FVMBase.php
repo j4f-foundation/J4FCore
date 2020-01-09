@@ -232,7 +232,7 @@ class J4FVMBase {
 		$matches = [];
 		preg_match_all("/define::([a-zA-Z]{0,})([;\)])/",$code_parsed,$matches);
 		//echo '<pre>'.print_r($matches,true).'</pre>';
-		if (!empty($matches[0])) {
+		if (!empty($matches[0]) && !isset($token['error'])) {
 			for ($i = 0; $i < count($matches[0]); $i++) {
 				if (isset($token[$matches[1][$i]]))
 					$code_parsed = str_replace($matches[0][$i],"'".trim($token[$matches[1][$i]])."'".$matches[2][$i],$code_parsed);

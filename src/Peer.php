@@ -29,7 +29,7 @@ class Peer {
      *
      * @return bool
      */
-    public static function SyncBlocks(Gossip &$gossip,array $nextBlocksToSyncFromPeer,int $currentBlocks,int $totalBlocks,string $ipAndPort) {
+    public static function SyncBlocks(Gossip &$gossip,array $nextBlocksToSyncFromPeer,int $currentBlocks,int $totalBlocks,string $ipAndPort) : bool {
         $blocksSynced = 0;
         $blockSynced = null;
         $transactionsSynced = null;
@@ -163,13 +163,15 @@ class Peer {
 
         if ($blocksSynced == 1) {
 			Display::ShowMessageNewBlock('imported',$lastBlock['height'],$blockSynced);
+			return true;
         } else if ($blocksSynced > 0) {
             Display::print("%Y%Imported%W% new blocks              %G%count%W%=".$blocksSynced."             %G%current%W%=".$currentBlocks."   %G%total%W%=".$totalBlocks);
+			return true;
         }
 
 		$gossip->isBusy = false;
 
-        return null;
+		return null;
     }
 
 	/**
@@ -308,8 +310,14 @@ class Peer {
             'from' => $lastBlockOnLocal
         );
 		$infoPOST = Socket::sendMessageWithReturn($ip,$port,$infoToSend);
-		if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1)
-            return $infoPOST['result'];
+		if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1) {
+			if (is_array($infoPOST['result']) && !empty($infoPOST['result'])) {
+				return $infoPOST['result'];
+			}
+			else {
+				return [];
+			}
+		}
         else
             return [];
     }

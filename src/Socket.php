@@ -26,7 +26,7 @@ class Socket {
      * @param string $ip
      * @param string $port
      * @param array $data
-	 * @return array
+	 * @return bool
      */
 
     public static function sendMessage(string $ip='127.0.0.1',string $port='6969', array $data = []) : bool {
@@ -55,7 +55,7 @@ class Socket {
      * @param string $port
      * @param array $data
 	 * @param int $data
-	 * @return array
+	 * @return array|null
      */
     public static function sendMessageWithReturn(string $ip='127.0.0.1', string $port='6969', array $data, int $timeout=5) : array {
 		if (!self::isAlive($ip,$port))

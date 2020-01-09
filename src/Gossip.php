@@ -29,7 +29,7 @@ final class Gossip {
     public $coinbase;
     public $syncing;
     public $config;
-    public $peers = array();
+    public $peers = [];
     public $difficulty;
     public $isTestNet;
 
@@ -375,13 +375,11 @@ final class Gossip {
 			//If we are synchronizing and we are connected with the bootstrap
 			else if ($gossip->syncing) {
 
-				if (@file_exists(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sync_with_peer")) {
-					$ipAndPort = file_get_contents(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sync_with_peer");
-				}
-				else {
-					//Select a peer to sync
+				//Select a peer to sync
+				if (@file_exists(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sync_with_peer"))
+					$ipAndPort = @file_get_contents(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sync_with_peer");
+				else
 					$ipAndPort = Peer::SelectPeerToSync($gossip);
-				}
 
 				//Check if have ip and port
 				if (strlen($ipAndPort) > 0) {
@@ -391,13 +389,17 @@ final class Gossip {
 					$lastBlock_LocalNode = $gossip->chaindata->GetNextBlockNum();
 
 					if ($lastBlock_LocalNode < $lastBlock_PeerNode) {
+						//Get next peer blocks
 						$nextBlocksToSyncFromPeer = Peer::SyncNextBlocksFrom($ipAndPort,$lastBlock_LocalNode);
-						$resultSync = Peer::SyncBlocks($gossip,$nextBlocksToSyncFromPeer,$lastBlock_LocalNode,$lastBlock_PeerNode,$ipAndPort);
+						if (is_array($nextBlocksToSyncFromPeer) && !empty($nextBlocksToSyncFromPeer)) {
+							//Sync blocks
+							$resultSync = Peer::SyncBlocks($gossip,$nextBlocksToSyncFromPeer,$lastBlock_LocalNode,$lastBlock_PeerNode,$ipAndPort);
 
-						//If dont have result of sync, stop sync with this peer
-						if ($resultSync == null) {
-							//Delete sync file
-							@unlink(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer");
+							//If dont have result of sync, stop sync with this peer
+							if ($resultSync == null) {
+								//Delete sync file
+								@unlink(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer");
+							}
 						}
 					} else {
 						$gossip->syncing = false;

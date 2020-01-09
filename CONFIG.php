@@ -21,7 +21,7 @@ define('PHP_RUN_COMMAND',               'php');
 
 //DEBUG
 define('DISPLAY_DEBUG',                 false);
-define('DISPLAY_DEBUG_LEVEL',           2); //Levels: 1-4
+define('DISPLAY_DEBUG_LEVEL',           4); //Levels: 1-4
 
 //DATABASE ENGINE
 define('FORCE_USE_ROCKSDB',				true);

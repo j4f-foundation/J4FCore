@@ -126,9 +126,9 @@ class Wallet {
      *
      * @param $address
      * @param $isTestNet
-     * @return float
+     * @return string
      */
-    public static function GetBalance(string $address,bool $isTestNet=false) : float {
+    public static function GetBalance(string $address,bool $isTestNet=false) : string {
 
         if ($address == "coinbase") {
             $wallet_from_info = self::GetCoinbase();
@@ -169,9 +169,9 @@ class Wallet {
      *
      * @param $address
      * @param $isTestNet
-     * @return float
+     * @return string
      */
-    public static function API_GetBalance(string $address,bool $isTestNet=false) : float {
+    public static function API_GetBalance(string $address,bool $isTestNet=false) : string {
 
         if ($address == "coinbase") {
             $wallet_from_info = self::GetCoinbase();
@@ -197,11 +197,9 @@ class Wallet {
 
 		$totalSpend = $totalReceivedReal = $current = 0;
 
-		$walletInfo = $chaindata->db->query("SELECT * FROM accounts WHERE hash = '".$address."';")->fetch_assoc();
+		$walletInfo = $chaindata->GetWalletInfo($address);
 		if (!empty($walletInfo)) {
-			$totalSpend = uint256::parse($walletInfo['sended']);
-			$totalReceivedReal = bcadd($walletInfo['received'],$walletInfo['mined'],18);
-			$current = uint256::parse(bcsub($totalReceivedReal,$walletInfo['sended'],18));
+			$current = $walletInfo['current'];
 		}
 
 		return $current;
@@ -249,9 +247,9 @@ class Wallet {
      *
      * @param DB $chaindata
      * @param string $address
-     * @return float
+     * @return string
      */
-    public static function GetBalanceWithChaindata(DB &$chaindata,string $address) : float {
+    public static function GetBalanceWithChaindata(DB &$chaindata,string $address) : string {
 
         if ($address == "coinbase") {
             $wallet_from_info = self::GetCoinbase();
@@ -260,11 +258,9 @@ class Wallet {
 
 		$totalSpend = $totalReceivedReal = $current = 0;
 
-		$walletInfo = $chaindata->db->query("SELECT * FROM accounts WHERE hash = '".$address."';")->fetch_assoc();
+		$walletInfo = $chaindata->GetWalletInfo($address);
 		if (!empty($walletInfo)) {
-			$totalSpend = uint256::parse($walletInfo['sended']);
-			$totalReceivedReal = bcadd($walletInfo['received'],$walletInfo['mined'],18);
-			$current = uint256::parse(bcsub($totalReceivedReal,$walletInfo['sended'],18));
+			$current = $walletInfo['current'];
 		}
 		return $current;
     }
