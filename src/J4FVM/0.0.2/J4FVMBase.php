@@ -844,8 +844,8 @@ class J4FVMBase {
 
 			//Run contract
 			$statusRun = $j4fvm_process->run();
-			if ($statusRun !== true) {
-				die('<strong class="text-danger">J4FVM_Interface</strong> Internal error running Interface');
+			if ($statusRun !== "1") {
+				die('<strong class="text-danger">J4FVM_Interface</strong> Internal error running Interface ');
 			}
 			else {
 				$outputCall = '';

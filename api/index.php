@@ -339,7 +339,7 @@ if ($id != null) {
 
 						$password = ($params['password'] == 'null') ? '':$params['password'];
 
-						$data = (isset($params['data'])) ? $params['data']:null;
+						$data = (isset($params['data'])) ? $params['data']:"";
 
                         $txnHash = Wallet::API_SendTransaction($params['from'],$password,$params['to'],$params['amount'],$data,$isTestnet);
 
@@ -564,6 +564,8 @@ if ($id != null) {
 
 							$j4fvm_process = new J4FVMSubprocess('READ');
 
+							//echo J4FVMTools::GetFunityVersion($contract['code']);
+
 							//Set info for J4FVM
 							$j4fvm_process->setContractHash($params['hash']);
 							$j4fvm_process->setTxnHash('empty');
@@ -574,7 +576,7 @@ if ($id != null) {
 
 							//Run contract
 							$statusRun = $j4fvm_process->run();
-							if ($statusRun !== true) {
+							if ($statusRun !== "1") {
 								$response_jsonrpc['error'] = array(
 	                                'code'    => -32604,
 	                                'message' => 'Internal error'

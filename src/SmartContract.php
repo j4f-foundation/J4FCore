@@ -262,12 +262,12 @@ class SmartContract {
 	public static function CallReadFunction(DB &$chaindata,array $contract,string $callFunctionHex) : string {
 
 		if (empty($contract))
-			return "Contract null";
+			return "Error, Contract null";
 
 		//Parse txn::data (call code) to string
 		$callCode = Tools::hex2str($callFunctionHex);
 		if (strlen($callCode) == 0)
-			return "";
+			return "Error, no function call";
 
 		//Parse contract code to string
 		$code_contract = Tools::hex2str($contract['code']);
