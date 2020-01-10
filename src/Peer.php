@@ -81,12 +81,12 @@ class Peer {
 							} else {
 								Display::_warning("Peer ".$ipAndPort." added to blacklist       %G%reason%W%=Reward transaction not valid");
 								$gossip->chaindata->addPeerToBlackList($ipAndPort);
-								return null;
+								return false;
 							}
 						} else {
 							Display::_warning("Peer ".$ipAndPort." added to blacklist       %G%reason%W%=Has a block that I can not validate");
 							$gossip->chaindata->addPeerToBlackList($ipAndPort);
-							return null;
+							return false;
 						}
 
 					//Check if my last block is the same height of the block to import
@@ -155,7 +155,7 @@ class Peer {
 
 						$gossip->syncing = true;
 						$gossip->isBusy = false;
-						return null;
+						return false;
 					}
 				}
             }
@@ -171,7 +171,7 @@ class Peer {
 
 		$gossip->isBusy = false;
 
-		return null;
+		return false;
     }
 
 	/**
@@ -191,6 +191,7 @@ class Peer {
 		$lastBlock = $gossip->chaindata->GetLastBlock();
 		//Run subprocess peerAlive per peer
 		$peers = $gossip->chaindata->GetAllPeersWithoutBootstrap();
+		$ipAndPort = "";
 		if (count($peers) > 0) {
 			foreach ($peers as $peer) {
 				$infoToSend = array(
