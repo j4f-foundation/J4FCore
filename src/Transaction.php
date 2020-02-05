@@ -1,6 +1,6 @@
 <?php
 // Copyright 2018 MaTaXeToS
-// Copyright 2019 The Just4Fun Authors
+// Copyright 2019-2020 The Just4Fun Authors
 // This file is part of the J4FCore library.
 //
 // The J4FCore library is free software: you can redistribute it and/or modify
@@ -18,34 +18,62 @@
 
 class Transaction {
 
+	//General vars
     public $hash;
     public $from;
     public $to;
     public $amount;
     public $signature;
     public $timestamp;
-	public $tx_fee;
 	public $data;
+	public $version;
+	public $gasLimit;
+	public $gasPrice;
 
-    /**
-     * Transaction constructor.
+	public function __construct($version) {
+		$this->version = $version;
+	}
+
+	/**
+     * Create transaction using old system (with fees)
      * @param string $from
      * @param string $to
      * @param string $amount
      * @param string $privKey
      * @param string $password
-     * @param int $tx_fee
      * @param bool $signed
      * @param string $hash
      * @param string $signature
      * @param string $timestamp
      */
-    public function __construct(string $from,string $to, string $amount,string $privKey,string $password="",string $tx_fee,string $data='',bool $signed=false,string $hash=null,string $signature=null,string $timestamp=null)
+    public static function withGas(string $from, string $to, string $amount,string $privKey,string $password="",string $data='', int $gasLimit, string $gasPrice, bool $signed=false,string $hash=null,string $signature=null,string $timestamp=null)
     {
-        $this->tx_fee = ($tx_fee != null) ? bcadd($tx_fee,"0",18):bcadd("0","0",18);
+		$instanceTXN = new self("0.0.1");
+		$instanceTXN->makeTxnWithGas($from,$to,$amount,$privKey,$password,$data,$gasLimit,$gasPrice,$signed,$hash,$signature,$timestamp);
+		return $instanceTXN;
+    }
+
+	/**
+     * Create transaction using old system (with fees)
+     * @param string $from
+     * @param string $to
+     * @param string $amount
+     * @param string $privKey
+     * @param string $password
+     * @param int $gasLimit
+	 * @param string $gasPrice
+     * @param bool $signed
+     * @param string $hash
+     * @param string $signature
+     * @param string $timestamp
+     */
+	protected function makeTxnWithGas(string $from,string $to, string $amount,string $privKey,string $password="", string $data='', int $gasLimit, string $gasPrice, bool $signed=false, string $hash=null, string $signature=null, string $timestamp=null)
+    {
 		$this->from = ($from == "") ? null:$from;
         $this->to = $to;
 		$this->amount = bcadd($amount,"0",18);
+		$this->gasLimit = $gasLimit;
+		$this->gasPrice = bcadd("0",$gasPrice,18);
 
 		// Check if data is parsed
 		$data = trim($data);
@@ -73,13 +101,27 @@ class Transaction {
         }
     }
 
+	/**
+     * Get fee transaction
+     *
+     * @return string
+     */
+	public function GetFee(DB &$chaindata) {
+		$txnGas = Gas::calculateGasTxn($chaindata,$this->to,$this->data);
+		if ($txnGas <= $this->gasLimit)
+			$fees = @bcmul($txnGas,$this->gasPrice,18);
+		else
+			$fees = @bcmul($this->gasLimit,$this->gasPrice,18);
+		return $fees;
+	}
+
     /**
      * Get hash transaction
      *
      * @return string
      */
     public function message() : string {
-        return PoW::hash($this->from.$this->to.$this->amount.$this->tx_fee.$this->timestamp.$this->data);
+		return PoW::hash($this->from.$this->to.$this->amount.$this->timestamp.$this->data.$this->gasLimit.$this->gasPrice);
     }
 
     /**

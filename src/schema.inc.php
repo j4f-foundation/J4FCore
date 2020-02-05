@@ -1,6 +1,6 @@
 <?php
 // Copyright 2018 MaTaXeToS
-// Copyright 2019 The Just4Fun Authors
+// Copyright 2019-2020 The Just4Fun Authors
 // This file is part of the J4FCore library.
 //
 // The J4FCore library is free software: you can redistribute it and/or modify
@@ -39,33 +39,6 @@ if ($dbversion == 0) {
 	");
 
 	$db->db->query("
-	CREATE TABLE `blocks_announced` (
-		`id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-		`block_hash` varchar(128) NOT NULL,
-		PRIMARY KEY (`id`),
-		UNIQUE KEY `bHash` (`block_hash`)
-	) ENGINE=MyISAM AUTO_INCREMENT=323 DEFAULT CHARSET=utf8;
-	");
-
-	$db->db->query("
-	CREATE TABLE `blocks_pending_to_display` (
-		`height` int(200) unsigned NOT NULL AUTO_INCREMENT,
-		`status` varchar(10) NOT NULL,
-		`block_previous` varchar(128) NOT NULL,
-		`block_hash` varchar(128) NOT NULL,
-		`root_merkle` varchar(128) NOT NULL,
-		`nonce` varchar(200) NOT NULL,
-		`timestamp_start_miner` varchar(12) NOT NULL,
-		`timestamp_end_miner` varchar(12) NOT NULL,
-		`difficulty` varchar(255) NOT NULL,
-		`version` varchar(10) NOT NULL,
-		`info` text NOT NULL,
-		PRIMARY KEY (`height`),
-		UNIQUE KEY `bHash` (`block_hash`)
-	) ENGINE=MyISAM AUTO_INCREMENT=383 DEFAULT CHARSET=utf8;
-	");
-
-	$db->db->query("
 	CREATE TABLE `config` (
 		`cfg` varchar(200) NOT NULL,
 		`val` varchar(200) NOT NULL,
@@ -93,46 +66,14 @@ if ($dbversion == 0) {
 		`wallet_to` varchar(64) NOT NULL,
 		`amount` varchar(64) NOT NULL,
 		`signature` longtext NOT NULL,
-		`tx_fee` varchar(10) DEFAULT NULL,
 		`timestamp` varchar(12) NOT NULL,
+		`version` varchar(15) NOT NULL DEFAULT '0.0.1',
+  	    `gasLimit` int(11) NOT NULL DEFAULT 21000,
+     	`gasPrice` decimal(65,18) NOT NULL DEFAULT '0',
 		PRIMARY KEY (`txn_hash`),
 		UNIQUE KEY `txn` (`txn_hash`) USING BTREE,
 		KEY `wallet_from_to` (`wallet_from`,`wallet_to`) USING BTREE
 	) ENGINE=MyISAM DEFAULT CHARSET=utf8;
-	");
-
-	$db->db->query("
-	CREATE TABLE `transactions_pending` (
-		`txn_hash` varchar(128) NOT NULL,
-		`block_hash` varchar(128) NOT NULL,
-		`wallet_from_key` longtext,
-		`wallet_from` varchar(64) DEFAULT NULL,
-		`wallet_to` varchar(64) NOT NULL,
-		`amount` varchar(64) NOT NULL,
-		`signature` longtext NOT NULL,
-		`tx_fee` varchar(10) DEFAULT NULL,
-		`timestamp` varchar(12) NOT NULL,
-		PRIMARY KEY (`txn_hash`),
-		UNIQUE KEY `txn` (`txn_hash`) USING BTREE,
-		KEY `wallet_from_to` (`wallet_from`,`wallet_to`) USING BTREE
-	) ENGINE=MyISAM DEFAULT CHARSET=utf8;
-	");
-
-    $db->db->query("
-		CREATE TABLE `transactions_pending_to_send` (
-			`txn_hash` varchar(128) NOT NULL,
-			`block_hash` varchar(128) NOT NULL,
-			`wallet_from_key` longtext,
-			`wallet_from` varchar(64) DEFAULT NULL,
-			`wallet_to` varchar(64) NOT NULL,
-			`amount` varchar(64) NOT NULL,
-			`signature` longtext NOT NULL,
-			`tx_fee` varchar(10) DEFAULT NULL,
-			`timestamp` varchar(12) NOT NULL,
-			PRIMARY KEY (`txn_hash`),
-			UNIQUE KEY `txn` (`txn_hash`) USING BTREE,
-			KEY `wallet_from_to` (`wallet_from`,`wallet_to`) USING BTREE
-		) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 	");
 
     $db->db->query("INSERT INTO config SET cfg='dbversion', val='1';");
@@ -144,21 +85,9 @@ if ($dbversion == 0) {
 }
 
 if ($dbversion == 1) {
-
-
 	$db->db->query("
 	ALTER TABLE `transactions`
-	ADD COLUMN `data`  longblob NOT NULL AFTER `tx_fee`;
-	");
-
-	$db->db->query("
-	ALTER TABLE `transactions_pending`
-	ADD COLUMN `data`  longblob NOT NULL AFTER `tx_fee`;
-	");
-
-	$db->db->query("
-	ALTER TABLE `transactions_pending_to_send`
-	ADD COLUMN `data`  longblob NOT NULL AFTER `tx_fee`;
+	ADD COLUMN `data` longblob NOT NULL AFTER `signature`;
 	");
 
     Display::print("Updating DB Schema #".$dbversion);
@@ -189,34 +118,13 @@ if ($dbversion == 2) {
 
 if ($dbversion == 3) {
 
-
 	$db->db->query("
 	ALTER TABLE `transactions`
 	MODIFY COLUMN `wallet_to`  varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `wallet_from`;
 	");
 
 	$db->db->query("
-	ALTER TABLE `transactions_pending`
-	MODIFY COLUMN `wallet_to`  varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `wallet_from`;
-	");
-
-	$db->db->query("
-	ALTER TABLE `transactions_pending_to_send`
-	MODIFY COLUMN `wallet_to`  varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `wallet_from`;
-	");
-
-	$db->db->query("
 	ALTER TABLE `transactions`
-	MODIFY COLUMN `wallet_from`  varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL AFTER `wallet_from_key`;
-	");
-
-	$db->db->query("
-	ALTER TABLE `transactions_pending`
-	MODIFY COLUMN `wallet_from`  varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL AFTER `wallet_from_key`;
-	");
-
-    $db->db->query("
-	ALTER TABLE `transactions_pending_to_send`
 	MODIFY COLUMN `wallet_from`  varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL AFTER `wallet_from_key`;
 	");
 
@@ -234,43 +142,18 @@ if ($dbversion == 4) {
 	");
 
 	$db->db->query("
-	ALTER TABLE `transactions_pending`
-	MODIFY COLUMN `amount` varchar(78) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `wallet_to`;
-	");
-
-	$db->db->query("
-	ALTER TABLE `transactions_pending_to_send`
-	MODIFY COLUMN `amount` varchar(78) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `wallet_to`;
-	");
-
-	$db->db->query("
 	ALTER TABLE `blocks`
 	MODIFY COLUMN `difficulty`  varchar(78) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `timestamp_end_miner`;
 	");
 
 	$db->db->query("
-	ALTER TABLE `blocks_pending_to_display`
-	MODIFY COLUMN `difficulty`  varchar(78) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `timestamp_end_miner`;
-	");
-
-	$db->db->query("
 	ALTER TABLE `blocks`
-	MODIFY COLUMN `nonce`  varchar(78) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `root_merkle`;
-	");
-
-	$db->db->query("
-	ALTER TABLE `blocks_pending_to_display`
 	MODIFY COLUMN `nonce`  varchar(78) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `root_merkle`;
 	");
 
 	$db->db->query("
 	ALTER TABLE `blocks`
 	MODIFY COLUMN `block_previous`  varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `height`;
-	");
-
-    $db->db->query("
-	ALTER TABLE `blocks`
-	MODIFY COLUMN `blocks_pending_to_display`  varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL AFTER `height`;
 	");
 
     Display::print("Updating DB Schema #".$dbversion);
@@ -317,19 +200,6 @@ if ($dbversion == 7) {
 	$db->db->query("
 	ALTER TABLE `transactions`
 	MODIFY COLUMN `amount`  decimal(65,18) NOT NULL AFTER `wallet_to`,
-	MODIFY COLUMN `tx_fee`  decimal(65,18) NOT NULL AFTER `signature`;
-	");
-
-	$db->db->query("
-	ALTER TABLE `transactions_pending`
-	MODIFY COLUMN `amount`  decimal(65,18) NOT NULL AFTER `wallet_to`,
-	MODIFY COLUMN `tx_fee`  decimal(65,18) NOT NULL AFTER `signature`;
-	");
-
-	$db->db->query("
-	ALTER TABLE `transactions_pending_to_send`
-	MODIFY COLUMN `amount`  decimal(65,18) NOT NULL AFTER `wallet_to`,
-	MODIFY COLUMN `tx_fee`  decimal(65,18) NOT NULL AFTER `signature`;
 	");
 
     $db->db->query("
@@ -343,6 +213,7 @@ if ($dbversion == 7) {
 	  `sended` decimal(65,18) unsigned NOT NULL,
 	  `received` decimal(65,18) unsigned NOT NULL,
 	  `mined` decimal(65,18) unsigned NOT NULL,
+	  `fees` decimal(65,18) unsigned NOT NULL,
 	  PRIMARY KEY (`hash`)
 	) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 	");
@@ -369,16 +240,6 @@ if ($dbversion == 8) {
 
 	$db->db->query("
 	ALTER TABLE `transactions`
-	ADD INDEX `bHash` (`block_hash`) USING HASH;
-	");
-
-	$db->db->query("
-	ALTER TABLE `transactions_pending`
-	ADD INDEX `bHash` (`block_hash`) USING HASH;
-	");
-
-	$db->db->query("
-	ALTER TABLE `transactions_pending_to_send`
 	ADD INDEX `bHash` (`block_hash`) USING HASH;
 	");
 
@@ -412,17 +273,16 @@ if ($dbversion == 10) {
 	  `wallet_to` varchar(128) NOT NULL,
 	  `amount` decimal(65,18) NOT NULL,
 	  `signature` longtext NOT NULL,
-	  `tx_fee` decimal(65,18) NOT NULL,
 	  `data` longblob NOT NULL,
 	  `timestamp` varchar(12) NOT NULL,
+	  `version` varchar(15) NOT NULL DEFAULT '0.0.1',
+	  `gasLimit` int(11) NOT NULL DEFAULT 21000,
+   	  `gasPrice` decimal(65,18) NOT NULL DEFAULT '0',
 	  PRIMARY KEY (`txn_hash`),
 	  UNIQUE KEY `txn` (`txn_hash`) USING BTREE,
 	  KEY `wallet_from_to` (`wallet_from`,`wallet_to`) USING BTREE
 	) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 	");
-
-	$db->db->query("DROP TABLE transactions_pending;");
-	$db->db->query("DROP TABLE transactions_pending_to_send;");
 
     Display::print("Updating DB Schema #".$dbversion);
 
@@ -431,17 +291,6 @@ if ($dbversion == 10) {
 }
 
 if ($dbversion == 11) {
-
-	$db->db->query("DROP TABLE blocks_announced;");
-	$db->db->query("DROP TABLE blocks_pending_to_display;");
-
-    Display::print("Updating DB Schema #".$dbversion);
-
-    //Increment version to next stage
-    $dbversion++;
-}
-
-if ($dbversion == 12) {
 
 	$db->db->query("
 	CREATE TABLE `accounts_j4frc20` (
@@ -473,25 +322,25 @@ if ($dbversion == 12) {
     $dbversion++;
 }
 
-if ($dbversion == 13) {
+if ($dbversion == 12) {
 
 	$db->db->query("
 	ALTER TABLE `accounts`
 	MODIFY COLUMN `hash`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL FIRST ,
-	ENGINE=ROCKSDB;
+	ENGINE=MyISAM;
 	");
 
 	$db->db->query("
 	ALTER TABLE `accounts_j4frc10`
 	MODIFY COLUMN `hash`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL FIRST ,
 	MODIFY COLUMN `contract_hash`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `hash`,
-	ENGINE=ROCKSDB;
+	ENGINE=MyISAM;
 	");
 	$db->db->query("
 	ALTER TABLE `accounts_j4frc20`
 	MODIFY COLUMN `hash`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL FIRST ,
 	MODIFY COLUMN `contract_hash`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `hash`,
-	ENGINE=ROCKSDB;
+	ENGINE=MyISAM;
 	");
 	$db->db->query("
 	ALTER TABLE `blocks`
@@ -504,26 +353,26 @@ if ($dbversion == 13) {
 	MODIFY COLUMN `difficulty`  varchar(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `timestamp_end_miner`,
 	MODIFY COLUMN `version`  varchar(10) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `difficulty`,
 	MODIFY COLUMN `info`  text CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `version`,
-	ENGINE=ROCKSDB;
+	ENGINE=MyISAM;
 	");
 	$db->db->query("
 	ALTER TABLE `config`
 	MODIFY COLUMN `cfg`  varchar(200) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL FIRST ,
 	MODIFY COLUMN `val`  varchar(200) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `cfg`,
-	ENGINE=ROCKSDB;
+	ENGINE=MyISAM;
 	");
 	$db->db->query("
 	ALTER TABLE `peers`
 	MODIFY COLUMN `ip`  varchar(120) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `id`,
 	MODIFY COLUMN `port`  varchar(8) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `ip`,
 	MODIFY COLUMN `blacklist`  varchar(12) CHARACTER SET utf8 COLLATE utf8_bin NULL DEFAULT '' AFTER `port`,
-	ENGINE=ROCKSDB;
+	ENGINE=MyISAM;
 	");
 	$db->db->query("
 	ALTER TABLE `smart_contracts`
 	MODIFY COLUMN `contract_hash`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL FIRST ,
 	MODIFY COLUMN `txn_hash`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `contract_hash`,
-	ENGINE=ROCKSDB;
+	ENGINE=MyISAM;
 	");
 	$db->db->query("
 	ALTER TABLE `smart_contracts_txn`
@@ -532,7 +381,7 @@ if ($dbversion == 13) {
 	MODIFY COLUMN `wallet_from`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `contract_hash`,
 	MODIFY COLUMN `wallet_to`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `wallet_from`,
 	MODIFY COLUMN `timestamp`  varchar(12) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `amount`,
-	ENGINE=ROCKSDB;
+	ENGINE=MyISAM;
 	");
 	$db->db->query("
 	ALTER TABLE `smart_contracts_txn_token`
@@ -540,8 +389,8 @@ if ($dbversion == 13) {
 	MODIFY COLUMN `contract_hash`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `txn_hash`,
 	MODIFY COLUMN `wallet_from`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `contract_hash`,
 	MODIFY COLUMN `wallet_to`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `wallet_from`,
-	MODIFY COLUMN `timestamp`  varchar(12) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `tokenId`,
-	ENGINE=ROCKSDB;
+	MODIFY MyISAM `timestamp`  varchar(12) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `tokenId`,
+	ENGINE=MyISAM;
 	");
 	$db->db->query("
 	ALTER TABLE `transactions`
@@ -552,7 +401,7 @@ if ($dbversion == 13) {
 	MODIFY COLUMN `wallet_to`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `wallet_from`,
 	MODIFY COLUMN `signature`  longtext CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `amount`,
 	MODIFY COLUMN `timestamp`  varchar(12) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `data`,
-	ENGINE=ROCKSDB;
+	ENGINE=MyISAM;
 	");
 	$db->db->query("
 	ALTER TABLE `txnpool`
@@ -562,7 +411,7 @@ if ($dbversion == 13) {
 	MODIFY COLUMN `wallet_to`  varchar(128) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `wallet_from`,
 	MODIFY COLUMN `signature`  longtext CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `amount`,
 	MODIFY COLUMN `timestamp`  varchar(12) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `data`,
-	ENGINE=ROCKSDB;
+	ENGINE=MyISAM;
 	");
 
     Display::print("Updating DB Schema #".$dbversion);

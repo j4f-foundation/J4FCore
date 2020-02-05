@@ -1,6 +1,6 @@
 <?php
 // Copyright 2018 MaTaXeToS
-// Copyright 2019 The Just4Fun Authors
+// Copyright 2019-2020 The Just4Fun Authors
 // This file is part of the J4FCore library.
 //
 // The J4FCore library is free software: you can redistribute it and/or modify
@@ -438,7 +438,7 @@ class J4FVMBase {
 	 *
 	 * @return string
      */
-	public static function js_get(string $str) : string {
+	public static function js_get(object $str) : string {
 		return js_str(self::_get(php_str($str)));
 	}
 
@@ -450,7 +450,7 @@ class J4FVMBase {
 	 *
 	 * @return string
      */
-	public static function js_set(string $str,string $value) : string {
+	public static function js_set(object $str,object $value) : string {
 		return js_str(self::_set(php_str($str),php_str($value)));
 	}
 
@@ -460,7 +460,7 @@ class J4FVMBase {
      * @param string $index
 	 * @param array $value
      */
-	public static function js_table_set(string $index,array $value) : void {
+	public static function js_table_set(object $index, object $value) : void {
 		$index = php_str($index);
 		$array_value =  php_array($value);
 		self::$data[$index] = $array_value;
@@ -473,7 +473,7 @@ class J4FVMBase {
 	 * @param array $value
 	 * @param string $subindex
      */
-	public static function js_table_set_sub(string $index, array $value, string$subindex) : void {
+	public static function js_table_set_sub(object $index, object $value, object $subindex) : void {
 
 		$index = php_str($index);
 		$subindex = php_str($subindex);
@@ -489,7 +489,7 @@ class J4FVMBase {
 	 *
 	 * @return array
      */
-	public static function js_table(string $table) : object {
+	public static function js_table(object $table) : object {
 		$table = php_str($table);
 
 		if (isset(self::$data[$table]))
@@ -508,7 +508,7 @@ class J4FVMBase {
 	 *
 	 * @return mixed
      */
-	public static function js_table_get(string $table,string $index) : object {
+	public static function js_table_get(object $table,object $index) : object {
 
 		$table = php_str($table);
 		$index = php_str($index);
@@ -523,7 +523,7 @@ class J4FVMBase {
 	 *
 	 * @return mixed
      */
-	public static function js_table_uint256(string $table) : object {
+	public static function js_table_uint256(object $table) : object {
 		$table = php_str($table);
 
 		if (isset(J4FVM::$data[$table])) {
@@ -544,7 +544,7 @@ class J4FVMBase {
 	 *
 	 * @return mixed
      */
-	public static function js_table_get_sub(string $table,string $index,string $subindex) : object {
+	public static function js_table_get_sub(object $table,object $index,object $subindex) : object {
 
 		$table = php_str($table);
 		$index = php_str($index);
@@ -562,7 +562,7 @@ class J4FVMBase {
      * @param float $amount
      * @return bool
      */
-	public static function blockchain_transfer(string $sender,string $receiver,float $amount) : bool {
+	public static function blockchain_transfer(object $sender,object $receiver,object $amount) : bool {
 
 		if (self::$contract_hash != null && strlen(self::$contract_hash) == 128) {
 			//Parsing jsvars to phpvars
@@ -601,7 +601,7 @@ class J4FVMBase {
      * @param float $amount
      * @return bool
      */
-	public static function blockchain_transfer_token(string $sender,string $receiver,float $tokenId) : bool {
+	public static function blockchain_transfer_token(object $sender,object $receiver,object $tokenId) : bool {
 
 		echo 'blockchain_transfer_token';
 

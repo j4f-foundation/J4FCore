@@ -1,6 +1,6 @@
 <?php
 // Copyright 2018 MaTaXeToS
-// Copyright 2019 The Just4Fun Authors
+// Copyright 2019-2020 The Just4Fun Authors
 // This file is part of the J4FCore library.
 //
 // The J4FCore library is free software: you can redistribute it and/or modify
@@ -40,6 +40,7 @@ class Miner {
 
         //Get Last block
         $lastBlock = $gossip->chaindata->GetLastBlock();
+		$nextBlockHeight = $lastBlock["height"] + 1;
 
         //Get Pending transactions
         $transactions_pending = $gossip->chaindata->GetTxnFromPool();
@@ -47,7 +48,7 @@ class Miner {
         $total_amount_to_miner = "0";
 
         //We calculate the commissions of the pending transactions
-		$totalFees = Blockchain::GetFeesOfTransactions($transactions_pending);
+		$totalFees = Blockchain::GetFeesOfTransactions($gossip->chaindata,$transactions_pending);
 
         if ($totalFees == null) {
             Display::_error("Can't get total fees of transactions. Cancelling mining");
@@ -58,22 +59,28 @@ class Miner {
         $total_amount_to_miner = bcadd($total_amount_to_miner,strval($totalFees),18);
 
         //Calc reward by height
-        $currentReward = Blockchain::getRewardByHeight($lastBlock['height']+1);
+        $currentReward = Blockchain::getRewardByHeight($nextBlockHeight);
 
         //we add the reward with transaction fees
 		$total_amount_to_miner = bcadd($total_amount_to_miner,strval($currentReward),18);
 
         //We created the mining reward txn + fees txns
-        $tx = new Transaction("",$gossip->coinbase, $total_amount_to_miner, $gossip->key->privKey,"","0");
+		$tx = Transaction::withGas("",$gossip->coinbase, $total_amount_to_miner, $gossip->key->privKey,"","",21000,"0");
 
         //We take all pending transactions
         $transactions = array($tx);
 
         //We add pending transactions
         foreach ($transactions_pending as $txn) {
-            $new_txn = new Transaction($txn['wallet_from_key'],$txn['wallet_to'], $txn['amount'], "", "", $txn['tx_fee'], $txn['data'], true, $txn['txn_hash'], $txn['signature'], $txn['timestamp']);
+			$new_txn = Transaction::withGas($txn['wallet_from_key'],$txn['wallet_to'], $txn['amount'], "", "", $txn['data'], $txn['gasLimit'], $txn['gasPrice'], true, $txn['txn_hash'], $txn['signature'], $txn['timestamp']);
+
             if ($new_txn->isValid())
 				$transactions[] = $new_txn;
+        }
+
+		if (count($transactions) == 0) {
+            Display::_error("Can't start mining block, no transactions found?");
+            return false;
         }
 
 		if (SHOW_INFO_SUBPROCESS)

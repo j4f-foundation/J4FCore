@@ -1,6 +1,6 @@
 <?php
 // Copyright 2018 MaTaXeToS
-// Copyright 2019 The Just4Fun Authors
+// Copyright 2019-2020 The Just4Fun Authors
 // This file is part of the J4FCore library.
 //
 // The J4FCore library is free software: you can redistribute it and/or modify
@@ -46,6 +46,7 @@ include('../src/J4FVM/J4FVMTools.php');
 include('../src/J4FVM/J4FVMSubprocess.php');
 include('../src/uint256.php');
 include('../src/Socket.php');
+include('../src/Gas.php');
 include('../funity/js.php');
 
 require __DIR__ . DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'vendor'.DIRECTORY_SEPARATOR.'autoload.php';
@@ -340,8 +341,14 @@ if ($id != null) {
 						$password = ($params['password'] == 'null') ? '':$params['password'];
 
 						$data = (isset($params['data'])) ? $params['data']:"";
+						$gasLimit = (isset($params['gasLimit'])) ? $params['gasLimit']:21000;
+						$gasPrice = (isset($params['gasPrice'])) ? $params['gasPrice']:"0.0000000001";
 
-                        $txnHash = Wallet::API_SendTransaction($params['from'],$password,$params['to'],$params['amount'],$data,$isTestnet);
+						//Instance the pointer to the chaindata
+
+				        $chaindata = new DB();
+						$nextBlock = $chaindata->GetNextBlockNum();
+						$txnHash = Wallet::API_SendTransaction($params['from'],$password,$params['to'],$params['amount'],$data,$gasLimit,$gasPrice,$isTestnet);
 
                         //Check if transaction have error
                         if (strpos($txnHash,'Error') !== false) {
@@ -351,6 +358,38 @@ if ($id != null) {
                             );
                         } else {
                             $response_jsonrpc['result'] = $txnHash;
+                        }
+                    }
+                break;
+
+				case 'j4f_calcGas':
+
+                    if (
+                        (!isset($params['to']) || strlen($params['to']) == 0) ||
+                        (!isset($params['data']) || strlen($params['data']) == 0)
+                    ) {
+                        $response_jsonrpc['error'] = array(
+                            'code'    => -32602,
+                            'message' => 'Invalid params'
+                        );
+                    } else {
+
+						$to = (isset($params['to'])) ? $params['to']:"";
+						$data = (isset($params['data'])) ? $params['data']:"";
+
+						//Instance the pointer to the chaindata
+
+				        $chaindata = new DB();
+						$gas = Gas::calculateGasTxn($chaindata,$to,$data);
+
+                        //Check if transaction have error
+                        if ($gas == null) {
+                            $response_jsonrpc['error'] = array(
+                                'code'    => 100,
+                                'message' => $txnHash
+                            );
+                        } else {
+                            $response_jsonrpc['result'] = $gas;
                         }
                     }
                 break;
@@ -451,8 +490,9 @@ if ($id != null) {
                                 'hash'              => $transaction['txn_hash'],
                                 'from'              => ($transaction['wallet_from'] == "") ? 'REWARD_MINER':$transaction['wallet_from'],
                                 'to'                => $transaction['wallet_to'],
-                                'fee'               => $transaction['tx_fee'],
                                 'amount'            => $transaction['amount'],
+								'gasLimit'          => $transaction['gasLimit'],
+								'gasPrice'          => $transaction['gasPrice'],
                                 'signature'         => $transaction['signature'],
 								'data'         		=> $transaction['data']
                             );

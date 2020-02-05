@@ -1,6 +1,6 @@
 <?php
 // Copyright 2018 MaTaXeToS
-// Copyright 2019 The Just4Fun Authors
+// Copyright 2019-2020 The Just4Fun Authors
 // This file is part of the J4FCore library.
 //
 // The J4FCore library is free software: you can redistribute it and/or modify
@@ -152,14 +152,11 @@ class Wallet {
         if ($lastBlockNum != $lastBlockNum_Local)
             return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." Blockchain it is not synchronized".PHP_EOL;
 
-		$totalSpend = $totalReceivedReal = $current = 0;
-
-		$walletInfo = $chaindata->db->query("SELECT * FROM accounts WHERE hash = '".$address."';")->fetch_assoc();
-        if (!empty($walletInfo)) {
-			$totalSpend = uint256::parse($walletInfo['sended']);
-			$totalReceivedReal = bcadd($walletInfo['received'],$walletInfo['mined'],18);
-			$current = uint256::parse(bcsub($totalReceivedReal,$walletInfo['sended'],18));
-        }
+		$current = 0;
+		$walletInfo = $chaindata->GetWalletInfo($address);
+		if (!empty($walletInfo)) {
+			$current = $walletInfo['current'];
+		}
 
 		return $current;
     }
@@ -195,8 +192,7 @@ class Wallet {
         if ($lastBlockNum != $lastBlockNum_Local)
             return "Error, Blockchain it is not synchronized";
 
-		$totalSpend = $totalReceivedReal = $current = 0;
-
+		$current = 0;
 		$walletInfo = $chaindata->GetWalletInfo($address);
 		if (!empty($walletInfo)) {
 			$current = $walletInfo['current'];
@@ -230,16 +226,16 @@ class Wallet {
             return "ERROR: Blockchain it is not synchronized";
 
         //Obtenemos lo que ha recibido el usuario en esta cartera
-        $totalReceived = "0";
+        $totalPending = "0";
 
         $totalReceivedPending_tmp = $chaindata->db->query("SELECT amount FROM txnpool WHERE wallet_to = '".$address."';");
         if (!empty($totalReceivedPending_tmp)) {
             while ($txnInfo = $totalReceivedPending_tmp->fetch_array(MYSQLI_ASSOC)) {
-                $totalReceived = @bcadd($totalReceived, $txnInfo['amount'], 18);
+                $totalPending = @bcadd($totalPending, $txnInfo['amount'], 18);
             }
         }
 
-        return uint256::parse($totalReceived);
+        return uint256::parse($totalPending);
     }
 
     /**
@@ -256,8 +252,7 @@ class Wallet {
             $address = self::GetWalletAddressFromPubKey($wallet_from_info['public']);
         }
 
-		$totalSpend = $totalReceivedReal = $current = 0;
-
+		$current = 0;
 		$walletInfo = $chaindata->GetWalletInfo($address);
 		if (!empty($walletInfo)) {
 			$current = $walletInfo['current'];
@@ -407,7 +402,7 @@ class Wallet {
      * @param bool $cli
      * @return string
      */
-    public static function SendTransaction(string $wallet_from,string $wallet_from_password,string $wallet_to,string $amount,string $data,bool $isTestNet=false,bool $cli=true) : string {
+    public static function SendTransaction(string $wallet_from,string $wallet_from_password,string $wallet_to,string $amount,string $data, int $gasLimit = 21000, string $gasPrice = "0.0000000001", bool $isTestNet=false,bool $cli=true) : string {
 
         //Instance the pointer to the chaindata
         $chaindata = new DB();
@@ -419,7 +414,7 @@ class Wallet {
         if ($lastBlockNum != $lastBlockNum_Local)
             return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." Blockchain it is not synchronized".PHP_EOL;
 
-        if (bccomp($amount ,"0",18) == -1)
+        if (@bccomp($amount ,"0",18) == -1)
 			if ($cli)
             	return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." Minium to send 0".PHP_EOL;
 			else
@@ -470,22 +465,15 @@ class Wallet {
             // Get current balance of wallet
             $currentBalance = self::GetBalance($wallet_from,$isTestNet);
 
-			//Calc Amount + Fees
-			$tx_fee = @bcdiv(@bcmul($amount,"0.15",18),"100",18);
-			$tx_fee_data = uint256::parse(@bcmul(@strlen($data),"0.0006",18));
-			$tx_fee_final = @bcadd($tx_fee,$tx_fee_data,18);
-			$amountWithFees = @bcadd($amount,$tx_fee_final,18);
+			//Calculate amount + fees
+			$feeGas = @bcmul($gasLimit,$gasPrice,18);
+			$amountWithFees = @bcadd($amount,$feeGas,18);
 
             // If have balance amounts + fees
-            if (bccomp($currentBalance,$amountWithFees,18) == 0 || bccomp($currentBalance,$amountWithFees,18) == 1) {
-
-				//Calculate 0.15 of Fee + data fee
-				$tx_fee = bcdiv(bcmul($amount,"0.15",18),"100",18);
-				$tx_fee_data = uint256::parse(@bcmul(@strlen($data),"0.0006",18));
-				$tx_fee_final = bcadd($tx_fee,$tx_fee_data,18);
+            if (@bccomp($currentBalance,$amountWithFees,18) == 0 || @bccomp($currentBalance,$amountWithFees,18) == 1) {
 
                 //Make transaction and sign
-                $transaction = new Transaction($wallet_from_info["public"],$wallet_to,$amount,$wallet_from_info["private"],$wallet_from_password,$tx_fee_final,$data);
+				$transaction = Transaction::withGas($wallet_from_info["public"],$wallet_to,$amount,$wallet_from_info["private"],$wallet_from_password,$data,$gasLimit,$gasPrice);
 
                 // Check if transaction is valid
                 if ($transaction->isValid()) {
@@ -536,11 +524,13 @@ class Wallet {
      * @param string $wallet_to
      * @param string $amount
 	 * @param string $data
+	 * @param int $gasLimit
+	 * @param string $gasPrice
      * @param bool $isTestNet
      * @param bool $cli
      * @return string
      */
-    public static function API_SendTransaction(string $wallet_from,string $wallet_from_password,string $wallet_to,string $amount,string $data,bool $isTestNet=false,bool $cli=true) : string {
+    public static function API_SendTransaction(string $wallet_from,string $wallet_from_password,string $wallet_to,string $amount,string $data, int $gasLimit = 21000, string $gasPrice = "0.0000000001",bool $isTestNet=false,bool $cli=true) : string {
 
         //Instance the pointer to the chaindata
         $chaindata = new DB();
@@ -600,22 +590,15 @@ class Wallet {
             // Get current balance of wallet
             $currentBalance = self::GetBalance($wallet_from,$isTestNet);
 
-			//Calc Amount + Fees
-			$tx_fee = @bcdiv(@bcmul($amount,"0.15",18),"100",18);
-			$tx_fee_data = uint256::parse(@bcmul(@strlen($data),"0.0006",18));
-			$tx_fee_final = @bcadd($tx_fee,$tx_fee_data,18);
-			$amountWithFees = @bcadd($amount,$tx_fee_final,18);
+			//Calculate amount + fees
+			$feeGas = @bcmul($gasLimit,$gasPrice,18);
+			$amountWithFees = @bcadd($amount,$feeGas,18);
 
             // If have balance
             if (@bccomp($currentBalance,$amountWithFees,8) == 0 || @bccomp($currentBalance,$amountWithFees,8) == 1) {
 
-				//Calculate 0.15 of Fee + data fee
-				$tx_fee = @bcdiv(@bcmul($amount,"0.15",18),"100",18);
-				$tx_fee_data = uint256::parse(@bcmul(@strlen($data),"0.0006",18));
-				$tx_fee_final = @bcadd($tx_fee,$tx_fee_data,18);
-
 				//Make transaction and sign
-                $transaction = new Transaction($wallet_from_info["public"],$wallet_to,$amount,$wallet_from_info["private"],$wallet_from_password,$tx_fee_final,$data);
+				$transaction = Transaction::withGas($wallet_from_info["public"],$wallet_to,$amount,$wallet_from_info["private"],$wallet_from_password,$data,$gasLimit,$gasPrice);
 
                 // Check if transaction is valid
                 if ($transaction->isValid()) {
@@ -658,12 +641,13 @@ class Wallet {
 	public static function sendTxnToNetwork(DB &$chaindata,Transaction $transaction) : void {
 		$peers = $chaindata->GetAllPeers();
 		$config = $chaindata->GetAllConfig();
+
+		$txnFromPool = $chaindata->GetTxnFromPoolByHash($transaction->hash);
+
 		foreach ($peers as $peer) {
 
 			$myPeerID = Tools::GetIdFromIpAndPort($config['node_ip'],$config['node_port']);
 			$peerID = Tools::GetIdFromIpAndPort($peer['ip'],$peer['port']);
-
-			$txnFromPool = $chaindata->GetTxnFromPoolByHash($transaction->hash);
 
 			if ($myPeerID != $peerID && is_array($txnFromPool)) {
 				$infoToSend = array(

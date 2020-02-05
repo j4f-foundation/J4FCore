@@ -1,6 +1,6 @@
 <?php
 // Copyright 2018 MaTaXeToS
-// Copyright 2019 The Just4Fun Authors
+// Copyright 2019-2020 The Just4Fun Authors
 // This file is part of the J4FCore library.
 //
 // The J4FCore library is free software: you can redistribute it and/or modify
@@ -218,8 +218,11 @@ class DB extends DBBase {
 			$totalSpend = uint256::parse($walletInfo['sended']);
 			$totalReceived = uint256::parse($walletInfo['received']);
 			$totalMined = uint256::parse($walletInfo['mined']);
-			$totalMinedAndReceived = @bcadd($walletInfo['received'],$walletInfo['mined'],18);
-			$current = uint256::parse(@bcsub($totalMinedAndReceived,$walletInfo['sended'],18));
+
+			$current = @bcadd($walletInfo['received'],$walletInfo['mined'],18);
+			$current = @bcsub($current,$walletInfo['sended'],18);
+			$current = @bcsub($current,$walletInfo['fees'],18);
+			$current = uint256::parse($current);
         }
 
 		return array(

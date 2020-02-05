@@ -1,6 +1,6 @@
 <?php
 // Copyright 2018 MaTaXeToS
-// Copyright 2019 The Just4Fun Authors
+// Copyright 2019-2020 The Just4Fun Authors
 // This file is part of the J4FCore library.
 //
 // The J4FCore library is free software: you can redistribute it and/or modify
@@ -208,12 +208,20 @@ class CLI {
 		Display::printCLI("Write %Y%:b%W% to return to MainMenu");
 		Display::_br();
 
+		//Instance the pointer to the chaindata
+        $chaindata = new DB();
+		$nextBlock = $chaindata->GetNextBlockNum();
+
 		$walletFrom = null;
 		$walletFromPassword = null;
 		$walletTo = null;
 		$amount = null;
 		$data = null;
-		while ($walletFrom === null || $walletFromPassword === null || $walletTo === null || $amount === null || $data === null) {
+
+		$gasLimit = null;
+		$gasPrice = null;
+
+		while ($walletFrom === null || $walletFromPassword === null || $walletTo === null || $amount === null || $data === null || $gasLimit == null || $gasPrice == null) {
 
 			if ($walletFrom === null) {
 				Display::printCLI("Write Wallet From (Use %Y%coinbase%W% to use local node wallet): ");
@@ -319,12 +327,14 @@ class CLI {
 						continue;
 					}
 
+					/*
 					$balance = Wallet::GetBalance($walletFrom,true);
 					if (@bccomp($balance,$inputAmount) == -1) {
 						Display::errorCLI("Not enought balance to send");
 						self::ReadInput();
 						continue;
 					}
+					*/
 
 					//Save amount
 					$amount = $inputAmount;
@@ -342,7 +352,7 @@ class CLI {
 					if ($inputData == null)
 						$inputData = '';
 
-					//Check walletFrom Format
+					//Check data Format
 					if (strlen($inputData) > 0) {
 						$REGEX_Data = '/0x[a-fA-F0-9]{1,}/';
 						if (!@preg_match($REGEX_Data,$inputData)) {
@@ -356,10 +366,43 @@ class CLI {
 					$data = $inputData;
 				}
 			}
+
+			if ($gasLimit === null) {
+				Display::printCLI("Write gasLimit for transaction (Default 21000): ");
+				$inputData = self::ReadInput();
+				if ($inputData == ':b') {
+					self::MainMenu();
+					break;
+				}
+				else {
+					if ($inputData == null)
+						$inputData = 21000;
+
+					//Save data
+					$gasLimit = $inputData;
+				}
+			}
+
+			if ($gasPrice === null) {
+				Display::printCLI("Write gasPrice for transaction (Default 0.0000000001): ");
+				$inputData = self::ReadInput();
+				if ($inputData == ':b') {
+					self::MainMenu();
+					break;
+				}
+				else {
+					if ($inputData == null)
+						$inputData = "0.0000000001";
+
+					//Save data
+					$gasPrice = $inputData;
+				}
+			}
 		}
 
 		Display::printCLI("Creating transaction, Please wait...");
-		$txnHash = Wallet::SendTransaction($walletFrom,$walletFromPassword,$walletTo,$amount,$data);
+		$txnHash = Wallet::SendTransaction($walletFrom,$walletFromPassword,$walletTo,$amount,$data,$gasLimit,$gasPrice);
+
 		//Check if transaction have error
 		if (strpos($txnHash,'Error') !== false) {
 			Display::errorCLI($txnHash);

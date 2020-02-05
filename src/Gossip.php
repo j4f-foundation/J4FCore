@@ -1,6 +1,6 @@
 <?php
 // Copyright 2018 MaTaXeToS
-// Copyright 2019 The Just4Fun Authors
+// Copyright 2019-2020 The Just4Fun Authors
 // This file is part of the J4FCore library.
 //
 // The J4FCore library is free software: you can redistribute it and/or modify
@@ -175,7 +175,6 @@ final class Gossip {
 
 		//Delayed Init Function
 		$loop->addTimer(0, function () use ($gossip) {
-
 	        //WE GENERATE THE GENESIS BLOCK
 	        if ($gossip->make_genesis) {
 	            if(!$gossip->isTestNet)
@@ -929,9 +928,10 @@ final class Gossip {
             else {
                 if ($displayMessage)
 					Display::_warning("%LP%Network%W% Can't connect to peer		%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
-                return false;
             }
         }
+
+		return false;
     }
 
     /**
@@ -1062,6 +1062,7 @@ final class Gossip {
     }
 
 	/**
+	 * MainThread
 	 * Mine process
 	 */
 	public function mineProcess() : void {
@@ -1166,7 +1167,7 @@ final class Gossip {
 
 						Tools::writeLog('MINER (MINED NEW BLOCK)');
 					} else {
-						Display::_error("Block reward not valid");
+						Display::_error("Block mined reward not valid");
 					}
 				} else {
 					Display::_error("Block mined not valid");

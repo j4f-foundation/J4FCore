@@ -1,6 +1,6 @@
 <?php
 // Copyright 2018 MaTaXeToS
-// Copyright 2019 The Just4Fun Authors
+// Copyright 2019-2020 The Just4Fun Authors
 // This file is part of the J4FCore library.
 //
 // The J4FCore library is free software: you can redistribute it and/or modify
@@ -33,11 +33,7 @@ class Blockchain {
 
         // Initial difficulty
         if ($currentBlock['height'] == 0)
-            return [2,1];
-
-        // for first 50 blocks use difficulty 2
-        if ($currentBlock['height'] < 50)
-            return [2,1];
+            return [1,1];
 
 		// Limit of last blocks to check time
         $limit = 5;
@@ -51,7 +47,8 @@ class Blockchain {
         $difficulty = $currentBlock['difficulty'];
 
         // Min/Max Avg BlockTime
-		$minAvg = 9; $maxAvg = 11;
+		//$minAvg = 9; $maxAvg = 11;
+		$minAvg = 4; $maxAvg = 6;
 
         // if lower than min, increase by 2%
         if ($avgTime < $minAvg)
@@ -62,8 +59,8 @@ class Blockchain {
             $difficulty = bcmul(strval($currentBlock['difficulty']), "0.98",2);
 
 		// Min difficulty is 1
-       if ($difficulty < 2)
-           $difficulty = 2;
+       if ($difficulty < 1)
+           $difficulty = 1;
 
         return [$difficulty,$avgTime];
     }
@@ -142,14 +139,25 @@ class Blockchain {
      * @param array $pendingTransactions
      * @return string
      */
-    public static function GetFeesOfTransactions(array $pendingTransactions) : string {
+    public static function GetFeesOfTransactions(DB $chaindata, array $pendingTransactions) : string {
 
         $totalFees = bcadd("0","0",18);
         foreach ($pendingTransactions as $txn) {
-            $new_txn = new Transaction($txn['wallet_from_key'],$txn['wallet_to'], $txn['amount'], "","", $txn['tx_fee'],$txn['data'],true, $txn['txn_hash'], $txn['signature'], $txn['timestamp']);
+
+			$fees = "0";
+
+			$new_txn = Transaction::withGas($txn['wallet_from_key'],$txn['wallet_to'], $txn['amount'], "","", $txn['data'], $txn['gasLimit'], $txn['gasPrice'], true, $txn['txn_hash'], $txn['signature'], $txn['timestamp']);
+
+			//If txn is valid..
             if ($new_txn->isValid()) {
-				$totalFees = bcadd($totalFees,$new_txn->tx_fee,18);
+				$txnGas = Gas::calculateGasTxn($chaindata,$new_txn->to,$new_txn->data);
+				if ($txnGas <= $new_txn->gasLimit)
+					$fees = bcmul($txnGas,$new_txn->gasPrice,18);
+				else
+					$fees = bcmul($new_txn->gasLimit,$new_txn->gasPrice,18);
             }
+
+			$totalFees = bcadd($totalFees,$fees,18);
         }
         return $totalFees;
     }
@@ -160,10 +168,10 @@ class Blockchain {
      *
      * @param DB $chaindata
      * @param array $lastBlock
-     * @param array $blockMinedByPeer
+     * @param Block $blockMinedByPeer
      * @return string
      */
-    public static function isValidBlockMinedByPeerInSameHeight(DB &$chaindata, array $lastBlock, array $blockMinedByPeer) : string {
+    public static function isValidBlockMinedByPeerInSameHeight(DB &$chaindata, array $lastBlock, Block $blockMinedByPeer) : string {
 
         //If dont have new block
         if ($blockMinedByPeer == null)
@@ -237,14 +245,15 @@ class Blockchain {
 
 			$transactions = array();
 			foreach ($blockArray['transactions'] as $transactionInfo) {
-				$transactions[] = new Transaction(
+				$transactions[] = Transaction::withGas(
 					$transactionInfo['wallet_from_key'],
 					$transactionInfo['wallet_to'],
 					$transactionInfo['amount'],
 					"",
 					"",
-					(isset($transactionInfo['tx_fee'])) ? $transactionInfo['tx_fee']:'',
 					$transactionInfo['data'],
+					$transactionInfo['gasLimit'],
+					$transactionInfo['gasPrice'],
 					true,
 					$transactionInfo['txn_hash'],
 					$transactionInfo['signature'],

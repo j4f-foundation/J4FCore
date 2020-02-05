@@ -1,6 +1,6 @@
 <?php
 // Copyright 2018 MaTaXeToS
-// Copyright 2019 The Just4Fun Authors
+// Copyright 2019-2020 The Just4Fun Authors
 // This file is part of the J4FCore library.
 //
 // The J4FCore library is free software: you can redistribute it and/or modify
@@ -42,15 +42,18 @@ include(__DIR__.'/GenesisBlock.php');
 include(__DIR__.'/Peer.php');
 include(__DIR__.'/SmartContract.php');
 include(__DIR__.'/SmartContractStateMachine.php');
+include(__DIR__.'/J4FVM/0.0.2/J4FVMBase.php');
+include(__DIR__.'/J4FVM/J4FVM.php');
 include(__DIR__.'/J4FVM/J4FVMTools.php');
 include(__DIR__.'/J4FVM/J4FVMSubprocess.php');
 include(__DIR__.'/uint256.php');
 include(__DIR__.'/Socket.php');
 include(__DIR__.'/CLI.php');
+include(__DIR__.'/Gas.php');
 include(__DIR__.'/../funity/js.php');
 
 //J4F Version
-define('VERSION','0.1.1');
+define('VERSION','0.2.0');
 
 //Start capturing flush
 ob_start();

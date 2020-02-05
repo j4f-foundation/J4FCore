@@ -1,6 +1,6 @@
 <?php
 // Copyright 2018 MaTaXeToS
-// Copyright 2019 The Just4Fun Authors
+// Copyright 2019-2020 The Just4Fun Authors
 // This file is part of the J4FCore library.
 //
 // The J4FCore library is free software: you can redistribute it and/or modify
@@ -25,7 +25,7 @@ class DBBlocks extends DBContracts {
      * @return object
      */
     public function GetMinerOfBlockByHash(string $hash) : string {
-        $minerTransaction = $this->db->query("SELECT wallet_to FROM transactions WHERE block_hash = '".$hash."' AND wallet_from = '' ORDER BY tx_fee DESC, timestamp DESC LIMIT 1;")->fetch_assoc();
+        $minerTransaction = $this->db->query("SELECT wallet_to FROM transactions WHERE block_hash = '".$hash."' AND wallet_from = '' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC LIMIT 1;")->fetch_assoc();
         if (!empty($minerTransaction))
             return $minerTransaction['wallet_to'];
         return "";
@@ -46,11 +46,11 @@ class DBBlocks extends DBContracts {
             $transactions = array();
 
             //Select only hashes of txns
-            $sql = "SELECT txn_hash FROM transactions WHERE block_hash = '".$info_block['block_hash']."' AND wallet_from = '' ORDER BY tx_fee DESC, timestamp DESC;";
+            $sql = "SELECT txn_hash FROM transactions WHERE block_hash = '".$info_block['block_hash']."' AND wallet_from = '' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC;";
 
             //If want all transaction info, select all
             if ($withTransactions)
-                $sql = "SELECT * FROM transactions WHERE block_hash = '".$info_block['block_hash']."' AND wallet_from = '' ORDER BY tx_fee DESC, timestamp DESC;";
+                $sql = "SELECT * FROM transactions WHERE block_hash = '".$info_block['block_hash']."' AND wallet_from = '' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC;";
 
             //Get transactions
             $transactions_chaindata = $this->db->query($sql);
@@ -65,11 +65,11 @@ class DBBlocks extends DBContracts {
 
 			//TMP FIX
 			//Select only hashes of txns
-            $sql = "SELECT txn_hash FROM transactions WHERE block_hash = '".$info_block['block_hash']."' AND wallet_from <> '' ORDER BY tx_fee DESC, timestamp DESC;";
+            $sql = "SELECT txn_hash FROM transactions WHERE block_hash = '".$info_block['block_hash']."' AND wallet_from <> '' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC;";
 
             //If want all transaction info, select all
             if ($withTransactions)
-                $sql = "SELECT * FROM transactions WHERE block_hash = '".$info_block['block_hash']."' AND wallet_from <> '' ORDER BY tx_fee DESC, timestamp DESC;";
+                $sql = "SELECT * FROM transactions WHERE block_hash = '".$info_block['block_hash']."' AND wallet_from <> '' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC;";
 
             //Get transactions
             $transactions_chaindata = $this->db->query($sql);
@@ -120,11 +120,11 @@ class DBBlocks extends DBContracts {
             $transactions = array();
 
             //Select only hashes of txns
-            $sql = "SELECT txn_hash FROM transactions WHERE block_hash = '".$info_block['block_hash']."' AND wallet_from = '' ORDER BY tx_fee DESC, timestamp DESC;";
+            $sql = "SELECT txn_hash FROM transactions WHERE block_hash = '".$info_block['block_hash']."' AND wallet_from = '' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC;";
 
             //If want all transaction info, select all
             if ($withTransactions)
-                $sql = "SELECT * FROM transactions WHERE block_hash = '".$info_block['block_hash']."' AND wallet_from = '' ORDER BY tx_fee DESC, timestamp DESC;";
+                $sql = "SELECT * FROM transactions WHERE block_hash = '".$info_block['block_hash']."' AND wallet_from = '' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC;";
 
             //Get transactions
             $transactions_chaindata = $this->db->query($sql);
@@ -138,9 +138,9 @@ class DBBlocks extends DBContracts {
             }
 
 			//TMP FIX
-            $sql = "SELECT txn_hash FROM transactions WHERE block_hash = '".$info_block['block_hash']."' AND wallet_from <> '' ORDER BY tx_fee DESC, timestamp DESC;";
+            $sql = "SELECT txn_hash FROM transactions WHERE block_hash = '".$info_block['block_hash']."' AND wallet_from <> '' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC;";
             if ($withTransactions)
-                $sql = "SELECT * FROM transactions WHERE block_hash = '".$info_block['block_hash']."' AND wallet_from <> '' ORDER BY tx_fee DESC, timestamp DESC;";
+                $sql = "SELECT * FROM transactions WHERE block_hash = '".$info_block['block_hash']."' AND wallet_from <> '' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC;";
 
             //Get transactions
             $transactions_chaindata = $this->db->query($sql);
@@ -198,50 +198,78 @@ class DBBlocks extends DBContracts {
                         $wallet_from = Wallet::GetWalletAddressFromPubKey($transaction->from);
                     }
 
-                    $sql_update_transactions = "INSERT INTO transactions (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp)
-                    VALUES ('".$blockInfo->hash."','".$transaction->message()."','".$wallet_from_pubkey."','".$wallet_from."','".$transaction->to."','".$transaction->amount."','".$transaction->signature."','".$transaction->tx_fee."','".$transaction->data."','".$transaction->timestamp."');";
-                    if (!$this->db->query($sql_update_transactions)) {
+                    $sql_insert_transaction = "INSERT INTO transactions (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, data, gasLimit, gasPrice, timestamp, version)
+                    VALUES ('".$blockInfo->hash."','".$transaction->message()."','".$wallet_from_pubkey."','".$wallet_from."','".$transaction->to."','".$transaction->amount."','".$transaction->signature."','".$transaction->data."',".$transaction->gasLimit.",".$transaction->gasPrice.",'".$transaction->timestamp."','".$transaction->version."');";
+					if (!$this->db->query($sql_insert_transaction)) {
                         $error = true;
                         break;
                     }
 
+					$outOfGas = false;
+					$totalGasTxn = Gas::calculateGasTxn($this,$transaction->to,$transaction->data);
+					if ($totalGasTxn < $transaction->gasLimit) {
+						$outOfGas = true;
+					}
+
 					//Update Account FROM
 					if (strlen($wallet_from) > 0 && $wallet_from != 'J4F00000000000000000000000000000000000000000000000000000000') {
-						$sql_updateAccountFrom = "
-						INSERT INTO accounts (hash,sended,received,mined)
-						VALUES ('".$wallet_from."','".$transaction->amount."' + '".$transaction->tx_fee."',0,0)
-						ON DUPLICATE KEY UPDATE sended = sended + ".$transaction->amount." + ".$transaction->tx_fee.";
-						";
-	                    if (!$this->db->query($sql_updateAccountFrom)) {
-	                        $error = true;
-	                        break;
-	                    }
+						//Calculate fee of txn (with max gasLimit/gasUsed * gasPrice)
+						$feeTXN = $transaction->GetFee($this);
+
+						//If there is not enough gas we will only charge fees
+						if ($outOfGas) {
+							$sql_updateAccountFrom = "
+							INSERT INTO accounts (hash,sended,received,mined,fees)
+							VALUES ('".$wallet_from."',0,0,0,'".$feeTXN."')
+							ON DUPLICATE KEY UPDATE fees = fees + VALUES(fees);
+							";
+						}
+						else {
+							$sql_updateAccountFrom = "
+							INSERT INTO accounts (hash,sended,received,mined,fees)
+							VALUES ('".$wallet_from."','".$transaction->amount."',0,0,'".$feeTXN."')
+							ON DUPLICATE KEY UPDATE sended = sended + VALUES(sended), fees = fees + VALUES(fees);
+							";
+						}
+						if (!$this->db->query($sql_updateAccountFrom)) {
+							$error = true;
+							break;
+						}
 					}
 					//Update Account TO
 					if (strlen($transaction->to) > 0) {
 						// MINED BLOCK
 						if (strlen($wallet_from) == 0) {
 							$sql_updateAccountTo = "
-							INSERT INTO accounts (hash,sended,received,mined)
-							VALUES ('".$transaction->to."',0,0,'".$transaction->amount."')
+							INSERT INTO accounts (hash,sended,received,mined,fees)
+							VALUES ('".$transaction->to."',0,0,'".$transaction->amount."',0)
 							ON DUPLICATE KEY UPDATE mined = mined + VALUES(mined);
 							";
 						}
 						else {
-							$sql_updateAccountTo = "
-							INSERT INTO accounts (hash,sended,received,mined)
-							VALUES ('".$transaction->to."',0,'".$transaction->amount."',0)
-							ON DUPLICATE KEY UPDATE received = received + VALUES(received);
-							";
+							//If there is not enough gas you will not receive anything
+							if ($outOfGas) {
+								$sql_updateAccountTo = "
+								INSERT INTO accounts (hash,sended,received,mined,fees)
+								VALUES ('".$transaction->to."',0,0,0,0)
+								ON DUPLICATE KEY UPDATE received = received + VALUES(received);
+								";
+							}
+							else {
+								$sql_updateAccountTo = "
+								INSERT INTO accounts (hash,sended,received,mined,fees)
+								VALUES ('".$transaction->to."',0,'".$transaction->amount."',0,0)
+								ON DUPLICATE KEY UPDATE received = received + VALUES(received);
+								";
+							}
 						}
-
 						if (!$this->db->query($sql_updateAccountTo)) {
 							$error = true;
 							break;
 						}
 					}
 
-                    //We eliminated the pending transaction
+                    //Remove transaction from pool
                     $this->removeTxnFromPool($transaction->message());
                 }
             }
@@ -279,7 +307,6 @@ class DBBlocks extends DBContracts {
 			//Start Transactions
 			$this->db->begin_transaction();
 
-
 			//Get Hash of TXN to NewContract
 			$sql_createContracts = "
 			SELECT txn_hash
@@ -291,7 +318,7 @@ class DBBlocks extends DBContracts {
 			$txnHashs = [];
 	        if (!empty($tmp_createContracts))
 	            while ($contractInfo = $tmp_createContracts->fetch_array(MYSQLI_ASSOC))
-	                $txnHashs[] = $contractInfo['hash'];
+	                $txnHashs[] = $contractInfo['txn_hash'];
 			$txn_in_newContract = '';
 			foreach ($txnHashs as $txn) {
 				if (strlen($txn_in_newContract) > 0) $txn_in_newContract .= ',';
@@ -299,23 +326,25 @@ class DBBlocks extends DBContracts {
 			}
 
 			//Get Hash of TXN to Call Contract
-			$sql_createContracts = "
+			$sql_getCallContracts = "
 			SELECT txn_hash
 			FROM transactions
 			WHERE wallet_to <> 'J4F00000000000000000000000000000000000000000000000000000000'
 			AND data <> '0x'
 			AND block_hash = '".$infoBlock['block_hash']."';";
-			$tmp_createContracts = $this->db->query($sql_createContracts);
+			$tmp_callContracts = $this->db->query($sql_getCallContracts);
 			$txnHashs = [];
-	        if (!empty($tmp_createContracts))
-	            while ($contractInfo = $tmp_createContracts->fetch_array(MYSQLI_ASSOC))
-	                $txnHashs[] = $contractInfo['hash'];
+	        if (!empty($tmp_callContracts))
+	            while ($contractInfo = $tmp_callContracts->fetch_array(MYSQLI_ASSOC))
+	                $txnHashs[] = $contractInfo['txn_hash'];
+
 			$txn_in_callContract = '';
 			foreach ($txnHashs as $txn) {
 				if (strlen($txn_in_callContract) > 0) $txn_in_callContract .= ',';
 				$txn_in_callContract .= "'".$txn."'";
 			}
 
+			//Reverse New Contracts
 			if (strlen($txn_in_newContract) > 0) {
 				//Get new contracts of this block
 				$sql_createContracts = "
@@ -393,21 +422,19 @@ class DBBlocks extends DBContracts {
 					$error = true;
 			}
 
-
-
+			//Reverse Call Contracts
 			if (strlen($txn_in_callContract) > 0) {
 				//Get transactions call to contracts
 				$sql_callContracts = "
-				SELECT contract_hash, txn_hash
-				FROM smart_contracts WHERE txn_hash IN (".$txn_in_callContract.");
+				SELECT wallet_to as contract_hash
+				FROM transactions WHERE txn_hash IN (".$txn_in_callContract.");
 				";
 				$tmp_callContracts = $this->db->query($sql_callContracts);
 				$callContracts = [];
-				if (!empty($tmp_createContracts)) {
-					while ($contractInfo = $tmp_callContracts->fetch_array(MYSQLI_ASSOC)) {
+				if (!empty($tmp_createContracts))
+					while ($contractInfo = $tmp_callContracts->fetch_array(MYSQLI_ASSOC))
 						$callContracts[] = $contractInfo;
-					}
-				}
+
 				//Reverse state of this contracts
 				foreach ($callContracts as $callContract) {
 					$stateMachine = SmartContractStateMachine::store($callContract['contract_hash'],Tools::GetBaseDir().'data'.DIRECTORY_SEPARATOR.'db');
@@ -476,49 +503,77 @@ class DBBlocks extends DBContracts {
 				";
 				if (!$this->db->query($sqlRemoveInterntalTransactionsTokenCallContracts))
 					$error = true;
+			}
 
-				//Reverse account status of this transactions
-				$sql_selectTransactionsToReverse = "SELECT * FROM transactions WHERE block_hash = '".$infoBlock['block_hash']."';";
-				$tmp_TxnsToReverse = $this->db->query($sql_selectTransactionsToReverse);
-				if (!empty($tmp_TxnsToReverse)) {
-					while ($txnToReverse = $tmp_TxnsToReverse->fetch_array(MYSQLI_ASSOC)) {
+			//Reverse account status of this transactions
+			$sql_selectTransactionsToReverse = "SELECT * FROM transactions WHERE block_hash = '".$infoBlock['block_hash']."';";
+			$tmp_TxnsToReverse = $this->db->query($sql_selectTransactionsToReverse);
+			if (!empty($tmp_TxnsToReverse)) {
+				while ($txnToReverse = $tmp_TxnsToReverse->fetch_array(MYSQLI_ASSOC)) {
 
-						//Mine txn
-						if ($txnToReverse['wallet_from'] == '') {
-							$sql_updateAccountFrom = "
-							UPDATE accounts SET
-							mined = mined - '".$txnToReverse['amount']."'
-							WHERE hash = '".$txnToReverse['wallet_to']."';
-							";
-							if (!$this->db->query($sql_updateAccountFrom)) {
-								$error = true;
-								break;
-							}
+					//Mine txn
+					if ($txnToReverse['wallet_from'] == '') {
+						$sql_updateAccountFrom = "
+						UPDATE accounts SET
+						mined = mined - '".$txnToReverse['amount']."'
+						WHERE hash = '".$txnToReverse['wallet_to']."';
+						";
+						if (!$this->db->query($sql_updateAccountFrom)) {
+							$error = true;
+							break;
+						}
+					}
+
+					//Normal Txn
+					else {
+						$tmpTxn = Transaction::withGas($txnToReverse['wallet_from'],$txnToReverse['wallet_to'],$txnToReverse['amount'],"","",$txnToReverse['data'],$txnToReverse['gasLimit'],$txnToReverse['gasPrice'], true, $txnToReverse['hash'],$txnToReverse['signature'],$txnToReverse['timestamp']);
+						$feeTXN = $tmpTxn->GetFee($this);
+
+						$outOfGas = false;
+						$totalGasTxn = Gas::calculateGasTxn($this,$tmpTxn->to,$tmpTxn->data);
+						if ($totalGasTxn < $tmpTxn->gasLimit) {
+							$outOfGas = true;
 						}
 
-						//Noram Txn
-						else {
-
+						//Reverse From Account
+						if ($outOfGas) {
 							$sql_updateAccountFrom = "
 							UPDATE accounts SET
-							sended = sended - ".$txnToReverse['amount'].",
-							sended = sended - ".$txnToReverse['tx_fee']."
+							fees = fees - '".$feeTXN."'
 							WHERE hash = '".$txnToReverse['wallet_from']."';
 							";
-							if (!$this->db->query($sql_updateAccountFrom)) {
-								$error = true;
-								break;
-							}
+						}
+						else {
+							$sql_updateAccountFrom = "
+							UPDATE accounts SET
+							sended = sended - '".$txnToReverse['amount']."',
+							fees = fees - '".$feeTXN."'
+							WHERE hash = '".$txnToReverse['wallet_from']."';
+							";
+						}
+						if (!$this->db->query($sql_updateAccountFrom)) {
+							$error = true;
+							break;
+						}
 
+						//Reverse To Account
+						if ($outOfGas) {
 							$sql_updateAccountTo = "
 							UPDATE accounts SET
-							received = received - '".$txnToReverse['amount']."'
+							received = received
 							WHERE hash = '".$txnToReverse['wallet_to']."';
 							";
-							if (!$this->db->query($sql_updateAccountTo)) {
-								$error = true;
-								break;
-							}
+						}
+						else {
+							$sql_updateAccountTo = "
+							UPDATE accounts SET
+							received = received - '".($txnToReverse['amount'])."'
+							WHERE hash = '".$txnToReverse['wallet_to']."';
+							";
+						}
+						if (!$this->db->query($sql_updateAccountTo)) {
+							$error = true;
+							break;
 						}
 					}
 				}
@@ -536,10 +591,11 @@ class DBBlocks extends DBContracts {
         }
 
         //Rollback transaction
-        if ($error)
-            $this->db->rollback();
+        if ($error) {
+			$this->db->rollback();
+		}
 		else {
-			$this->db->commit();
+			//$this->db->commit();
 			return true;
 		}
         return false;
@@ -596,12 +652,12 @@ class DBBlocks extends DBContracts {
      * @return array
      */
     public function GetGenesisBlock() : array {
-        $genesis_block = null;
+        $genesis_block = [];
         $blocks_chaindata = $this->db->query("SELECT * FROM blocks WHERE height = 0");
         //If we have block information, we will import them into a new BlockChain
         if (!empty($blocks_chaindata)) {
             while ($blockInfo = $blocks_chaindata->fetch_array(MYSQLI_ASSOC)) {
-                $transactions_chaindata = $this->db->query("SELECT * FROM transactions WHERE block_hash = '".$blockInfo['block_hash']."' AND wallet_from = '' ORDER BY tx_fee DESC, timestamp DESC;");
+                $transactions_chaindata = $this->db->query("SELECT * FROM transactions WHERE block_hash = '".$blockInfo['block_hash']."' AND wallet_from = '' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC;");
                 $transactions = array();
                 if (!empty($transactions_chaindata)) {
                     while ($transactionInfo = $transactions_chaindata->fetch_array(MYSQLI_ASSOC)) {
@@ -610,7 +666,7 @@ class DBBlocks extends DBContracts {
                 }
 
 				//TMP-FIX
-				$transactions_chaindata = $this->db->query("SELECT * FROM transactions WHERE block_hash = '".$blockInfo['block_hash']."' AND wallet_from <> '' ORDER BY tx_fee DESC, timestamp DESC;");
+				$transactions_chaindata = $this->db->query("SELECT * FROM transactions WHERE block_hash = '".$blockInfo['block_hash']."' AND wallet_from <> '' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC;");
                 if (!empty($transactions_chaindata)) {
                     while ($transactionInfo = $transactions_chaindata->fetch_array(MYSQLI_ASSOC)) {
                         $transactions[] = $transactionInfo;
@@ -634,7 +690,7 @@ class DBBlocks extends DBContracts {
      * @return array
      */
     public function GetLastBlock(bool $withTransactions=true) : array {
-        $lastBlock = null;
+        $lastBlock = [];
         $infoLastBlock = $this->db->query("SELECT * FROM blocks ORDER BY height DESC LIMIT 1");
         //If we have block information, we will import them into a new BlockChain
         if (!empty($infoLastBlock)) {
@@ -643,11 +699,11 @@ class DBBlocks extends DBContracts {
                 $transactions = array();
 
                 //Select only hashes of txns
-                $sql = "SELECT txn_hash FROM transactions WHERE block_hash = '".$blockInfo['block_hash']."' AND wallet_from = '' ORDER BY tx_fee DESC, timestamp DESC;";
+                $sql = "SELECT txn_hash FROM transactions WHERE block_hash = '".$blockInfo['block_hash']."' AND wallet_from = '' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC;";
 
                 //If want all transaction info, select all
                 if ($withTransactions)
-                    $sql = "SELECT * FROM transactions WHERE block_hash = '".$blockInfo['block_hash']."' AND wallet_from = '' ORDER BY tx_fee DESC, timestamp DESC;";
+                    $sql = "SELECT * FROM transactions WHERE block_hash = '".$blockInfo['block_hash']."' AND wallet_from = '' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC;";
 
                 //Get transactions
                 $transactions_chaindata = $this->db->query($sql);
@@ -661,9 +717,9 @@ class DBBlocks extends DBContracts {
                 }
 
 				//TMP FIX
-                $sql = "SELECT txn_hash FROM transactions WHERE block_hash = '".$blockInfo['block_hash']."' AND wallet_from <> '' ORDER BY tx_fee DESC, timestamp DESC;";
+                $sql = "SELECT txn_hash FROM transactions WHERE block_hash = '".$blockInfo['block_hash']."' AND wallet_from <> '' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC;";
                 if ($withTransactions)
-                    $sql = "SELECT * FROM transactions WHERE block_hash = '".$blockInfo['block_hash']."' AND wallet_from <> '' ORDER BY tx_fee DESC, timestamp DESC;";
+                    $sql = "SELECT * FROM transactions WHERE block_hash = '".$blockInfo['block_hash']."' AND wallet_from <> '' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC;";
                 $transactions_chaindata = $this->db->query($sql);
                 if (!empty($transactions_chaindata)) {
                     while ($transactionInfo = $transactions_chaindata->fetch_array(MYSQLI_ASSOC)) {
@@ -697,7 +753,7 @@ class DBBlocks extends DBContracts {
             $height = 0;
             while ($blockInfo = $blocks_chaindata->fetch_array(MYSQLI_ASSOC)) {
 
-                $transactions_chaindata = $this->db->query("SELECT * FROM transactions WHERE block_hash = '".$blockInfo['block_hash']."' and wallet_from = '' ORDER by tx_fee DESC, timestamp DESC;");
+                $transactions_chaindata = $this->db->query("SELECT * FROM transactions WHERE block_hash = '".$blockInfo['block_hash']."' and wallet_from = '' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC;");
                 $transactions = array();
                 if (!empty($transactions_chaindata)) {
                     while ($transactionInfo = $transactions_chaindata->fetch_array(MYSQLI_ASSOC)) {
@@ -706,7 +762,7 @@ class DBBlocks extends DBContracts {
                 }
 
 				//TMP FIX
-				$transactions_chaindata = $this->db->query("SELECT * FROM transactions WHERE block_hash = '".$blockInfo['block_hash']."' and wallet_from <> '' ORDER by tx_fee DESC, timestamp DESC;");
+				$transactions_chaindata = $this->db->query("SELECT * FROM transactions WHERE block_hash = '".$blockInfo['block_hash']."' and wallet_from <> '' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC;");
                 if (!empty($transactions_chaindata)) {
                     while ($transactionInfo = $transactions_chaindata->fetch_array(MYSQLI_ASSOC)) {
                         $transactions[] = $transactionInfo;

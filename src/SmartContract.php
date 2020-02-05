@@ -1,6 +1,6 @@
 <?php
 // Copyright 2018 MaTaXeToS
-// Copyright 2019 The Just4Fun Authors
+// Copyright 2019-2020 The Just4Fun Authors
 // This file is part of the J4FCore library.
 //
 // The J4FCore library is free software: you can redistribute it and/or modify
@@ -35,21 +35,32 @@ class SmartContract {
 				//Check if transaction is for make new contract
 				if ($transaction->to == 'J4F00000000000000000000000000000000000000000000000000000000' && $transaction->data != "0x") {
 
-					$j4fvm_process = new J4FVMSubprocess('MAKE');
+					//Check OutOfGas
+					$gasTxn = Gas::calculateGasTxn($chaindata,$transaction->to,$transaction->data);
+					if ($transaction->gasLimit < $gasTxn) {
+						continue;
+					}
 
 					//Make ContractHash
 					$contractHash = PoW::hash($transaction->data.$transaction->from.$transaction->timestamp.$transaction->signature);
 
-					//Set info for J4FVM
-					$j4fvm_process->setContractHash($contractHash);
-					$j4fvm_process->setTxnHash($transaction->hash);
-					$j4fvm_process->setVersion(J4FVMTools::GetFunityVersion($transaction->data));
-					$j4fvm_process->setFrom(Tools::str2hex($transaction->from));
-					$j4fvm_process->setAmount($transaction->amount);
-					$j4fvm_process->setData($transaction->data);
+					if (!J4FVM_USE_SUBPROCESS) {
+						self::_Make($chaindata,$contractHash,$transaction->hash,Tools::str2hex($transaction->from),$transaction->amount,$transaction->data);
+					}
+					else {
+						$j4fvm_process = new J4FVMSubprocess('MAKE');
 
-					//Run contract
-					$j4fvm_process->run();
+						//Set info for J4FVM
+						$j4fvm_process->setContractHash($contractHash);
+						$j4fvm_process->setTxnHash($transaction->hash);
+						$j4fvm_process->setVersion(J4FVMTools::GetFunityVersion($transaction->data));
+						$j4fvm_process->setFrom(Tools::str2hex($transaction->from));
+						$j4fvm_process->setAmount($transaction->amount);
+						$j4fvm_process->setData($transaction->data);
+
+						//Run contract
+						$j4fvm_process->run();
+					}
 				}
 			}
 		}
@@ -117,7 +128,6 @@ class SmartContract {
 
 		// If status contract its OK, save this contract
 		if ($run_status == 1) {
-
 			//Get data contract
 			$contractData = Tools::str2hex(@json_encode(J4FVM::$data));
 
@@ -143,19 +153,32 @@ class SmartContract {
 				if ((strlen($transaction->to) > 64) && $transaction->data != "0x") {
 
 					$contract = $chaindata->GetContractByHash($transaction->to);
+
 					if ($contract != null) {
-						$j4fvm_process = new J4FVMSubprocess('WRITE');
 
-						//Set info for J4FVM
-						$j4fvm_process->setContractHash($transaction->to);
-						$j4fvm_process->setTxnHash($transaction->hash);
-						$j4fvm_process->setVersion(J4FVMTools::GetFunityVersion($contract['code']));
-						$j4fvm_process->setFrom(Tools::str2hex($transaction->from));
-						$j4fvm_process->setAmount($transaction->amount);
-						$j4fvm_process->setData($transaction->data);
+						//Check OutOfGas
+						$gasTxn = Gas::calculateGasTxn($chaindata,$transaction->to,$transaction->data);
+						if ($transaction->gasLimit < $gasTxn) {
+							continue;
+						}
 
-						//Run contract
-						$j4fvm_process->run();
+						if (!J4FVM_USE_SUBPROCESS) {
+							self::_CallFunction($chaindata,$transaction->to,$transaction->hash,Tools::str2hex($transaction->from),$transaction->amount,$transaction->data);
+						}
+						else {
+							$j4fvm_process = new J4FVMSubprocess('WRITE');
+
+							//Set info for J4FVM
+							$j4fvm_process->setContractHash($transaction->to);
+							$j4fvm_process->setTxnHash($transaction->hash);
+							$j4fvm_process->setVersion(J4FVMTools::GetFunityVersion($contract['code']));
+							$j4fvm_process->setFrom(Tools::str2hex($transaction->from));
+							$j4fvm_process->setAmount($transaction->amount);
+							$j4fvm_process->setData($transaction->data);
+
+							//Run contract
+							$j4fvm_process->run();
+						}
 					}
 				}
 			}
@@ -483,5 +506,4 @@ class SmartContract {
 		);
 
 	}
-
 }

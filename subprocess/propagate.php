@@ -1,6 +1,6 @@
 <?php
 // Copyright 2018 MaTaXeToS
-// Copyright 2019 The Just4Fun Authors
+// Copyright 2019-2020 The Just4Fun Authors
 // This file is part of the J4FCore library.
 //
 // The J4FCore library is free software: you can redistribute it and/or modify
@@ -41,6 +41,7 @@ include(__DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'src'.DIRECTORY_SEP
 include(__DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'src'.DIRECTORY_SEPARATOR.'Peer.php');
 include(__DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'src'.DIRECTORY_SEPARATOR.'Socket.php');
 include(__DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'src'.DIRECTORY_SEPARATOR.'uint256.php');
+include(__DIR__.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'src'.DIRECTORY_SEPARATOR.'Gas.php');
 require __DIR__ . DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'vendor'.DIRECTORY_SEPARATOR.'autoload.php';
 
 use React\Socket\ConnectionInterface;
@@ -88,9 +89,26 @@ if ($blockMined != null && is_object($blockMined)) {
 
 	$returnFromPeer = Socket::sendMessageWithReturn($peerIP,$peerPORT,$infoToSend);
 	if ($returnFromPeer != null && isset($returnFromPeer['status']) && $returnFromPeer['status'] == true) {
+
+		Tools::writeLog('SUBPROCESS::[PROPAGATION] '.$peerIP.':'.$peerPORT." --> OK");
+		Tools::writeLog('SUBPROCESS::[PROPAGATION] '.$peerIP.':'.$peerPORT." --> " . $returnFromPeer['result']);
+
 		//Peer suggest sanity on my blockchain
 		if ($returnFromPeer['result'] == 'sanity') {
 			Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$peerIP.":".$peerPORT);
+		}
+	}
+	else {
+
+		Tools::writeLog('SUBPROCESS::[PROPAGATION] '.$peerIP.':'.$peerPORT." --> ERROR");
+
+		if (isset($returnFromPeer['status']) && $returnFromPeer['status'] == false) {
+			Tools::writeLog('SUBPROCESS::[PROPAGATION] '.$peerIP.':'.$peerPORT." --> sanity");
+			Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$peerIP.":".$peerPORT);
+		}
+		else {
+			Tools::writeLog('SUBPROCESS::[PROPAGATION] '.$peerIP.':'.$peerPORT." --> UKNOWN ERROR");
+			//Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$peerIP.":".$peerPORT);
 		}
 	}
 }

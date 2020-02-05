@@ -1,6 +1,6 @@
 <?php
 // Copyright 2018 MaTaXeToS
-// Copyright 2019 The Just4Fun Authors
+// Copyright 2019-2020 The Just4Fun Authors
 // This file is part of the J4FCore library.
 //
 // The J4FCore library is free software: you can redistribute it and/or modify
@@ -86,7 +86,7 @@ class DBTransactions {
      */
     public function GetTxnFromPool(int $limit=511) : array {
         $txs = array();
-        $txs_chaindata = $this->db->query("SELECT * FROM txnpool WHERE wallet_from <> wallet_to ORDER BY tx_fee DESC, timestamp DESC LIMIT " . $limit);
+        $txs_chaindata = $this->db->query("SELECT * FROM txnpool WHERE wallet_from <> wallet_to ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC LIMIT " . $limit);
         if (!empty($txs_chaindata)) {
             while ($tx_chaindata = $txs_chaindata->fetch_array(MYSQLI_ASSOC)) {
                 if ($tx_chaindata['txn_hash'] != null && strlen($tx_chaindata['txn_hash']) > 0)
@@ -128,15 +128,15 @@ class DBTransactions {
 	 * @return bool
 	 */
 	public function addTxnToPoolByPeer(string $txHash,array $transaction) : bool {
-		$infoTxnPool = $this->db->query("SELECT txn_hash FROM txnpool WHERE txn_hash = '".$txHash."' ORDER BY tx_fee DESC, timestamp DESC;")->fetch_assoc();
+		$infoTxnPool = $this->db->query("SELECT txn_hash FROM txnpool WHERE txn_hash = '".$txHash."' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC;")->fetch_assoc();
 		if (empty($infoTxnPool)) {
 
 			//Start Transactions
 			$this->db->begin_transaction();
 
 			$sqlAddTxnToPool = "
-			INSERT INTO txnpool (txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp)
-			VALUES ('".$txHash."','".$transaction['wallet_from_key']."','".$transaction['wallet_from']."','".$transaction['wallet_to']."','".$transaction['amount']."','".$transaction['signature']."','".$transaction['tx_fee']."','".$transaction['data']."','".$transaction['timestamp']."');";
+			INSERT INTO txnpool (txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, data, gasLimit, gasPrice, timestamp, version)
+			VALUES ('".$txHash."','".$transaction['wallet_from_key']."','".$transaction['wallet_from']."','".$transaction['wallet_to']."','".$transaction['amount']."','".$transaction['signature']."','".$transaction['data']."',".$transaction['gasLimit'].",".$transaction['gasPrice'].",'".$transaction['timestamp']."','".$transaction['version']."');";
 
 			//Commit transaction
 			if ($this->db->query($sqlAddTxnToPool)) {
@@ -159,7 +159,7 @@ class DBTransactions {
 	 * @return bool
 	 */
 	public function addTxnToPool(string $txHash,Transaction $transaction) : bool {
-		$infoTxnPool = $this->db->query("SELECT txn_hash FROM txnpool WHERE txn_hash = '".$txHash."' ORDER BY tx_fee DESC, timestamp DESC;")->fetch_assoc();
+		$infoTxnPool = $this->db->query("SELECT txn_hash FROM txnpool WHERE txn_hash = '".$txHash."' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC;")->fetch_assoc();
 		if (empty($infoTxnPool)) {
 
 			$wallet_from_pubkey = "";
@@ -172,8 +172,8 @@ class DBTransactions {
 			//Start Transactions
 			$this->db->begin_transaction();
 
-			$sqlAddTxnToPool = "INSERT INTO txnpool (txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, tx_fee, data, timestamp)
-					VALUES ('".$transaction->message()."','".$wallet_from_pubkey."','".$wallet_from."','".$transaction->to."','".$transaction->amount."','".$transaction->signature."','".$transaction->tx_fee."','".$transaction->data."','".$transaction->timestamp."');";
+			$sqlAddTxnToPool = "INSERT INTO txnpool (txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, data, gasLimit, gasPrice, timestamp, version)
+					VALUES ('".$transaction->message()."','".$wallet_from_pubkey."','".$wallet_from."','".$transaction->to."','".$transaction->amount."','".$transaction->signature."','".$transaction->data."',".$transaction->gasLimit.",".$transaction->gasPrice.",'".$transaction->timestamp."','".$transaction->version."');";
 
 			//Commit transaction
 			if ($this->db->query($sqlAddTxnToPool)) {
@@ -204,7 +204,7 @@ class DBTransactions {
      */
     public function GetAllTxnFromPool() : array {
         $txs = [];
-        $txs_chaindata = $this->db->query("SELECT * FROM txnpool ORDER BY tx_fee DESC, timestamp DESC");
+        $txs_chaindata = $this->db->query("SELECT * FROM txnpool ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC");
         if (!empty($txs_chaindata)) {
             while ($tx_chaindata = $txs_chaindata->fetch_array(MYSQLI_ASSOC)) {
                 $txs[] = $tx_chaindata;

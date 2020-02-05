@@ -1,6 +1,6 @@
 <?php
 // Copyright 2018 MaTaXeToS
-// Copyright 2019 The Just4Fun Authors
+// Copyright 2019-2020 The Just4Fun Authors
 // This file is part of the J4FCore library.
 //
 // The J4FCore library is free software: you can redistribute it and/or modify
@@ -93,9 +93,11 @@ class Block {
      * @param bool $isTestNet
      *
      */
-    public static function createGenesis(string $coinbase, string $privKey, int $amount, bool $isTestNet=false) {
-        $transactions = array(new Transaction("",$coinbase,$amount,$privKey,"","","If you want different results, do not do the same things"));
-        //$genesisBlock = new Block("",1, $transactions);
+    public static function createGenesisWithSubProcess(string $coinbase, string $privKey, string $amount, bool $isTestNet=false) : void {
+		$genesisTXN = Transaction::withGas("",$coinbase,$amount,$privKey,"","If you want different results, do not do the same things",21000,bcadd("0","0",18));
+
+		//Set Genesis transaction into txns array
+		$transactions = [$genesisTXN];
 
         Display::print("Start minning GENESIS block with " . count($transactions) . " txns - SubProcess: " . MINER_MAX_SUBPROCESS);
 
@@ -136,9 +138,7 @@ class Block {
      * @param bool $isTestnet
 	 * @param bool $isMultiThread
      */
-    public function mine(int $idMiner,bool $isTestnet,bool $isMultiThread=true) {
-
-        $this->timestamp = Tools::GetGlobalTime();
+    public function mine(int $idMiner,bool $isTestnet,bool $isMultiThread=true) : void {
 
         //We prepare the transactions that will go in the block
         $data = "";
@@ -152,28 +152,74 @@ class Block {
         //We add the hash of the previous block
 		$data .= $this->previous;
 
+		//Record init time
+		$this->timestamp = Tools::GetGlobalTime();
+
         //We started mining
         $this->nonce = PoW::findNonce($idMiner,$data,$this->difficulty,$this->startNonce,$this->incrementNonce,$isMultiThread);
+
+		//Record end time
+		$this->timestamp_end = Tools::GetGlobalTime();
+
         if ($this->nonce != "") {
-            //Make hash and merkle for this block
-            $this->hash = PoW::hash($data.$this->nonce);
-            $this->merkle = PoW::hash($data.$this->nonce.$this->hash);
+            //Make merkleRoot and hash for this block
+			$this->merkle = $this->GetMerkleRoot($this->GetTxnIds());
+            $this->hash = PoW::hash($data.$this->timestamp.$this->timestamp_end.$this->nonce.$this->merkle);
         }
         else {
             $this->hash = "";
             $this->merkle = "";
         }
-
-        $this->timestamp_end = Tools::GetGlobalTime();
-
     }
+
+	/**
+     * Get transactions hash of this block
+	 * @return array
+     */
+	public function GetTxnIds() : array {
+		$txnIds = [];
+		foreach ($this->transactions as $transaction) {
+			$txnIds[] = $transaction->message();
+		}
+		return $txnIds;
+	}
+
+	/**
+	 * Get MerkleRoot of this block
+	 *
+	 * @param array $txnIds
+	 * @return string
+	 */
+	public function GetMerkleRoot($txnIds) : string {
+
+		$merkleRoot = [];
+
+		//Split TxnIds
+		$txnIdsChunks = array_chunk($txnIds, 2);
+		foreach ($txnIdsChunks as $chunkTxn) {
+			$concat = "";
+
+			if (count($chunkTxn) == 2)
+				$concatTxnChunk = $chunkTxn[0] . $chunkTxn[1];
+			else
+				$concatTxnChunk = $chunkTxn[0] . $chunkTxn[0];
+
+			if (strlen($concatTxnChunk) > 0)
+				$merkleRoot[] = PoW::hash($concatTxnChunk);
+		}
+
+		if (count($merkleRoot) == 1)
+			return $merkleRoot[0];
+		else
+			return $this->GetMerkleRoot($merkleRoot);
+	}
 
     /**
      * Get miner transaction
      *
-     * @return bool|mixed
+     * @return Transaction
      */
-    public function GetMinerTransaction() {
+    public function GetMinerTransaction() : Transaction {
         foreach ($this->transactions as $transaction) {
             if ($transaction->from == "") {
                 if ($transaction->isValid()) {
@@ -191,13 +237,22 @@ class Block {
      */
     public function GetFeesOfTransactions() : string {
         $totalFees = bcadd("0","0",18);
+
+		$chaindata = new DB();
+
         foreach ($this->transactions as $transaction) {
+
+			$fees = "0";
+
             if ($transaction->isValid()) {
-                $totalFees = bcadd($totalFees,$transaction->tx_fee,18);
+				$fees = $transaction->GetFee($chaindata);
             }
             else
                 return null;
+
+			$totalFees = bcadd($totalFees,$fees,18);
         }
+
         return $totalFees;
     }
 

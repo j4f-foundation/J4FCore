@@ -1,6 +1,6 @@
 <?php
 // Copyright 2018 MaTaXeToS
-// Copyright 2019 The Just4Fun Authors
+// Copyright 2019-2020 The Just4Fun Authors
 // This file is part of the J4FCore library.
 //
 // The J4FCore library is free software: you can redistribute it and/or modify
@@ -27,7 +27,7 @@ class GenesisBlock {
      * @param bool $isTestNet
      * @param int $amount
      */
-    public static function make(DB &$chaindata,string $coinbase,string $privKey,bool $isTestNet,int $amount=50) : void {
+    public static function make(DB &$chaindata,string $coinbase,string $privKey,bool $isTestNet,string $amount="50") : void {
 
         @unlink(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
         @unlink(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR.Subprocess::$FILE_MINERS_STARTED);
@@ -68,17 +68,25 @@ class GenesisBlock {
      * @param int $amount
      * @param bool $isTestNet
      */
-	public static function makeMainThread(DB &$chaindata,string $coinbase,string $privKey,int $amount,bool $isTestNet) : void {
+	public static function makeMainThread(DB &$chaindata,string $coinbase,string $privKey,string $amount,bool $isTestNet) : void {
 		//We created the GENESIS block on mainthread
-		$transactions = array(new Transaction("",$coinbase,$amount,$privKey,"","","If you want different results, do not do the same things"));
 		$genesisBlock = $chaindata->GetGenesisBlock();
 		$lastBlock = $chaindata->GetLastBlock();
 
+		$nextHeight = $chaindata->GetNextBlockNum();
+
+		$transactions = Transaction::withGas("",$coinbase,$amount,$privKey,"","If you want different results, do not do the same things", 21000, "0");
+		$transactions = [$transactions];
+
 		//Define block
-		$genesisBlock = new Block(0,null,2,$transactions,$lastBlock,$genesisBlock,0,1);
+		$genesisBlock = new Block(0,"",2,$transactions,$lastBlock,$genesisBlock,0,1);
+
+		//Save transactions for this block
+        Tools::writeFile(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR.Subprocess::$FILE_TX_INFO,Tools::str2hex(@serialize($transactions)));
+        Tools::writeFile(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR.Subprocess::$FILE_MINERS_STARTED);
 
 		//Mine block
-		$genesisBlock->mine(0,$isTestnet,false);
+		$genesisBlock->mine(0,$isTestNet,false);
 
 		if (!$genesisBlock->isValid(0,$isTestNet)) {
 			Display::_error("%LR%GENESIS%W% no valid");
@@ -119,10 +127,13 @@ class GenesisBlock {
      * @param int $amount
      * @param bool $isTestNet
      */
-	public static function makeWithSubprocess(DB &$chaindata,string $coinbase,string $privKey,int $amount,bool $isTestNet) : void {
-		Block::createGenesis($coinbase, $privKey,$amount,$isTestNet);
-		while(true) {
+	public static function makeWithSubprocess(DB &$chaindata,string $coinbase,string $privKey,string $amount,bool $isTestNet) : void {
+		//Start subprocess to make Genesis Block
+		Block::createGenesisWithSubProcess($coinbase, $privKey,$amount,$isTestNet);
 
+		//Wait for block to be generated
+		while(true) {
+			
 			//Update MainThread time for subprocess
 			Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MAIN_THREAD_CLOCK,time());
 
@@ -177,14 +188,15 @@ class GenesisBlock {
         $transactions = array();
         if (!empty($genesis_block_bootstrap['transactions'])) {
             foreach ($genesis_block_bootstrap['transactions'] as $transactionInfo) {
-                $transactions[] = new Transaction(
+				$transactions[] = Transaction::withGas(
                     $transactionInfo['wallet_from_key'],
                     $transactionInfo['wallet_to'],
                     $transactionInfo['amount'],
                     "",
                     "",
-					'',
 					$transactionInfo['data'],
+					$transactionInfo['gasLimit'],
+					$transactionInfo['gasPrice'],
                     true,
                     $transactionInfo['txn_hash'],
                     $transactionInfo['signature'],
@@ -200,10 +212,10 @@ class GenesisBlock {
             $genesis_block_bootstrap['block_previous'],
             $genesis_block_bootstrap['difficulty'],
             $transactions,
-            '',
-            '',
-            '',
-            '',
+            null,
+            null,
+            0,
+            1,
 			true,
             $genesis_block_bootstrap['block_hash'],
             $genesis_block_bootstrap['nonce'],

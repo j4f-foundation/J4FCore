@@ -1,6 +1,6 @@
 <?php
 // Copyright 2018 MaTaXeToS
-// Copyright 2019 The Just4Fun Authors
+// Copyright 2019-2020 The Just4Fun Authors
 // This file is part of the J4FCore library.
 //
 // The J4FCore library is free software: you can redistribute it and/or modify
@@ -33,7 +33,7 @@ class Gas {
 		$totalGasUsed = 21000;
 
 		//Check if this txn run a contract
-		if (@strlen($contractHash) != 128)
+		if (@strlen($contractHash) != 128 && $contractHash != "J4F00000000000000000000000000000000000000000000000000000000")
 			return $totalGasUsed;
 
 		//Check if have data
@@ -67,6 +67,15 @@ class Gas {
 				}
 			}
 		}
+		//New contract
+		else {
+			$code = $callCode = Tools::hex2str($txnData);
+			$functions = J4FVMTools::getFunctions($code,true);
+			$contractName = J4FVMTools::GetContractName($code);
+			$totalGasUsed = self::GetGas($contractName,$functions,$totalGasUsed);
+			$totalGasUsed *= 10;
+			$totalGasUsed = intval(number_format($totalGasUsed,0,"",""));
+		}
 
 		return $totalGasUsed;
 	}
@@ -99,6 +108,18 @@ class Gas {
 			$totalGasUsed += (@count($function['params']) * 500);
 
 			//Get vars
+			@preg_match_all('/\s{1,}get::/',$function['code'],$matches);
+			if (!@empty($matches) && !@empty($matches[0])) {
+				$totalGasUsed += (@count($matches[0]) * 256);
+			}
+
+			//Set vars
+			@preg_match_all('/\s{1,}set::/',$function['code'],$matches);
+			if (!@empty($matches) && !@empty($matches[0])) {
+				$totalGasUsed += (@count($matches[0]) * 512);
+			}
+
+			//Get vars
 			@preg_match_all('/contract\.(get|table)\(/',$function['code'],$matches);
 			if (!@empty($matches) && !@empty($matches[0])) {
 				$totalGasUsed += (@count($matches[0]) * 1200);
@@ -111,7 +132,7 @@ class Gas {
 			}
 
 			//Maths
-			@preg_match_all('/(math|uint256)\.(add|sub|mul|div|mod|pow|sqrt|powmod|comp|float)\(/',$function['code'],$matches);
+			@preg_match_all('/(math|uint256)\.(add|sub|mul|div|mod|pow|sqrt|powmod|comp|float|parse)\(/',$function['code'],$matches);
 			if (!@empty($matches) && !@empty($matches[0])) {
 				$totalGasUsed += (@count($matches[0]) * 4500);
 			}
