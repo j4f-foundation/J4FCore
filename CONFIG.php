@@ -24,7 +24,7 @@ define('DISPLAY_DEBUG',                 false);
 define('DISPLAY_DEBUG_LEVEL',           4); //Levels: 1-4
 
 //DATABASE ENGINE
-define('FORCE_USE_ROCKSDB',				true);
+define('FORCE_USE_ROCKSDB',				false);
 
 // J4F BOOTSTRAP NODE INFO
 define('NODE_BOOTSTRAP',                '137.74.50.40');

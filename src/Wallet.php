@@ -28,7 +28,7 @@ class Wallet {
     public static function LoadOrCreate(string $account,string $password) : array {
 
         if ($password != null && $password == 'null')
-            $password = null;
+            $password = '';
 
         //By default, the file we want to check is the name of the account
         $wallet_file = Tools::GetBaseDir().DIRECTORY_SEPARATOR."data".DIRECTORY_SEPARATOR."wallets".DIRECTORY_SEPARATOR.$account.".dat";
