@@ -8,7 +8,7 @@ Total coins: Unlimited
 Blocks every: Mainnet ?? (average) | Testnet: 10 sec (average)
 ```
 
-![php >= 7.3](https://img.shields.io/badge/php-%3E%3D%207.1-blue)
+![php >= 7.3](https://img.shields.io/badge/php-%3E%3D%207.3-blue)
 ![GPL 3.0](https://img.shields.io/badge/license-GPL%203.0-orange)
 
 # Requisites
@@ -17,8 +17,8 @@ Blocks every: Mainnet ?? (average) | Testnet: 10 sec (average)
 ([How sync time](https://www.digitalocean.com/community/tutorials/how-to-set-up-time-synchronization-on-ubuntu-16-04))
 - Open ports for p2p connection
 - ReactPHP [See more](https://reactphp.org/)
-- OpenSSL
-- MariaDB Server with RocksDB Engine
+- OpenSSL [Windows: OpenSSL v1.1.1e](https://slproweb.com/products/Win32OpenSSL.html)
+- MariaDB Server (Optional: RocksDB Engine)
 - PHP 7.3 or higher
 - PHP Extensions:
   - php_mysqli
