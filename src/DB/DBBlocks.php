@@ -169,29 +169,29 @@ class DBBlocks extends DBContracts {
      */
     public function addBlock(int $blockNum,Block $blockInfo) : bool {
 
-        $error = false;
+        try {
+			//Get info of this hash block
+			$info_block_chaindata = $this->db->query("SELECT block_hash FROM blocks WHERE block_hash = '".$blockInfo->hash."';")->fetch_assoc();
+			if (empty($info_block_chaindata)) {
 
-        $info_block_chaindata = $this->db->query("SELECT block_hash FROM blocks WHERE block_hash = '".$blockInfo->hash."';")->fetch_assoc();
-        if (empty($info_block_chaindata)) {
+				//Check if exist previous
+				$block_previous = "";
+				if ($blockInfo->previous != null)
+					$block_previous = $blockInfo->previous;
 
-            //Check if exist previous
-            $block_previous = "";
-            if ($blockInfo->previous != null)
-                $block_previous = $blockInfo->previous;
+				//Start Transactions and disable autocommit sqls
+				$this->db->autocommit(FALSE);
+				$this->db->begin_transaction(MYSQLI_TRANS_START_READ_WRITE,"new_block_".$blockNum);
 
-            //Start Transactions
-            $this->db->begin_transaction();
+				//SQL Insert Block
+				$sql_insert_block = "INSERT INTO blocks (height,block_previous,block_hash,root_merkle,nonce,timestamp_start_miner,timestamp_end_miner,difficulty,version,info)
+				VALUES (".$blockNum.",'".$block_previous."','".$blockInfo->hash."','".$blockInfo->merkle."','".$blockInfo->nonce."','".$blockInfo->timestamp."','".$blockInfo->timestamp_end."','".$blockInfo->difficulty."','".$this->GetConfig('node_version')."','".$this->db->real_escape_string(@serialize($blockInfo->info))."');";
+				if (!$this->db->query($sql_insert_block))
+					throw new Exception('Error adding new block #'.$blockNum . ' - SQL: ' . $sql_insert_block);
 
-            //SQL Insert Block
-            $sql_insert_block = "INSERT INTO blocks (height,block_previous,block_hash,root_merkle,nonce,timestamp_start_miner,timestamp_end_miner,difficulty,version,info)
-            VALUES (".$blockNum.",'".$block_previous."','".$blockInfo->hash."','".$blockInfo->merkle."','".$blockInfo->nonce."','".$blockInfo->timestamp."','".$blockInfo->timestamp_end."','".$blockInfo->difficulty."','".$this->GetConfig('node_version')."','".$this->db->real_escape_string(@serialize($blockInfo->info))."');";
+				foreach ($blockInfo->transactions as $transaction) {
 
-            //Add block into blockchain
-            if ($this->db->query($sql_insert_block)) {
-
-                foreach ($blockInfo->transactions as $transaction) {
-
-                    $wallet_from_pubkey = "";
+					$wallet_from_pubkey = "";
                     $wallet_from = "";
                     if ($transaction->from != null) {
                         $wallet_from_pubkey = $transaction->from;
@@ -200,10 +200,8 @@ class DBBlocks extends DBContracts {
 
                     $sql_insert_transaction = "INSERT INTO transactions (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, data, gasLimit, gasPrice, timestamp, version)
                     VALUES ('".$blockInfo->hash."','".$transaction->message()."','".$wallet_from_pubkey."','".$wallet_from."','".$transaction->to."','".$transaction->amount."','".$transaction->signature."','".$transaction->data."',".$transaction->gasLimit.",".$transaction->gasPrice.",'".$transaction->timestamp."','".$transaction->version."');";
-					if (!$this->db->query($sql_insert_transaction)) {
-                        $error = true;
-                        break;
-                    }
+					if (!$this->db->query($sql_insert_transaction))
+						throw new Exception('Error adding txn of block #' . $blockNum . ' - SQL: ' . $sql_insert_transaction);
 
 					$outOfGas = false;
 					$totalGasTxn = Gas::calculateGasTxn($this,$transaction->to,$transaction->data);
@@ -231,10 +229,8 @@ class DBBlocks extends DBContracts {
 							ON DUPLICATE KEY UPDATE sended = sended + VALUES(sended), fees = fees + VALUES(fees);
 							";
 						}
-						if (!$this->db->query($sql_updateAccountFrom)) {
-							$error = true;
-							break;
-						}
+						if (!$this->db->query($sql_updateAccountFrom))
+							throw new Exception('Error updating account FROM - SQL: ' . $sql_updateAccountFrom);
 					}
 					//Update Account TO
 					if (strlen($transaction->to) > 0) {
@@ -263,32 +259,27 @@ class DBBlocks extends DBContracts {
 								";
 							}
 						}
-						if (!$this->db->query($sql_updateAccountTo)) {
-							$error = true;
-							break;
-						}
+						if (!$this->db->query($sql_updateAccountTo))
+							throw new Exception('Error updating account TO - SQL: ' . $sql_updateAccountTo);
 					}
 
                     //Remove transaction from pool
                     $this->removeTxnFromPool($transaction->message());
-                }
-            }
-            else {
-                $error = true;
-            }
-        }
-
-        //If have error, rollback action
-        if ($error) {
-            $this->db->rollback();
+				}
+			}
+		}
+		//If have error, rollback action
+		catch (Exception $e) {
+			$this->db->rollback();
+			Display::print($e->getMessage());
+			$this->db->autocommit(true);
             return false;
-        }
+		}
 
-        //No errors, block added
-        else {
-            $this->db->commit();
-            return true;
-        }
+		//No errors, block added
+		$this->db->commit();
+		$this->db->autocommit(true);
+		return true;
     }
 
     /**

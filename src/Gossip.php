@@ -157,13 +157,13 @@ final class Gossip {
 		//Save pointer of Gossip
 		$gossip = $this;
 
-		//Check integrity of last 20 blocks
-		Blockchain::checkIntegrity($gossip->chaindata,null,20);
-
 		if ($sanityBlockchain > 0) {
 			$gossip->SanityFromBlockHeight($sanityBlockchain);
 			exit();
 		}
+
+		//Check integrity of last 20 blocks
+		Blockchain::checkIntegrity($gossip->chaindata,null,20);
 
 		$loop = React\EventLoop\Factory::create();
 
