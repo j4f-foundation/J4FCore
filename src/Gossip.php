@@ -449,8 +449,7 @@ final class Gossip {
 
 					$gossip->chaindata->SetConfig('syncing','on');
 
-					if (DISPLAY_DEBUG && DISPLAY_DEBUG_LEVEL >= 1)
-						Display::_debug("Getting blocks from peer: " . @file_get_contents(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sync_with_peer"));
+					Display::_debug("Getting blocks from peer: " . @file_get_contents(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sync_with_peer"),1);
 				}
 			}
 		});
@@ -944,8 +943,7 @@ final class Gossip {
 
         if (count($peers) > 0) {
 
-            if (DISPLAY_DEBUG && DISPLAY_DEBUG_LEVEL >= 1)
-                Display::_debug("Checking status of peers                 %G%count%W%=".count($peers));
+            Display::_debug("Checking status of peers                 %G%count%W%=".count($peers),1);
 
             Tools::writeLog('Checking status of peers count='.count($peers));
 
@@ -1109,10 +1107,8 @@ final class Gossip {
 					$seconds = $threadTime->format('%s');
 					if ($seconds >= MINER_TIMEOUT_CLOSE) {
 
-						if (DISPLAY_DEBUG && DISPLAY_DEBUG_LEVEL >= 4) {
-							Display::_debug("MinerTimer  : " . intval($timeMiner));
-							Display::_debug("CurrentTimer: " . time());
-						}
+						Display::_debug("MinerTimer  : " . intval($timeMiner),4);
+						Display::_debug("CurrentTimer: " . time(),4);
 
 						Display::print("The miner thread #".$i." do not seem to respond (Timeout ".$seconds."s). Restarting Thread");
 

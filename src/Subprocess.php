@@ -47,8 +47,7 @@ class Subprocess {
         else
             system(PHP_RUN_COMMAND." ".$directory.$fileProcess.".php ".$params." > /dev/null 2>&1 &");
 
-        if (DISPLAY_DEBUG && DISPLAY_DEBUG_LEVEL >= 2)
-            Display::_debug("%Y%Started new subprocess%W%   %G%process%W%=".$fileProcess."    %G%params%W%=".$params);
+        Display::_debug("%Y%Started new subprocess%W%   %G%process%W%=".$fileProcess."    %G%params%W%=".$params,2);
     }
 
     /**

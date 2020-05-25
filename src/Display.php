@@ -73,9 +73,10 @@ class Display {
     /**
      * Write a debug line in the CMD
      * @param $string
+	 * @param $int
      */
-    public static function _debug(string $string) : void {
-		if (DISPLAY_DEBUG) {
+    public static function _debug(string $string, int $level) : void {
+		if (DISPLAY_DEBUG && DISPLAY_DEBUG_LEVEL >= $level) {
 			$date = new DateTime();
 			echo self::_replaceColors("%Y%DEBUG%W% [".$date->format("m-d|H:i:s")."] ".$string."%W%").self::_br();
 			ob_flush();

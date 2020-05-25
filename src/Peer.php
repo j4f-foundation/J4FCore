@@ -48,8 +48,9 @@ class Peer {
                 $lastBlock = $gossip->chaindata->GetLastBlock();
 
 				if (@is_array($lastBlock) && !@empty($lastBlock)) {
+
 					//Check if my last block is the previous block of the block to import
-					if ($lastBlock['block_hash'] == $object['block_previous']) {
+					if ($lastBlock['block_hash'] == $blockToImport->previous) {
 
 						//Define new height for next block
 						$nextHeight = $lastBlock['height']+1;
@@ -88,9 +89,9 @@ class Peer {
 							$gossip->chaindata->addPeerToBlackList($ipAndPort);
 							return false;
 						}
+					}
 
 					//Check if my last block is the same height of the block to import
-					}
 					else if ($lastBlock['block_previous'] == $blockToImport->previous && $lastBlock['block_hash'] != $blockToImport->hash) {
 
 						//Check if difficulty its ok
@@ -138,7 +139,10 @@ class Peer {
 							}
 							break;
 						}
-					} else if ($lastBlock['block_previous'] == $object['block_previous'] && $lastBlock['block_hash'] == $object['block_hash']) {
+					}
+
+					//Check if same block
+					else if ($lastBlock['block_previous'] == $object['block_previous'] && $lastBlock['block_hash'] == $object['block_hash']) {
 						continue;
 					}
 					else {
@@ -309,7 +313,7 @@ class Peer {
             'action' => 'SYNCBLOCKS',
             'from' => $lastBlockOnLocal
         );
-		$infoPOST = Socket::sendMessageWithReturn($ip,$port,$infoToSend);
+		$infoPOST = Socket::sendMessageWithReturn($ip,$port,$infoToSend,5);
 		if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1) {
 			if (is_array($infoPOST['result']) && !empty($infoPOST['result'])) {
 				return $infoPOST['result'];

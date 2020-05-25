@@ -181,7 +181,7 @@ class DBBlocks extends DBContracts {
 
 				//Start Transactions and disable autocommit sqls
 				$this->db->autocommit(FALSE);
-				$this->db->begin_transaction(MYSQLI_TRANS_START_READ_WRITE,"new_block_".$blockNum);
+				$this->db->begin_transaction();
 
 				//SQL Insert Block
 				$sql_insert_block = "INSERT INTO blocks (height,block_previous,block_hash,root_merkle,nonce,timestamp_start_miner,timestamp_end_miner,difficulty,version,info)

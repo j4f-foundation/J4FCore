@@ -63,7 +63,7 @@ class Socket {
 
 		$loop = React\EventLoop\Factory::create();
 		$connector = new React\Socket\Connector($loop, array(
-		    'timeout' => 5.0
+		    'timeout' => $timeout
 		));
 
 		$dataParsed = @json_encode($data);

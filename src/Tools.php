@@ -292,7 +292,7 @@ class Tools {
             $mini_hash = substr($blockMined->hash,-12);
             $mini_hash_previous = substr($blockMined->previous,-12);
 
-            Display::_debug("sendBlockMinedToNetworkWithSubprocess  %G%previous%W%=".$mini_hash_previous."  %G%hash%W%=".$mini_hash);
+            Display::_debug("sendBlockMinedToNetworkWithSubprocess  %G%previous%W%=".$mini_hash_previous."  %G%hash%W%=".$mini_hash,3);
         }
 
         //Run subprocess propagation per peer
