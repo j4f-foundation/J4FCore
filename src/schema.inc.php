@@ -440,6 +440,21 @@ if ($dbversion == 13) {
     $dbversion++;
 }
 
+if ($dbversion == 14) {
+
+	$db->db->query("ALTER TABLE `accounts` ADD UNIQUE INDEX `account` (`hash`) USING HASH;");
+	$db->db->query("ALTER TABLE `accounts_j4frc10` ADD UNIQUE INDEX `account_contract` (`hash`, `contract_hash`) USING HASH;");
+	$db->db->query("ALTER TABLE `accounts_j4frc20` ADD UNIQUE INDEX `account_contract_token` (`hash`, `contract_hash`, `tokenId`) USING HASH;");
+	$db->db->query("ALTER TABLE `config` ADD UNIQUE INDEX `config` (`cfg`) USING HASH;");
+	$db->db->query("ALTER TABLE `peers` DROP INDEX `ip`;");
+	$db->db->query("ALTER TABLE `peers` ADD UNIQUE INDEX `ip_port` (`ip`, `blacklist`) USING HASH;");
+
+    Display::print("Updating DB Schema #".$dbversion);
+
+    //Increment version to next stage
+    $dbversion++;
+}
+
 
 // update dbversion
 if ($dbversion != $_CONFIG['dbversion']) {
