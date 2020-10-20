@@ -634,7 +634,17 @@ class DBBlocks extends DBContracts {
      * @return int
      */
     public function GetNextBlockNum() : int {
-        return intval($this->db->query("SELECT COUNT(height) as NextBlockNum FROM blocks")->fetch_assoc()['NextBlockNum']);
+		return intval($this->db->query("SELECT height as NextBlockNum FROM blocks ORDER BY height DESC LIMIT 1")->fetch_assoc()['NextBlockNum']) + 1;
+    }
+
+	/**
+     * Returns the next block number in the block chain
+     * Must be the number entered in the next block
+     *
+     * @return int
+     */
+    public function GetCurrentBlockNum() : int {
+		return intval($this->db->query("SELECT height as NextBlockNum FROM blocks ORDER BY height DESC LIMIT 1")->fetch_assoc()['NextBlockNum']);
     }
 
     /**
@@ -737,7 +747,7 @@ class DBBlocks extends DBContracts {
      */
     public function SyncBlocks(int $fromBlock) : array {
         $blocksToSync = array();
-        $blocks_chaindata = $this->db->query("SELECT * FROM blocks ORDER BY height ASC LIMIT ".$fromBlock.",100");
+        $blocks_chaindata = $this->db->query("SELECT * FROM blocks ORDER BY height ASC LIMIT ".$fromBlock.",201");
 
         //If we have block information, we will import them into a new BlockChain
         if (!empty($blocks_chaindata)) {

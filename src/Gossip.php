@@ -152,7 +152,7 @@ final class Gossip {
 		if (!$this->bootstrap_node)
 			$this->lastBlock_BootstrapNode = BootstrapNode::GetLastBlockNum($this->chaindata,$this->isTestNet);
 		else
-			$this->lastBlock_BootstrapNode = $this->chaindata->GetNextBlockNum();
+			$this->lastBlock_BootstrapNode = $this->chaindata->GetCurrentBlockNum();
 
 		//Save pointer of Gossip
 		$gossip = $this;
@@ -163,6 +163,7 @@ final class Gossip {
 		}
 
 		//Check integrity of last 20 blocks
+		Display::print("%Y%CHECKING INTEGRITY%W% of last 20 blocks");
 		Blockchain::checkIntegrity($gossip->chaindata,null,20);
 
 		$loop = React\EventLoop\Factory::create();
@@ -226,7 +227,6 @@ final class Gossip {
                     exit();
                 }
 
-
                 //Set p2p ON
                 $gossip->chaindata->SetConfig('p2p','on');
 
@@ -251,7 +251,7 @@ final class Gossip {
                 }
 
 				$lastBlock_BootstrapNode = BootstrapNode::GetLastBlockNum($gossip->chaindata,$gossip->isTestNet);
-                $lastBlock_LocalNode = $this->chaindata->GetNextBlockNum();
+                $lastBlock_LocalNode = $this->chaindata->GetCurrentBlockNum();
 
                 //We check if we need to synchronize or not
                 if ($lastBlock_LocalNode < $lastBlock_BootstrapNode) {
@@ -343,7 +343,7 @@ final class Gossip {
 			if (!$gossip->bootstrap_node)
 				$gossip->lastBlock_BootstrapNode = BootstrapNode::GetLastBlockNum($gossip->chaindata,$gossip->isTestNet);
 			else
-				$gossip->lastBlock_BootstrapNode = $gossip->chaindata->GetNextBlockNum();
+				$gossip->lastBlock_BootstrapNode = $gossip->chaindata->GetCurrentBlockNum();
 		});
 
 		//General loop of node
@@ -385,7 +385,7 @@ final class Gossip {
 
 					//We get the last block from peer
 					$lastBlock_PeerNode = Peer::GetLastBlockNum($ipAndPort);
-					$lastBlock_LocalNode = $gossip->chaindata->GetNextBlockNum();
+					$lastBlock_LocalNode = $gossip->chaindata->GetCurrentBlockNum();
 
 					if ($lastBlock_LocalNode < $lastBlock_PeerNode) {
 						//Get next peer blocks
@@ -423,7 +423,7 @@ final class Gossip {
 			if (!$gossip->bootstrap_node && $gossip->connected_to_bootstrap) {
 				//We get the last block from the BootstrapNode
 				//$lastBlock_BootstrapNode = BootstrapNode::GetLastBlockNum($gossip->chaindata,$gossip->isTestNet);
-				$lastBlock_LocalNode = $gossip->chaindata->GetNextBlockNum();
+				$lastBlock_LocalNode = $gossip->chaindata->GetCurrentBlockNum();
 
 				//We check if we need to synchronize or not
 				if ($lastBlock_LocalNode < $gossip->lastBlock_BootstrapNode) {
@@ -788,7 +788,7 @@ final class Gossip {
 							BREAK;
 							case 'LASTBLOCKNUM':
 								$return['status'] = true;
-								$return['result'] = $gossip->chaindata->GetNextBlockNum();
+								$return['result'] = $gossip->chaindata->GetCurrentBlockNum();
 							break;
 							case 'STATUSNODE':
 								$return['status'] = true;
@@ -801,7 +801,7 @@ final class Gossip {
 									'syncing'       => $config['syncing'],
 									'dbversion'     => $config['dbversion'],
 									'nodeversion'   => $config['node_version'],
-									'lastBlock'     => $gossip->chaindata->GetNextBlockNum()
+									'lastBlock'     => $gossip->chaindata->GetCurrentBlockNum()
 								);
 							break;
 							case 'GETGENESIS':
