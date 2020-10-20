@@ -18,7 +18,7 @@ Blocks every: Mainnet ?? (average) | Testnet: 10 sec (average)
 - Open ports for p2p connection
 - ReactPHP [See more](https://reactphp.org/)
 - OpenSSL [Windows: OpenSSL v1.1.1e](https://slproweb.com/products/Win32OpenSSL.html)
-- MariaDB Server (Optional: RocksDB Engine)
+- MariaDB Server (Recommended with [RocksDB Engine](https://github.com/j4f-foundation/J4FCore/blob/master/RocksDB.md))
 - PHP 7.3 or higher
 - PHP Extensions:
   - php_mysqli
