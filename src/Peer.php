@@ -179,6 +179,47 @@ class Peer {
     }
 
 	/**
+	 * Check this peer and determine if need to sync with it
+	 *
+	 * @return bool
+	 */
+	public static function CheckPeerIfNeedToSync(Gossip &$gossip, string $peerIp, string $peerPort) : void {
+		$lastBlock = $gossip->chaindata->GetLastBlock();
+
+		$infoToSend = array(
+			'action' => 'STATUSNODE'
+		);
+		$response = Socket::sendMessageWithReturn($peerIp,$peerPort,$infoToSend,2);
+
+		//Check if response as ok
+		if ($response != null && isset($response['status'])) {
+
+			//Check if peer have same height block
+			if ($response['result']['lastBlock'] > ($lastBlock['height']+1)) {
+
+				//Check if have same GENESIS block from peer
+				$peerGenesisBlock = Peer::GetGenesisBlock($peerIp.':'.$peerPort);
+				$localGenesisBlock = $gossip->chaindata->GetGenesisBlock();
+
+				//Check if i have genesis block (local blockchain)
+				if ($localGenesisBlock != null) {
+					if ($localGenesisBlock['block_hash'] == $peerGenesisBlock['block_hash']) {
+						Tools::writeLog('SUBPROCESS::Selected peer '.$peer['ip'].':'.$peer['port'].' for sync');
+						@unlink(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer");
+						Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$peerIp.":".$peerPort);
+					}
+				}
+				else {
+					//Init sync
+					Tools::writeLog('SUBPROCESS::Selected peer '.$peer['ip'].':'.$peer['port'].' for sync');
+					@unlink(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer");
+					Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$peerIp.":".$peerPort);
+				}
+			}
+		}
+	}
+
+	/**
 	 * Select peer to sync with it
 	 *
 	 * @return string
@@ -310,10 +351,11 @@ class Peer {
 
         //Nos comunicamos con el BOOTSTRAP_NODE
         $infoToSend = array(
-            'action' => 'SYNCBLOCKS',
+			'action' => 'SYNCBLOCKS',
             'from' => $lastBlockOnLocal
         );
-		$infoPOST = Socket::sendMessageWithReturn($ip,$port,$infoToSend,5);
+
+		$infoPOST = Socket::sendMessageWithReturn($ip,$port,$infoToSend,30);
 		if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1) {
 			if (is_array($infoPOST['result']) && !empty($infoPOST['result'])) {
 				return $infoPOST['result'];
@@ -324,6 +366,5 @@ class Peer {
 		}
         else
             return [];
-    }
-
+	}
 }
