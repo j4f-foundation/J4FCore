@@ -75,9 +75,9 @@ class Socket {
 		//Delayed Stop Function
 		$currentTime = 0;
 		$breakSocket = false;
-		$loop->addPeriodicTimer(0.5, function () use ($loop, &$currentTime, &$breakSocket) {
+		$loop->addPeriodicTimer(1, function () use ($loop, &$currentTime, &$breakSocket, &$timeout) {
 			$currentTime++;
-			if ($currentTime >= 10 || $breakSocket)
+			if ($currentTime >= $timeout || $breakSocket)
 				$loop->stop();
 		});
 

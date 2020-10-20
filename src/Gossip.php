@@ -210,7 +210,7 @@ final class Gossip {
 	            $gossip->_addBootstrapNode($gossip);
 
                 //If we do not have open ports, we can not continue
-                if (!$gossip->connected_to_bootstrap) {
+              	if (!$gossip->connected_to_bootstrap) {
                     Display::_error("Impossible to establish a P2P connection with Bootstrap");
                     if (IS_WIN)
                         readline("Press any Enter to close close window");
@@ -390,7 +390,9 @@ final class Gossip {
 					if ($lastBlock_LocalNode < $lastBlock_PeerNode) {
 						//Get next peer blocks
 						$nextBlocksToSyncFromPeer = Peer::SyncNextBlocksFrom($ipAndPort,$lastBlock_LocalNode);
+
 						if (is_array($nextBlocksToSyncFromPeer) && !empty($nextBlocksToSyncFromPeer)) {
+
 							//Sync blocks
 							$resultSync = Peer::SyncBlocks($gossip,$nextBlocksToSyncFromPeer,$lastBlock_LocalNode,$lastBlock_PeerNode,$ipAndPort);
 
@@ -765,6 +767,7 @@ final class Gossip {
 									$infoToSend = array(
 										'action' => 'HELLO_PONG'
 									);
+
 									if (Socket::isAlive($msgFromPeer['client_ip'],$msgFromPeer['client_port'])) {
 										$gossip->chaindata->addPeer($msgFromPeer['client_ip'],$msgFromPeer['client_port']);
 										Display::print('%LP%Network%W% Connected to peer		%G%peerId%W%='.Tools::GetIdFromIpAndPort($msgFromPeer['client_ip'],$msgFromPeer['client_port']));
@@ -807,19 +810,11 @@ final class Gossip {
 							break;
 							case 'SYNCBLOCKS':
 								if (isset($msgFromPeer['from'])) {
-
-									//Check integrity of my blockchain
-									$integrityOk = Blockchain::checkIntegrity($gossip->chaindata,($msgFromPeer['from']+100),150);
-
-									if ($integrityOk) {
-										$return['status'] = true;
-										$return['result'] = $gossip->chaindata->SyncBlocks($msgFromPeer['from']);
-									}
-									else {
-										$return['status'] = true;
-										$return['result'] = null;
-										$return['error'] = 'IntegrityKO';
-									}
+									$return['status'] = true;
+									$return['result'] = $gossip->chaindata->SyncBlocks($msgFromPeer['from']);
+								}
+								else {
+									Display::print("ERROR SYNCBLOCKS");
 								}
 							break;
 							case 'HELLO_PONG':
@@ -840,8 +835,8 @@ final class Gossip {
 
 			//Remove peer when disconnect
 			$connection->on('close', function () use ($connection): void {
-	            //unset($this->peers[$connection->getRemoteAddress()]);
-	        });
+          //unset($this->peers[$connection->getRemoteAddress()]);
+      });
 
 		});
 
