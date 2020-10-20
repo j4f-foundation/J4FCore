@@ -5,7 +5,7 @@ PHP Blockchain from scratch with Smart Contracts
 ```
 PoW sha3-256d + sha3-512
 Total coins: Unlimited
-Blocks every: Mainnet ?? (average) | Testnet: 10 sec (average)
+Blocks every: Mainnet ?? (average) | Testnet: 5 sec (average)
 ```
 
 ![php >= 7.3](https://img.shields.io/badge/php-%3E%3D%207.3-blue)
@@ -91,7 +91,6 @@ If you have a fix or code change, feel free to submit it as a pull request direc
 Currency is still in early development phase, it may not be stable 100%
 ```
 The mainnet has not yet been released.
-The forecast for its launch is 4 months
 ```
 
 # Development Fund

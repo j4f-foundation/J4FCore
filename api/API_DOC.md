@@ -48,7 +48,7 @@ Default JSON-RPC endpoints:
 You can start use the HTTP JSON-RPC visit url ex.
 ```js
 http://NODE_IP:NODE_PORT/api/?method=net_version
-http://NODE_IP:NODE_PORT/api/?method=getBalance&wallet=VTx00000000000000000000000000000000
+http://NODE_IP:NODE_PORT/api/?method=getBalance&wallet=J4F00000000000000000000000000000000000000000000000000000000
 ```
 
 ## url Info
@@ -330,7 +330,7 @@ http://NODE_IP:NODE_PORT/api/?id=8&method=j4f_coinbase
 {
   "id":8,
   "jsonrpc": "2.0",
-  "result": "VTx00000000000000000000000000000000"
+  "result": "J4F00000000000000000000000000000000000000000000000000000000"
 }
 ```
 
@@ -359,7 +359,7 @@ http://NODE_IP:NODE_PORT/api/?id=9&method=j4f_accounts
 {
   "id":9,
   "jsonrpc": "2.0",
-  "result": ["VTx00000000000000000000000000000000"]
+  "result": ["J4F00000000000000000000000000000000000000000000000000000000"]
 }
 ```
 
@@ -398,7 +398,7 @@ http://NODE_IP:NODE_PORT/api/?id=10&method=j4f_addAccount&password=example_passw
   "id":10,
   "jsonrpc": "2.0",
   "result": {
-      "wallet":VTx00000000000000000000000000000000",
+      "wallet":J4F00000000000000000000000000000000000000000000000000000000",
       "public":"PUBLIC KEY....",
       "private":"PRIVATE KEY...."
   }
@@ -446,7 +446,7 @@ Returns the balance of the account of given address.
 
 ```js
 params: [
-   "wallet":"VTx00000000000000000000000000000000"
+   "wallet":"J4F00000000000000000000000000000000000000000000000000000000"
 ]
 ```
 
@@ -458,10 +458,10 @@ params: [
 ##### Example
 ```js
 // JSON-RPC Request
-curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_getBalance","params":["wallet":"VTx00000000000000000000000000000000"],"id":12}'
+curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_getBalance","params":["wallet":"J4F00000000000000000000000000000000000000000000000000000000"],"id":12}'
 
 //HTTP Request
-http://NODE_IP:NODE_PORT/api/?id=12&method=j4f_getBalance&wallet=VTx00000000000000000000000000000000
+http://NODE_IP:NODE_PORT/api/?id=12&method=j4f_getBalance&wallet=J4F00000000000000000000000000000000000000000000000000000000
 
 // Result
 {
@@ -483,7 +483,7 @@ Returns the pending balance of the account of given address.
 
 ```js
 params: [
-   "wallet":"VTx00000000000000000000000000000000"
+   "wallet":"J4F00000000000000000000000000000000000000000000000000000000"
 ]
 ```
 
@@ -495,10 +495,10 @@ params: [
 ##### Example
 ```js
 // JSON-RPC Request
-curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_getPendingBalance","params":["wallet":"VTx00000000000000000000000000000000"],"id":13}'
+curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_getPendingBalance","params":["wallet":"J4F00000000000000000000000000000000000000000000000000000000"],"id":13}'
 
 //HTTP Request
-http://NODE_IP:NODE_PORT/api/?id=13&method=j4f_getPendingBalance&wallet=VTx00000000000000000000000000000000
+http://NODE_IP:NODE_PORT/api/?id=13&method=j4f_getPendingBalance&wallet=J4F00000000000000000000000000000000000000000000000000000000
 
 // Result
 {
@@ -520,7 +520,7 @@ Returns the number of transactions *sent* from an address.
 
 ```js
 params: [
-   "wallet":"VTx00000000000000000000000000000000"
+   "wallet":"J4F00000000000000000000000000000000000000000000000000000000"
 ]
 ```
 
@@ -533,10 +533,10 @@ params: [
 ##### Example
 ```js
 // JSON-RPC Request
-curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_getTransactionCount","params":["wallet":"VTx00000000000000000000000000000000"],"id":14}'
+curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_getTransactionCount","params":["wallet":"J4F00000000000000000000000000000000000000000000000000000000"],"id":14}'
 
 //HTTP Request
-http://NODE_IP:NODE_PORT/api/?id=14&method=j4f_getTransactionCount&wallet=VTx00000000000000000000000000000000
+http://NODE_IP:NODE_PORT/api/?id=14&method=j4f_getTransactionCount&wallet=J4F00000000000000000000000000000000000000000000000000000000
 
 // Result
 {
@@ -636,8 +636,8 @@ Creates new message call transaction
 
 ```js
 params: [{
-  "from": "VTxed481ddab0bc5acefbaa67a2f35f8839",
-  "to": "VTx31b9ad4ac95a8f4d4ba7f4c5bb908e20",
+  "from": "J4F6eb3ed64d9bb395fc4b9cb63aae15b8d8e3a83520670bfd924c1ea49",
+  "to": "J4Fcaab3a3087a4c5b3c30dba34adf1726b86c7ba24c96c4b859f6a8a26",
   "password": "PASSWORD_WALLET_FROM",
   "amount": "1"
 }]
@@ -703,24 +703,24 @@ params: [
 curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_getBlockByHash","params":["0000cdd334c36ebc602462664b52c3d5df61f5e12b761695b164267bc789e0c5", "transactions":false],"id":18}'
 
 //HTTP Request
-http://NODE_IP:NODE_PORT/api/?id=18&method=j4f_getBlockByHash&hash=0000cdd334c36ebc602462664b52c3d5df61f5e12b761695b164267bc789e0c5&transactions=0
+http://NODE_IP:NODE_PORT/api/?id=18&method=j4f_getBlockByHash&hash=5922fe670445cfa2d8c4bc903917d43aa77df6242024c974606d5ba9909d3e6b9e7112704f09cbe9bdd9faf1f3532ecf2faeeb23520aee22f360051ecaeb3059&transactions=0
 
 // Result
 {
-"id":18,
-"jsonrpc":"2.0",
-"result": {
-    "height": "100",
-    "hash": "0000cdd334c36ebc602462664b52c3d5df61f5e12b761695b164267bc789e0c5",
-    "parentHash": "null",
-    "nonce": "13785",
-    "transactionsRoot": "210059b75e34048962171df100572d45a912d27a7c3c44e5708d9a0fe1fac38b",
-    "miner": "VTx31b9ad4ac95a8f4d4ba7f4c5bb908e20",
-    "difficulty": "1420552106474293933196125558253485924058694448219036746811467852730196165",
-    "totalDifficulty":  "1766847064778384329583297500742918515827483896875618958121606201292619775",
-    "timestamp": "1545881112",
-    "transactions": [{...},{ ... }]
-  }
+   "id":"18",
+   "jsonrpc":"2.0",
+   "result":{
+      "height":"100",
+      "hash":"5922fe670445cfa2d8c4bc903917d43aa77df6242024c974606d5ba9909d3e6b9e7112704f09cbe9bdd9faf1f3532ecf2faeeb23520aee22f360051ecaeb3059",
+      "parentHash":"d15adf91dc9a00fe2b7c8577535852e66b3e1d40196647bc09856fcf3a6eba613da88c9a1b14a770011e9193a9f2340119bb42f68abb832eea6efeb20f8cd81b",
+      "nonce":"2858",
+      "merkleRoot":"72dee7eca88831bf057d7fc5d79ac4e36c585d08cbe36dea9357795709eb72c494d15bebd784f34e2bb44936a1c997612c73d54c82f52ad4381669255212ee7d",
+      "miner":"J4Ff994e3b5c49c7f41eee4e3a5b0e6621f846b00ddd5142f7d66c888e1",
+      "difficulty":"1.46",
+      "maxDifficulty":"000FFFFFF00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "timestamp":"1580868187",
+      "transactions": [{...},{ ... }]
+   }
 }
 ```
 
@@ -770,7 +770,7 @@ Returns the information about a transaction requested by transaction hash.
 
 ```js
 params: [
-   "hash":"7378fe81f12248f7759a0535601ef2b5c9398a9956f9b254b06d3810e456687f"
+   "hash":"c4bf7d7aec6ba3d25bb8933623f8222489506d069c211c32b07a734416d93d43a662a29ad704eab78e473b51bf9ea3aad578d1595f5a3975595a9f1ae83c0389"
 ]
 ```
 
@@ -790,25 +790,27 @@ params: [
 ##### Example
 ```js
 // Request
-curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_getTransactionByHash","params":["hash":"7378fe81f12248f7759a0535601ef2b5c9398a9956f9b254b06d3810e456687f"],"id":20}'
+curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_getTransactionByHash","params":["hash":"c4bf7d7aec6ba3d25bb8933623f8222489506d069c211c32b07a734416d93d43a662a29ad704eab78e473b51bf9ea3aad578d1595f5a3975595a9f1ae83c0389"],"id":20}'
 
 //HTTP Request
-http://NODE_IP:NODE_PORT/api/?id=20&method=j4f_getTransactionByHash&hash=7378fe81f12248f7759a0535601ef2b5c9398a9956f9b254b06d3810e456687f
+http://NODE_IP:NODE_PORT/api/?id=20&method=j4f_getTransactionByHash&hash=c4bf7d7aec6ba3d25bb8933623f8222489506d069c211c32b07a734416d93d43a662a29ad704eab78e473b51bf9ea3aad578d1595f5a3975595a9f1ae83c0389
 
 // Result
 {
-  "jsonrpc":"2.0",
-  "id":20,
-  "result":{
-    "blockHash":"0000cdd334c36ebc602462664b52c3d5df61f5e12b761695b164267bc789e0c5",
-    "blockHeight":"1000",
-    "hash":"7378fe81f12248f7759a0535601ef2b5c9398a9956f9b254b06d3810e456687f",
-    "from":"VTx00000000000000000000000000000000",
-    "to":"VTx00000000000000000000000000000000",
-    "fee":"0.00000900",
-    "amount":"429",
-    "signature":"ILPjd7CjCJj36NfoCg2ojY8gZyXSUKYCy3iiKn1H52WT+TZyMmgIwrVZ+BKNv+qQ1Qo+dmA46wi5X72L9jthKFnhbfRs/7xpQP8W9sglbrIRBhTZ0HqB70R6yg5flHgTAIPKKuO7QKW+5PYiQKaSsSztMaeryMe619BRyMeQI7/qRScc/AZUzshQdDqedjkb+2eiVNdQzvNn0oKQ5A0kt7Txd117vRXYxkkdcHl7WMTnBiwlyM0luTBSe6hGZRXD5MqOSj8p5zGKveIPzyxdbwX77e8KB/bLNuw8rGaZwdg2jYj9VjK1ILaiRsyhWi6HWvjLCpECY0QNlynbO4MDBw=="
-  }
+   "id":"20",
+   "jsonrpc":"2.0",
+   "result":{
+      "blockHash":"e61eed040850ff6760324ee3afca27034c8c632e46cfde1a458c59aea8e3cab655f378215ef4536018aa329bee0049b6853bb649e17c0893597d991d7fc3e233",
+      "blockHeight":17453,
+      "hash":"c4bf7d7aec6ba3d25bb8933623f8222489506d069c211c32b07a734416d93d43a662a29ad704eab78e473b51bf9ea3aad578d1595f5a3975595a9f1ae83c0389",
+      "from":"REWARD_MINER",
+      "to":"J4Ff994e3b5c49c7f41eee4e3a5b0e6621f846b00ddd5142f7d66c888e1",
+      "amount":"2.000000000000000000",
+      "gasLimit":"21000",
+      "gasPrice":"0.000000000000000000",
+      "signature":"dUn2mH8lL12wAuRC21vkSP2L4jsCs+n7DqeM+4O4hNCEjlbfPcPbahzRqAwtg9JRWtZQef5ztmQvJCr7zexGW4iqJ446CjeeZy5Gzg6izs9lO9NayAnHJLiPmuQ4TAyKF3jYnOWnq7je6TDbaf+3NHeCbA1k2FXX1bSlInZNC4twcVxin0H2OSCj6EtRYHmc5\/jCpH4pyI6W4byrpp6AVXdGXxFbuAadmrCDP6vnJvUIqHhps4NStXVD8S\/fHZfkDvLrR3CWDGSEAYx9cb44GaP9oJENO9TDoYnBKAi4zgCKOYMxZ99N2gevPrxJJtap7Ndcs4me63Dbb3cqjckK+Q==",
+      "data":"0x"
+   }
 }
 ```
 
@@ -824,7 +826,7 @@ Check if cant sign this wallet with this password
 
 ```js
 params: [
-   "wallet":"VTx00000000000000000000000000000000",
+   "wallet":"J4F00000000000000000000000000000000000000000000000000000000",
    "password":"EXAMPLE_PASSWORD"
 ]
 ```
@@ -836,10 +838,10 @@ params: [
 ##### Example
 ```js
 // Request
-curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_sign","params":["wallet":"VTx00000000000000000000000000000000","password":"EXAMPLE_PASSWORD"],"id":20}'
+curl -X POST --data '{"jsonrpc":"2.0","method":"j4f_sign","params":["wallet":"J4F00000000000000000000000000000000000000000000000000000000","password":"EXAMPLE_PASSWORD"],"id":20}'
 
 //HTTP Request
-http://NODE_IP:NODE_PORT/api/?id=20&method=j4f_sign&wallet=VTx00000000000000000000000000000000&password=EXAMPLE_PASSWORD
+http://NODE_IP:NODE_PORT/api/?id=20&method=j4f_sign&wallet=J4F00000000000000000000000000000000000000000000000000000000&password=EXAMPLE_PASSWORD
 
 // Result
 {
