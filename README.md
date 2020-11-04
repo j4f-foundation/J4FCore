@@ -19,6 +19,7 @@ Blocks every: Mainnet ?? (average) | Testnet: 5 sec (average)
 - ReactPHP [See more](https://reactphp.org/)
 - OpenSSL [Windows: OpenSSL v1.1.1e](https://slproweb.com/products/Win32OpenSSL.html)
 - MariaDB Server (Recommended with [RocksDB Engine](https://github.com/j4f-foundation/J4FCore/blob/master/RocksDB.md))
+- OpenSSL [See more](https://slproweb.com/products/Win32OpenSSL.html)
 - PHP 7.3 or higher
 - PHP Extensions:
   - php_mysqli

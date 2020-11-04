@@ -163,8 +163,10 @@ final class Gossip {
 		}
 
 		//Check integrity of last 20 blocks
-		Display::print("%Y%CHECKING INTEGRITY%W% of last 20 blocks");
-		Blockchain::checkIntegrity($gossip->chaindata,null,20);
+		if ($this->chaindata->GetCurrentBlockNum() > 0) {
+			Display::print("%Y%CHECKING INTEGRITY%W% of last 20 blocks");
+			Blockchain::checkIntegrity($gossip->chaindata,null,20);
+		}
 
 		$loop = React\EventLoop\Factory::create();
 
