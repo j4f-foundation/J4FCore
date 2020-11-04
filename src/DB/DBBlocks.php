@@ -746,8 +746,16 @@ class DBBlocks extends DBContracts {
      * @return array
      */
     public function SyncBlocks(int $fromBlock) : array {
+
+		$blocks_in = "";
+		for ($i = $fromBlock; $i < $fromBlock + 1001; $i++) {
+			if (strlen($blocks_in) > 0)
+				$blocks_in .= ",";
+			$blocks_in .= $i;
+		}
+
         $blocksToSync = array();
-        $blocks_chaindata = $this->db->query("SELECT * FROM blocks ORDER BY height ASC LIMIT ".$fromBlock.",201");
+        $blocks_chaindata = $this->db->query("SELECT * FROM blocks WHERE height IN (".$blocks_in.") ORDER BY height ASC;");
 
         //If we have block information, we will import them into a new BlockChain
         if (!empty($blocks_chaindata)) {
