@@ -11,7 +11,7 @@ Blocks every: Mainnet ?? (average) | Testnet: 5 sec (average)
 ![php >= 7.3](https://img.shields.io/badge/php-%3E%3D%207.3-blue)
 ![GPL 3.0](https://img.shields.io/badge/license-GPL%203.0-orange)
 
-# Requisites
+# Requirements
 
 - Time synchronized with NTP ([NTP Pool](https://www.pool.ntp.org))
 ([How sync time](https://www.digitalocean.com/community/tutorials/how-to-set-up-time-synchronization-on-ubuntu-16-04))

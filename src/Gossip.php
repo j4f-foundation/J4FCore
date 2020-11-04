@@ -776,7 +776,7 @@ final class Gossip {
 									else
 										$return['result'] = "p2p_off";
 								}
-							BREAK;
+							break;
 							case 'HELLO':
 								if (isset($msgFromPeer['client_ip']) && isset($msgFromPeer['client_port'])) {
 									$return['status'] = true;
@@ -785,7 +785,7 @@ final class Gossip {
 								} else {
 									$return['message'] = "No ClientIP or ClientPort defined";
 								}
-							BREAK;
+							break;
 							case 'LASTBLOCKNUM':
 								$return['status'] = true;
 								$return['result'] = $gossip->chaindata->GetCurrentBlockNum();
