@@ -455,6 +455,24 @@ if ($dbversion == 14) {
     $dbversion++;
 }
 
+if ($dbversion == 14) {
+
+	if (FORCE_USE_ROCKSDB) {
+		$db->db->query("
+		set rocksdb_bulk_load=1;
+		ALTER TABLE `blocks` ADD UNIQUE INDEX `height` (`height`) USING BTREE;
+		");
+	}
+	else {
+		$db->db->query("ALTER TABLE `blocks` ADD UNIQUE INDEX `height` (`height`) USING BTREE;");
+	}
+
+    Display::print("Updating DB Schema #".$dbversion);
+
+    //Increment version to next stage
+    $dbversion++;
+}
+
 
 // update dbversion
 if ($dbversion != $_CONFIG['dbversion']) {
