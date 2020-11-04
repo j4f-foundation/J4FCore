@@ -455,7 +455,7 @@ if ($dbversion == 14) {
     $dbversion++;
 }
 
-if ($dbversion == 14) {
+if ($dbversion == 15) {
 
 	if (FORCE_USE_ROCKSDB) {
 		$db->db->query("
@@ -465,6 +465,24 @@ if ($dbversion == 14) {
 	}
 	else {
 		$db->db->query("ALTER TABLE `blocks` ADD UNIQUE INDEX `height` (`height`) USING BTREE;");
+	}
+
+    Display::print("Updating DB Schema #".$dbversion);
+
+    //Increment version to next stage
+    $dbversion++;
+}
+
+if ($dbversion == 16) {
+
+	if (FORCE_USE_ROCKSDB) {
+		$db->db->query("
+		set rocksdb_bulk_load=1;
+		ALTER TABLE `transactions` ADD INDEX `timestamp` (`timestamp`);
+		");
+	}
+	else {
+		$db->db->query("ALTER TABLE `transactions` ADD INDEX `timestamp` (`timestamp`);");
 	}
 
     Display::print("Updating DB Schema #".$dbversion);
