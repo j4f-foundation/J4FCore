@@ -634,7 +634,7 @@ class DBBlocks extends DBContracts {
      * @return int
      */
     public function GetNextBlockNum() : int {
-		return intval($this->db->query("SELECT height as NextBlockNum FROM blocks ORDER BY height DESC LIMIT 1")->fetch_assoc()['NextBlockNum']) + 1;
+		return intval($this->GetCurrentBlockNum()) + 1;
     }
 
 	/**
@@ -644,7 +644,7 @@ class DBBlocks extends DBContracts {
      * @return int
      */
     public function GetCurrentBlockNum() : int {
-		return intval($this->db->query("SELECT height as NextBlockNum FROM blocks ORDER BY height DESC LIMIT 1")->fetch_assoc()['NextBlockNum']);
+		return intval($this->db->query("SELECT height as CurrentBlockNum FROM blocks ORDER BY height DESC LIMIT 1")->fetch_assoc()['CurrentBlockNum']);
     }
 
     /**
@@ -658,6 +658,7 @@ class DBBlocks extends DBContracts {
         //If we have block information, we will import them into a new BlockChain
         if (!empty($blocks_chaindata)) {
             while ($blockInfo = $blocks_chaindata->fetch_array(MYSQLI_ASSOC)) {
+				//Get Miner TXN
                 $transactions_chaindata = $this->db->query("SELECT * FROM transactions WHERE block_hash = '".$blockInfo['block_hash']."' AND wallet_from = '' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC;");
                 $transactions = array();
                 if (!empty($transactions_chaindata)) {
@@ -666,7 +667,7 @@ class DBBlocks extends DBContracts {
                     }
                 }
 
-				//TMP-FIX
+				//Get Other TXNs
 				$transactions_chaindata = $this->db->query("SELECT * FROM transactions WHERE block_hash = '".$blockInfo['block_hash']."' AND wallet_from <> '' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC;");
                 if (!empty($transactions_chaindata)) {
                     while ($transactionInfo = $transactions_chaindata->fetch_array(MYSQLI_ASSOC)) {
@@ -692,21 +693,18 @@ class DBBlocks extends DBContracts {
      */
     public function GetLastBlock(bool $withTransactions=true) : array {
         $lastBlock = [];
-        $infoLastBlock = $this->db->query("SELECT * FROM blocks ORDER BY height DESC LIMIT 1");
-        //If we have block information, we will import them into a new BlockChain
+		$lastBlockNum = $this->GetCurrentBlockNum();
+        $infoLastBlock = $this->db->query("SELECT * FROM blocks WHERE height = " . $lastBlockNum);
+
         if (!empty($infoLastBlock)) {
             while ($blockInfo = $infoLastBlock->fetch_array(MYSQLI_ASSOC)) {
 
                 $transactions = array();
 
-                //Select only hashes of txns
+				//Miner TXN
                 $sql = "SELECT txn_hash FROM transactions WHERE block_hash = '".$blockInfo['block_hash']."' AND wallet_from = '' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC;";
-
-                //If want all transaction info, select all
                 if ($withTransactions)
                     $sql = "SELECT * FROM transactions WHERE block_hash = '".$blockInfo['block_hash']."' AND wallet_from = '' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC;";
-
-                //Get transactions
                 $transactions_chaindata = $this->db->query($sql);
                 if (!empty($transactions_chaindata)) {
                     while ($transactionInfo = $transactions_chaindata->fetch_array(MYSQLI_ASSOC)) {
@@ -717,7 +715,7 @@ class DBBlocks extends DBContracts {
                     }
                 }
 
-				//TMP FIX
+				//Other TXNs
                 $sql = "SELECT txn_hash FROM transactions WHERE block_hash = '".$blockInfo['block_hash']."' AND wallet_from <> '' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC;";
                 if ($withTransactions)
                     $sql = "SELECT * FROM transactions WHERE block_hash = '".$blockInfo['block_hash']."' AND wallet_from <> '' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC;";
@@ -748,7 +746,7 @@ class DBBlocks extends DBContracts {
     public function SyncBlocks(int $fromBlock) : array {
 
 		$blocks_in = "";
-		for ($i = $fromBlock; $i < $fromBlock + 1001; $i++) {
+		for ($i = $fromBlock; $i < $fromBlock + 1000; $i++) {
 			if (strlen($blocks_in) > 0)
 				$blocks_in .= ",";
 			$blocks_in .= $i;
@@ -762,6 +760,7 @@ class DBBlocks extends DBContracts {
             $height = 0;
             while ($blockInfo = $blocks_chaindata->fetch_array(MYSQLI_ASSOC)) {
 
+				//Miner TXN
                 $transactions_chaindata = $this->db->query("SELECT * FROM transactions WHERE block_hash = '".$blockInfo['block_hash']."' and wallet_from = '' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC;");
                 $transactions = array();
                 if (!empty($transactions_chaindata)) {
@@ -770,7 +769,7 @@ class DBBlocks extends DBContracts {
                     }
                 }
 
-				//TMP FIX
+				//Other TXNs
 				$transactions_chaindata = $this->db->query("SELECT * FROM transactions WHERE block_hash = '".$blockInfo['block_hash']."' and wallet_from <> '' ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC;");
                 if (!empty($transactions_chaindata)) {
                     while ($transactionInfo = $transactions_chaindata->fetch_array(MYSQLI_ASSOC)) {

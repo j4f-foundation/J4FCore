@@ -115,39 +115,6 @@ class Tools {
      */
     public static function GetIdFromIpAndPort($ip,$port) {
         return substr(PoW::hash($ip.$port),0,18);
-		//return $ip.":".$port;
-    }
-
-    /**
-     * Send a POST message to a destination
-     *
-     * @param $url
-     * @param $data
-     * @param $timeout
-     * @param null $username
-     * @param null $password
-     * @return mixed|string
-     */
-
-    public static function postContent($url, $data = array(), $timeout = 20, $username = null, $password = null)
-    {
-        $postdata = http_build_query($data);
-
-        $opts = array('http' =>
-            array(
-                'method'  => 'POST',
-                'header'  => 'Content-type: application/x-www-form-urlencoded',
-                'content' => $postdata,
-                'timeout' => $timeout,
-            )
-        );
-
-        if($username && $password)
-            $opts['http']['header'] = ("Authorization: Basic " . @base64_encode("$username:$password"));
-
-        $stream = @stream_context_create($opts);
-        $contents = @file_get_contents($url, false, $stream);
-        return @json_decode($contents);
     }
 
     /**
@@ -555,37 +522,5 @@ class Tools {
 		}
 		return number_format($number, $length);
 	}
-
-    /**
-     * Send a CURL POST message to a destination
-     *
-     * @param string $url
-     * @param array $data
-     * @param int $timeout
-     * @return mixed|string
-     */
-    public static function postContentV1($url, $data, $timeout = 60)
-    {
-        try {
-
-            $postdata = @http_build_query($data);
-
-            $ch = @curl_init();
-
-            @curl_setopt($ch, CURLOPT_URL,$url);
-            @curl_setopt($ch, CURLOPT_POST, 1);
-            @curl_setopt($ch, CURLOPT_POSTFIELDS, $postdata);
-            @curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 0);
-            @curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
-            @curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-            $server_output = @json_decode(@curl_exec($ch));
-
-            @curl_close ($ch);
-            return $server_output;
-        } catch (Exception $e) {
-            return "error";
-        }
-    }
 }
 ?>

@@ -58,7 +58,7 @@ class SmartContract {
 						$j4fvm_process->setAmount($transaction->amount);
 						$j4fvm_process->setData($transaction->data);
 
-						//Run contract
+						//Run subprocess
 						$j4fvm_process->run();
 					}
 				}
@@ -67,7 +67,7 @@ class SmartContract {
 	}
 
 	/**
-	 * Make Smart Contracts of this block
+	 * Make Smart Contracts of this transaction
 	 * All nodes create smart contracts on blockchain (local)
 	 *
 	 * @param DB $chaindata
