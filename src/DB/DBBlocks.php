@@ -746,7 +746,7 @@ class DBBlocks extends DBContracts {
     public function SyncBlocks(int $fromBlock) : array {
 
 		$blocks_in = "";
-		for ($i = $fromBlock; $i < $fromBlock + 1000; $i++) {
+		for ($i = $fromBlock; $i <= $fromBlock + 1000; $i++) {
 			if (strlen($blocks_in) > 0)
 				$blocks_in .= ",";
 			$blocks_in .= $i;
