@@ -422,17 +422,32 @@ if ($dbversion == 12) {
 
 if ($dbversion == 13) {
 
-	$db->db->query("ALTER TABLE accounts ENGINE = InnoDB;");
-	$db->db->query("ALTER TABLE accounts_j4frc10 ENGINE = InnoDB;");
-	$db->db->query("ALTER TABLE accounts_j4frc20 ENGINE = InnoDB;");
-	$db->db->query("ALTER TABLE blocks ENGINE = InnoDB;");
-	$db->db->query("ALTER TABLE config ENGINE = InnoDB;");
-	$db->db->query("ALTER TABLE peers ENGINE = InnoDB;");
-	$db->db->query("ALTER TABLE smart_contracts ENGINE = InnoDB;");
-	$db->db->query("ALTER TABLE smart_contracts_txn ENGINE = InnoDB;");
-	$db->db->query("ALTER TABLE smart_contracts_txn_token ENGINE = InnoDB;");
-	$db->db->query("ALTER TABLE transactions ENGINE = InnoDB;");
-	$db->db->query("ALTER TABLE txnpool ENGINE = InnoDB;");
+	if (FORCE_USE_ROCKSDB) {
+		$db->db->query("ALTER TABLE accounts ENGINE = RocksDB;");
+		$db->db->query("ALTER TABLE accounts_j4frc10 ENGINE = RocksDB;");
+		$db->db->query("ALTER TABLE accounts_j4frc20 ENGINE = RocksDB;");
+		$db->db->query("ALTER TABLE blocks ENGINE = RocksDB;");
+		$db->db->query("ALTER TABLE config ENGINE = RocksDB;");
+		$db->db->query("ALTER TABLE peers ENGINE = RocksDB;");
+		$db->db->query("ALTER TABLE smart_contracts ENGINE = RocksDB;");
+		$db->db->query("ALTER TABLE smart_contracts_txn ENGINE = RocksDB;");
+		$db->db->query("ALTER TABLE smart_contracts_txn_token ENGINE = RocksDB;");
+		$db->db->query("ALTER TABLE transactions ENGINE = RocksDB;");
+		$db->db->query("ALTER TABLE txnpool ENGINE = RocksDB;");
+	}
+	else {
+		$db->db->query("ALTER TABLE accounts ENGINE = InnoDB;");
+		$db->db->query("ALTER TABLE accounts_j4frc10 ENGINE = InnoDB;");
+		$db->db->query("ALTER TABLE accounts_j4frc20 ENGINE = InnoDB;");
+		$db->db->query("ALTER TABLE blocks ENGINE = InnoDB;");
+		$db->db->query("ALTER TABLE config ENGINE = InnoDB;");
+		$db->db->query("ALTER TABLE peers ENGINE = InnoDB;");
+		$db->db->query("ALTER TABLE smart_contracts ENGINE = InnoDB;");
+		$db->db->query("ALTER TABLE smart_contracts_txn ENGINE = InnoDB;");
+		$db->db->query("ALTER TABLE smart_contracts_txn_token ENGINE = InnoDB;");
+		$db->db->query("ALTER TABLE transactions ENGINE = InnoDB;");
+		$db->db->query("ALTER TABLE txnpool ENGINE = InnoDB;");
+	}
 
     Display::print("Updating DB Schema #".$dbversion);
 
