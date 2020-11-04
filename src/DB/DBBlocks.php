@@ -96,7 +96,7 @@ class DBBlocks extends DBContracts {
      * @return int
      */
     public function GetBlockHeightByHash($hash) : int {
-        $sql = "SELECT height FROM blocks WHERE block_hash = '".$hash."' LIMIT 1;";
+        $sql = "SELECT height FROM blocks WHERE block_hash = '".$hash."';";
         $info_block = $this->db->query($sql)->fetch_assoc();
         if (!empty($info_block))
             return intval($info_block['height']);
@@ -644,7 +644,7 @@ class DBBlocks extends DBContracts {
      * @return int
      */
     public function GetCurrentBlockNum() : int {
-		return intval($this->db->query("SELECT height as CurrentBlockNum FROM blocks ORDER BY height DESC LIMIT 1")->fetch_assoc()['CurrentBlockNum']);
+		return intval($this->db->query("SELECT max(height) as CurrentBlockNum FROM blocks;")->fetch_assoc()['CurrentBlockNum']);
     }
 
     /**
