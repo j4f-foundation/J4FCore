@@ -143,8 +143,18 @@ if ($id != null) {
                     $nodeSyncing = $chaindata->GetConfig('syncing');
                     if (strlen($nodeSyncing) > 0 && $nodeSyncing == 'on')
                         $syncing = true;
+					if ($syncing) {
 
-                    $response_jsonrpc['result'] = $syncing;
+						$highestBlock = $chaindata->GetConfig('highestBlock');
+
+						$response_jsonrpc['result'] = array(
+							"currentBlock" => $chaindata->GetCurrentBlockNum(),
+							"highestBlock" => $highestBlock,
+						);
+					}
+					else {
+						$response_jsonrpc['result'] = $syncing;
+					}
                 break;
 
                 case 'node_mining':
@@ -202,7 +212,7 @@ if ($id != null) {
                 break;
 
                 case 'j4f_blockNumber':
-                    $response_jsonrpc['result'] = $chaindata->GetLastBlock(false)['height'];
+                    $response_jsonrpc['result'] = $chaindata->GetCurrentBlockNum();
                 break;
 
                 case 'j4f_getBalance':

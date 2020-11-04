@@ -388,6 +388,10 @@ final class Gossip {
 					$lastBlock_LocalNode = $gossip->chaindata->GetCurrentBlockNum();
 
 					if ($lastBlock_LocalNode < $lastBlock_PeerNode) {
+
+						//Save highest block in config table (used in API)
+						$gossip->chaindata->SetConfig('highestBlock',$lastBlock_PeerNode);
+
 						//Get next peer blocks
 						$nextBlocksToSyncFromPeer = Peer::SyncNextBlocksFrom($ipAndPort,$lastBlock_LocalNode);
 
