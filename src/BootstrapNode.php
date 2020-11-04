@@ -44,7 +44,7 @@ class BootstrapNode {
 		if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1)
 			return $infoPOST['result'];
 		else
-			return null;
+			return [];
     }
 
     /**
