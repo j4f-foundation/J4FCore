@@ -544,8 +544,6 @@ final class Gossip {
 									$return['error'] = "6x00000002";
 									$return['message'] = "Block date is from the future";
 									//Display::_error('Block date is from the future');
-									//Display::_error('BlockTime: ' . $blockMinedByPeer->timestamp_end);
-									//Display::_error('LocalTime: ' . $currentLocalTime);
 									break;
 								}
 
@@ -570,7 +568,6 @@ final class Gossip {
 										break;
 									}
 
-									/*
 									// We check if the time difference is equal orgreater than 2s
 									$diffTimeBlocks = date_diff(
 							            date_create(date('Y-m-d H:i:s', $lastBlock['timestamp_end_miner'])),
@@ -582,10 +579,9 @@ final class Gossip {
 										$return['status'] = true;
 										$return['error'] = "5x00000000";
 										$return['result'] = 'sanity';
-										//Display::_error('Peer need sanity');
+										//Display::_error('Peer need sanity - DiffSeconds: ' . $diffTimeSeconds);
 										break;
 									}
-									*/
 
 									//Valid new block in same hiehgt to add in Blockchain
 									$returnCode = Blockchain::isValidBlockMinedByPeerInSameHeight($gossip->chaindata,$lastBlock,$blockMinedByPeer);
