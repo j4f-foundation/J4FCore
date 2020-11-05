@@ -752,7 +752,7 @@ final class Gossip {
 									$gossip->chaindata->addPeer($msgFromPeer['client_ip'],$msgFromPeer['client_port']);
 
 									//Get more peers from this new peer
-									//Peer::GetMorePeers($gossip, $msgFromPeer['client_ip'],$msgFromPeer['client_port']);
+									Peer::GetMorePeers($gossip, $msgFromPeer['client_ip'],$msgFromPeer['client_port']);
 
 									Display::print('%LP%Network%W% Connected to peer		%G%peerId%W%='.Tools::GetIdFromIpAndPort($msgFromPeer['client_ip'],$msgFromPeer['client_port']));
 								} else {
@@ -883,16 +883,9 @@ final class Gossip {
                     $this->peers[$ip.':'.$port] = true;
                     if ($displayMessage)
 						Display::print('%LP%Network%W% Connected to peer		%G%peerId%W%='.Tools::GetIdFromIpAndPort($ip,$port));
+
+					return true;
                 }
-				else {
-					if ($displayMessage)
-						Display::_warning("%LP%Network%W% Can't connect to peer		%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
-				}
-                return true;
-            }
-            else {
-                if ($displayMessage)
-					Display::_warning("%LP%Network%W% Can't connect to peer		%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
             }
         }
 
@@ -925,14 +918,6 @@ final class Gossip {
 
 					return true;
                 }
-				else {
-					if ($displayMessage)
-						Display::_warning("%LP%Network%W% Can't connect to peer		%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
-				}
-            }
-            else {
-                if ($displayMessage)
-					Display::_warning("%LP%Network%W% Can't connect to peer		%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
             }
         }
 
@@ -1212,8 +1197,6 @@ final class Gossip {
 				$this->_connectToPeer($peer['ip'], $peer['port'], true);
 			}
 			else {
-				Display::_warning("%LP%Network%W% Can't connect to peer		%G%peerId%W%=".Tools::GetIdFromIpAndPort($peer['ip'],$peer['port']));
-
 				//Remove this peer
 				$this->chaindata->removePeer($peer['ip'],$peer['port']);
 			}
