@@ -40,8 +40,14 @@ class Blockchain {
         if ($currentBlock['height'] < 5)
             $limit = $currentBlock['height'] - 1;
 
-        // Get diff time (timestamps are in seconds already)
-		$avgTime = $chaindata->GetAvgBlockTime($currentBlock['height']-$limit);
+		// Get diff time (timestamps are in seconds already)
+		//HardFork (Testnet)
+		if ($currentBlock['height'] <= 2006315) {
+			$avgTime = $chaindata->GetAvgBlockTime($currentBlock['height']-$limit);
+		}
+		else {
+			$avgTime = $chaindata->GetAvgBlockTime($currentBlock['height']-$limit,$limit);
+		}
 
         // Default same difficulty
         $difficulty = $currentBlock['difficulty'];

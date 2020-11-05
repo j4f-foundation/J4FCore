@@ -187,7 +187,8 @@ class DBBlocks extends DBContracts {
 				$sql_insert_block = "INSERT INTO blocks (height,block_previous,block_hash,root_merkle,nonce,timestamp_start_miner,timestamp_end_miner,difficulty,version,info)
 				VALUES (".$blockNum.",'".$block_previous."','".$blockInfo->hash."','".$blockInfo->merkle."','".$blockInfo->nonce."','".$blockInfo->timestamp."','".$blockInfo->timestamp_end."','".$blockInfo->difficulty."','".$this->GetConfig('node_version')."','".$this->db->real_escape_string(@serialize($blockInfo->info))."');";
 				if (!$this->db->query($sql_insert_block))
-					throw new Exception('Error adding new block #'.$blockNum . ' - SQL: ' . $sql_insert_block);
+					//throw new Exception('Error adding new block #'.$blockNum . ' - SQL: ' . $sql_insert_block);
+					throw new Exception('Error adding new block #'.$blockNum);
 
 				foreach ($blockInfo->transactions as $transaction) {
 
@@ -791,12 +792,17 @@ class DBBlocks extends DBContracts {
      * @param $height
      * @return float
      */
-	public function GetAvgBlockTime(int $height) : float {
+	public function GetAvgBlockTime(int $height, int $limit = -1) : float {
 
 		$totalTimeMined = 0;
 		$numBlocks = 0;
 
-		$sql = "SELECT timestamp_start_miner,timestamp_end_miner FROM blocks WHERE height >= '".$height."' ORDER BY height ASC";
+		if ($limit == -1) {
+			$sql = "SELECT timestamp_start_miner,timestamp_end_miner FROM blocks WHERE height >= '".$height."' ORDER BY height ASC;";
+		}
+		else {
+			$sql = "SELECT timestamp_start_miner,timestamp_end_miner FROM blocks WHERE height >= '".$height."' ORDER BY height ASC LIMIT ".$limit.";";
+		}
 		$blocks = $this->db->query($sql);
 		if (!empty($blocks)) {
             while ($blockInfo = $blocks->fetch_array(MYSQLI_ASSOC)) {
