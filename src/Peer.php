@@ -147,7 +147,7 @@ class Peer {
 					}
 					else {
 						//Improve peer system with autoSanity
-						$numBlocksSanity = 10 + $blocksSynced;
+						$numBlocksSanity = 200 + $blocksSynced;
 						if ($lastBlock['height'] <= $numBlocksSanity)
 							$numBlocksSanity = 1;
 						$heightBlockFromRemove = $lastBlock['height'] - $numBlocksSanity;

@@ -305,7 +305,6 @@ final class Gossip {
 						//Stop minning subprocess
 						Tools::clearTmpFolder();
 						Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
-						Display::print("%Y%Miner work cancelled%W%     Imported new headers");
 					}
 
 					Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer", $ipAndPort);
@@ -508,6 +507,9 @@ final class Gossip {
 									break;
 								}
 
+								//Determine isBusy
+								$gossip->isBusy = true;
+
 								//Get current network
 								$isTestNet = ($gossip->chaindata->GetConfig('network') == 'testnet') ? true:false;
 
@@ -525,9 +527,6 @@ final class Gossip {
 
 								/** @var Block $blockMinedByPeer */
 								$blockMinedByPeer = Tools::objectToObject(unserialize($msgFromPeer['block']),"Block");
-
-								//Determine isBusy
-								$gossip->isBusy = true;
 
 								//Check if block received its OK
 								if (!is_object($blockMinedByPeer) || ( is_object($blockMinedByPeer) && !isset($blockMinedByPeer->hash) )) {
@@ -562,7 +561,7 @@ final class Gossip {
 								if ($lastBlock['block_previous'] == $blockMinedByPeer->previous && $lastBlock['block_hash'] != $blockMinedByPeer->hash) {
 
 									//Check if difficulty its ok
-									$currentDifficulty = Blockchain::checkDifficulty($gossip->chaindata,($lastBlock['height']-1),$isTestNet);
+									$currentDifficulty = Blockchain::checkDifficulty($gossip->chaindata,($blockMinedByPeer->height-1),$isTestNet);
 									if ($currentDifficulty[0] != $blockMinedByPeer->difficulty) {
 										$return['status'] = true;
 										$return['error'] = "4x00000000";
@@ -571,6 +570,7 @@ final class Gossip {
 										break;
 									}
 
+									/*
 									// We check if the time difference is equal orgreater than 2s
 									$diffTimeBlocks = date_diff(
 							            date_create(date('Y-m-d H:i:s', $lastBlock['timestamp_end_miner'])),
@@ -585,6 +585,7 @@ final class Gossip {
 										//Display::_error('Peer need sanity');
 										break;
 									}
+									*/
 
 									//Valid new block in same hiehgt to add in Blockchain
 									$returnCode = Blockchain::isValidBlockMinedByPeerInSameHeight($gossip->chaindata,$lastBlock,$blockMinedByPeer);
@@ -701,6 +702,7 @@ final class Gossip {
 										$return['status'] = true;
 										$return['error'] = $returnCode;
 									}
+
 									break;
 								}
 
@@ -718,7 +720,9 @@ final class Gossip {
 										//Check integrity of my blockchain
 										Blockchain::checkIntegrity($gossip->chaindata,null,50);
 
+										//If have miner enabled, stop all miners
 										Tools::clearTmpFolder();
+										Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
 
 										// Start microsanity with this peer
 										if (strlen($msgFromPeer['node_ip']) > 0 && strlen($msgFromPeer['node_port']) > 0)
@@ -850,7 +854,7 @@ final class Gossip {
 			$gossip->peers[$ip.':'.$port] = true;
 
 			if ($gossip->isTestNet)
-				Display::print("%LP%Network%W% Connected to peer			%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
+				Display::print("%LP%Network%W% Connected to BootstrapNode		%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
 		}
 		else {
 			if ($gossip->isTestNet)
@@ -914,7 +918,7 @@ final class Gossip {
                 if ($response['status'] == true) {
                     $this->peers[$ip.':'.$port] = true;
                     if ($displayMessage)
-						Display::print('%LP%Network%W% Connected to peer			%G%peerId%W%='.Tools::GetIdFromIpAndPort($ip,$port));
+						Display::print('%LP%Network%W% Connected to peer		%G%peerId%W%='.Tools::GetIdFromIpAndPort($ip,$port));
 
 					return true;
                 }
