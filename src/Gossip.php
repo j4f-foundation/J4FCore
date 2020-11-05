@@ -721,7 +721,7 @@ final class Gossip {
 										Tools::clearTmpFolder();
 
 										// Start microsanity with this peer
-										if (strlen($msgFromPeer['node_ip'] > 0) && strlen($msgFromPeer['node_port']) > 0)
+										if (strlen($msgFromPeer['node_ip']) > 0 && strlen($msgFromPeer['node_port']) > 0)
 											Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$msgFromPeer['node_ip'].":".$msgFromPeer['node_port']);
 										Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
 									}
@@ -752,7 +752,7 @@ final class Gossip {
 									$gossip->chaindata->addPeer($msgFromPeer['client_ip'],$msgFromPeer['client_port']);
 
 									//Get more peers from this new peer
-									Peer::GetMorePeers($msgFromPeer['client_ip'],$msgFromPeer['client_port']);
+									Peer::GetMorePeers($gossip, $msgFromPeer['client_ip'],$msgFromPeer['client_port']);
 
 									Display::print('%LP%Network%W% Connected to peer		%G%peerId%W%='.Tools::GetIdFromIpAndPort($msgFromPeer['client_ip'],$msgFromPeer['client_port']));
 								} else {

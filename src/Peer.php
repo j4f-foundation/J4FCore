@@ -438,19 +438,19 @@ class Peer {
 	 * @param string $port
 	 * @return void
 	 */
-	public function GetMorePeers(string $ip, string $port) : void {
+	public static function GetMorePeers(Gossip &$gossip, string $ip, string $port) : void {
 		//Data to send
 		$infoToSend = array(
             'action' => 'GETPEERS'
         );
-		foreach($this->peers as $ipAndPort => $v) {
+		foreach($gossip->peers as $ipAndPort => $v) {
 			$peer = explode(":", $ipAndPort);
 			$infoPOST = Socket::sendMessageWithReturn($peer[0],$peer[1],$infoToSend,5);
 			if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1) {
 				if (is_array($infoPOST['result']) && !empty($infoPOST['result'])) {
 					foreach ($infoPOST['result'] as $newPeerInfo) {
-						if (count($this->peers) < PEERS_MAX) {
-							$this->_addPeer($newPeerInfo['ip'],$newPeerInfo['port']);
+						if (count($gossip->peers) < PEERS_MAX) {
+							$gossip->_addPeer($newPeerInfo['ip'],$newPeerInfo['port']);
 						}
 					}
 				}
