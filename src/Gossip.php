@@ -37,9 +37,6 @@ final class Gossip {
     public $chaindata;
     private $make_genesis;
     private $bootstrap_node;
-    private $connected_to_bootstrap;
-    private $openned_ports;
-	private $lastBlock_BootstrapNode;
 
     private $loop_x5 = 0;
 	private $loop_x10 = 0;
@@ -140,20 +137,6 @@ final class Gossip {
 		$this->coinbase = Wallet::GetWalletAddressFromPubKey($this->key->pubKey);
 		Display::print("Coinbase detected: %LG%".$this->coinbase);
 
-		//We cleaned the table of peers
-		if (!$this->bootstrap_node)
-			$this->chaindata->truncate("peers");
-
-		//By default we mark that we are not connected to the bootstrap and that we do not have ports open for P2P
-		$this->connected_to_bootstrap = false;
-		$this->openned_ports = false;
-
-		//Get last block from Bootstrap
-		if (!$this->bootstrap_node)
-			$this->lastBlock_BootstrapNode = BootstrapNode::GetLastBlockNum($this->chaindata,$this->isTestNet);
-		else
-			$this->lastBlock_BootstrapNode = $this->chaindata->GetCurrentBlockNum();
-
 		//Save pointer of Gossip
 		$gossip = $this;
 
@@ -209,42 +192,29 @@ final class Gossip {
 
 	        //If we already have information, we establish the loaded state
 	        else {
-	            //We connect to the Bootstrap node
-	            $gossip->_addBootstrapNode($gossip);
+				//Check if have peers
+				$peers = $gossip->chaindata->GetAllPeers();
+				if (count($peers) == 0) {
+					//If no have peers, connect to boostrap and get peers
+					$gossip->_connectToBootstrapNode($gossip);
+					//We ask the BootstrapNode to give us the information of the connected peers
+	                $peersNode = BootstrapNode::GetPeers($gossip->chaindata,$gossip->isTestNet);
+					$this->ConnectToBootstrapPeers($peersNode);
+				}
+				else {
+					//We have peers, connect to all peers
+					$this->ConnectToMyPeers($peers);
+				}
 
-                //If we do not have open ports, we can not continue
-              	if (!$gossip->connected_to_bootstrap) {
-                    Display::_error("Impossible to establish a P2P connection with Bootstrap");
-                    if (IS_WIN)
-                        readline("Press any Enter to close close window");
-                    exit();
-                }
+				//If can't connect to any peers, try to connect to bootstrap
+				if (count($gossip->peers) == 0) {
+					$gossip->_connectToBootstrapNode($gossip);
+				}
 
-				//If we do not have open ports, we can not continue
-                if (!$gossip->openned_ports) {
-                    Display::_error("Impossible to establish a P2P connection");
-                    Display::_error("Check that it is accessible from the internet: %Y%tcp://".$gossip->ip.":".$gossip->port);
-                    if (IS_WIN)
-                        readline("Press any Enter to close close window");
-                    exit();
-                }
+				//Get more peers from my current peers list (connected)
+				$this->GetMorePeersFromMyPeers();
 
-                //Set p2p ON
-                $gossip->chaindata->SetConfig('p2p','on');
-
-                //We ask the BootstrapNode to give us the information of the connected peers
-                $peersNode = BootstrapNode::GetPeers($gossip->chaindata,$gossip->isTestNet);
-                if (is_array($peersNode) && !empty($peersNode)) {
-                    $maxRand = PEERS_MAX;
-                    foreach ($peersNode as $peer) {
-                        if (trim($gossip->ip).":".trim($gossip->port) != trim($peer['ip']).":".trim($peer['port'])) {
-                            if (count($gossip->peers) < PEERS_MAX) {
-                                $gossip->_addPeer(trim($peer['ip']),trim($peer['port']));
-                            }
-                        }
-                    }
-                }
-
+				//Check if have required peers to run node
                 if (count($gossip->peers) < PEERS_REQUIRED) {
                     Display::_error("there are not enough peers       count=".count($gossip->peers)."   required=".PEERS_REQUIRED);
                     if (IS_WIN)
@@ -252,12 +222,14 @@ final class Gossip {
                     exit();
                 }
 
-				$lastBlock_BootstrapNode = BootstrapNode::GetLastBlockNum($gossip->chaindata,$gossip->isTestNet);
+				//Select random peer to check status
+				$ipAndPort = Peer::GetHighestBlockFromPeers($gossip);
+				$lastBlock_PeerNode = Peer::GetLastBlockNum($ipAndPort);
                 $lastBlock_LocalNode = $this->chaindata->GetCurrentBlockNum();
 
                 //We check if we need to synchronize or not
-                if ($lastBlock_LocalNode < $lastBlock_BootstrapNode) {
-                    Display::print("%LR%DeSync detected %W%- Downloading blocks (%G%".$lastBlock_LocalNode."%W%/%Y%".$lastBlock_BootstrapNode.")");
+                if ($lastBlock_LocalNode < $lastBlock_PeerNode) {
+                    Display::print("%LR%DeSync detected %W%- Downloading blocks (%G%".$lastBlock_LocalNode."%W%/%Y%".$lastBlock_PeerNode.")");
 
 					//We declare that we are synchronizing
                     $gossip->syncing = true;
@@ -265,7 +237,6 @@ final class Gossip {
                     $gossip->chaindata->SetConfig('syncing','on');
 
 					//Select a peer to sync
-					$ipAndPort = Peer::SelectPeerToSync($gossip);
 					$ipPort = explode(':',$ipAndPort);
 					Display::print("Selected peer to sync -> %G%".Tools::GetIdFromIpAndPort($ipPort[0],$ipPort[1]));
 					Tools::writeLog('Selected peer to sync			%G%'.Tools::GetIdFromIpAndPort($ipPort[0],$ipPort[1]));
@@ -298,22 +269,18 @@ final class Gossip {
 		            Display::print("Current peers: %G%".count($gossip->chaindata->GetAllPeers()));
 				}
 
-                //Check if have same GENESIS block from BootstrapNode
-                $genesis_block_bootstrap = BootstrapNode::GetGenesisBlock($gossip->chaindata,$gossip->isTestNet);
+                //Check if have same GENESIS block from peer
+                $genesis_block_peer = Peer::GetGenesisBlock($ipAndPort);
                 $genesis_block_local = $gossip->chaindata->GetGenesisBlock();
-                if ($genesis_block_local['block_hash'] != $genesis_block_bootstrap['block_hash']) {
-                    Display::_error("%Y%GENESIS BLOCK NO MATCH%W%    genesis block does not match the block genesis of bootstrapNode");
+                if ($genesis_block_local['block_hash'] != $genesis_block_peer['block_hash']) {
+                    Display::_error("%Y%GENESIS BLOCK NO MATCH%W%    genesis block does not match the block genesis of peer");
                     if (IS_WIN)
                         readline("Press any Enter to close close window");
                     exit();
                 }
 	        }
 
-
 			if ($gossip->make_genesis)
-				return;
-
-			if (!$gossip->connected_to_bootstrap && !$gossip->bootstrap_node)
 				return;
 
 			//Get pending transactions from bootstrap
@@ -335,17 +302,11 @@ final class Gossip {
 			if ($gossip->syncing)
 				return;
 
-			if (!$gossip->connected_to_bootstrap || !$gossip->bootstrap_node)
+			if (!$gossip->bootstrap_node)
 				return;
 
 			//Get Pending transactions from network
 			$gossip->GetPendingTransactions();
-
-			//Get lastblockNum from BootstrapNode
-			if (!$gossip->bootstrap_node)
-				$gossip->lastBlock_BootstrapNode = BootstrapNode::GetLastBlockNum($gossip->chaindata,$gossip->isTestNet);
-			else
-				$gossip->lastBlock_BootstrapNode = $gossip->chaindata->GetCurrentBlockNum();
 		});
 
 		//General loop of node
@@ -425,22 +386,23 @@ final class Gossip {
 				}
 			}
 
-			//If isnt bootstrap and connected to bootstrap
-			if (!$gossip->bootstrap_node && $gossip->connected_to_bootstrap) {
-				//We get the last block from the BootstrapNode
-				//$lastBlock_BootstrapNode = BootstrapNode::GetLastBlockNum($gossip->chaindata,$gossip->isTestNet);
+			//If isnt bootstrap
+			if (!$gossip->bootstrap_node) {
+				$ipAndPort = Peer::GetHighestBlockFromPeers($gossip);
+				$lastBlock_PeerNode = Peer::GetLastBlockNum($ipAndPort);
 				$lastBlock_LocalNode = $gossip->chaindata->GetCurrentBlockNum();
 
 				//We check if we need to synchronize or not
-				if ($lastBlock_LocalNode < $gossip->lastBlock_BootstrapNode) {
-					//Display::print("%LR%DeSync detected %W%- Downloading blocks (%G%" . $lastBlock_LocalNode . "%W%/%Y%" . $lastBlock_BootstrapNode . ")");
-
+				if ($lastBlock_LocalNode < $lastBlock_PeerNode) {
+					//If have miner enabled, stop it and start sync
 					if ($gossip->enable_mine && @file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MINERS_STARTED)) {
 						//Stop minning subprocess
 						Tools::clearTmpFolder();
 						Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
 						Display::print("%Y%Miner work cancelled%W%     Imported new headers");
 					}
+
+					Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer", $ipAndPort);
 
 					//We declare that we are synchronizing
 					$gossip->syncing = true;
@@ -784,9 +746,14 @@ final class Gossip {
 								}
 							break;
 							case 'HELLO':
+								//GG
 								if (isset($msgFromPeer['client_ip']) && isset($msgFromPeer['client_port'])) {
 									$return['status'] = true;
 									$gossip->chaindata->addPeer($msgFromPeer['client_ip'],$msgFromPeer['client_port']);
+
+									//Get more peers from this new peer
+									Peer::GetMorePeers($msgFromPeer['client_ip'],$msgFromPeer['client_port']);
+
 									Display::print('%LP%Network%W% Connected to peer		%G%peerId%W%='.Tools::GetIdFromIpAndPort($msgFromPeer['client_ip'],$msgFromPeer['client_port']));
 								} else {
 									$return['message'] = "No ClientIP or ClientPort defined";
@@ -842,7 +809,7 @@ final class Gossip {
 			//Remove peer when disconnect
 			$connection->on('close', function () use ($connection): void {
           //unset($this->peers[$connection->getRemoteAddress()]);
-      });
+      	});
 
 		});
 
@@ -852,11 +819,11 @@ final class Gossip {
 	}
 
     /**
-     * We add the BootstrapNode
+     * Connect to bootstrap node and add it to peer list
      *
      * @return  bool
      */
-    public function _addBootstrapNode(Gossip &$gossip) : void {
+    public function _connectToBootstrapNode(Gossip &$gossip) : void {
 
         if ($gossip->isTestNet) {
             $ip = NODE_BOOTSTRAP_TESTNET;
@@ -872,24 +839,18 @@ final class Gossip {
             'client_port' => $gossip->port
         );
 
-        $response = Socket::sendMessageWithReturn($ip, $port, $infoToSend, 1);
+        $response = Socket::sendMessageWithReturn($ip, $port, $infoToSend, 15);
 		if ($response != null && isset($response['status'])) {
 			$gossip->chaindata->addPeer($ip, $port);
 
-			$gossip->peers[] = array($ip.':'.$port => $ip,$port);
+			$gossip->peers[$ip.':'.$port] = true;
 
 			if ($gossip->isTestNet)
-				Display::print("%LP%Network%W% Connected to peer		%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
+				Display::print("%LP%Network%W% Connected to peer			%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
 			else
-				Display::print("%LP%Network%W% Connected to peer		%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
-
-			$gossip->openned_ports = true;
-			$gossip->connected_to_bootstrap = true;
+				Display::print("%LP%Network%W% Connected to peer			%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
 		}
 		else {
-			$gossip->openned_ports = false;
-			$gossip->connected_to_bootstrap = false;
-
 			if ($gossip->isTestNet)
 				Display::_error("%LP%Network%W% Can't connect to BootstrapNode		%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
 			else
@@ -915,15 +876,59 @@ final class Gossip {
                 'client_ip' => $this->ip,
                 'client_port' => $this->port
             );
-            $response = Socket::sendMessageWithReturn($ip, $port, $infoToSend, 1);
+            $response = Socket::sendMessageWithReturn($ip, $port, $infoToSend, 15);
             if ($response != null && isset($response['status'])) {
                 if ($response['status'] == true) {
                     $this->chaindata->addPeer($ip, $port);
-                    $this->peers[] = array($ip.':'.$port => $ip,$port);
+                    $this->peers[$ip.':'.$port] = true;
                     if ($displayMessage)
 						Display::print('%LP%Network%W% Connected to peer		%G%peerId%W%='.Tools::GetIdFromIpAndPort($ip,$port));
                 }
+				else {
+					if ($displayMessage)
+						Display::_warning("%LP%Network%W% Can't connect to peer		%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
+				}
                 return true;
+            }
+            else {
+                if ($displayMessage)
+					Display::_warning("%LP%Network%W% Can't connect to peer		%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
+            }
+        }
+
+		return false;
+    }
+
+	/**
+     * We connect to this peer
+     *
+     * @param   string    $ip
+     * @param   string    $port
+     * @param   bool      $displayMessage
+     * @return  bool
+     */
+	public function _connectToPeer(string $ip,string $port, bool $displayMessage=true) : bool {
+
+        if ($this->chaindata->haveThisPeer($ip,$port) && ($this->ip != $ip || ($this->ip == $ip && $this->port != $port))) {
+
+            $infoToSend = array(
+                'action' => 'HELLO',
+                'client_ip' => $this->ip,
+                'client_port' => $this->port
+            );
+            $response = Socket::sendMessageWithReturn($ip, $port, $infoToSend, 15);
+            if ($response != null && isset($response['status'])) {
+                if ($response['status'] == true) {
+                    $this->peers[$ip.':'.$port] = true;
+                    if ($displayMessage)
+						Display::print('%LP%Network%W% Connected to peer			%G%peerId%W%='.Tools::GetIdFromIpAndPort($ip,$port));
+
+					return true;
+                }
+				else {
+					if ($displayMessage)
+						Display::_warning("%LP%Network%W% Can't connect to peer		%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
+				}
             }
             else {
                 if ($displayMessage)
@@ -959,10 +964,6 @@ final class Gossip {
     public function SetTitleProcess() : void {
         $title = "J4F Node";
         $title .= " | PeerID: " . substr(PoW::hash($this->ip . $this->port), 0, 18);
-        if ($this->connected_to_bootstrap || $this->bootstrap_node)
-            $title .= " | BootstrapNode: Connected";
-        else
-            $title .= " | BootstrapNode: Disconnected";
         $title .= " | Peers: " . count($this->chaindata->GetAllPeers());
 
         if ($this->syncing)
@@ -982,13 +983,15 @@ final class Gossip {
     }
 
     /**
-     * We get the pending transactions from BootstrapNode
+     * We get the pending transactions from random peer
      */
     public function GetPendingTransactions() : void {
         if (!$this->bootstrap_node) {
 
+			$ipAndPort = Peer::SelectPeerToSync($this);
+
             //Get transactions from peer
-            $transactionsByPeer = BootstrapNode::GetPendingTransactions($this->chaindata,$this->isTestNet);
+            $transactionsByPeer = Peer::GetPendingTransactions($ipAndPort);
 
             //Check if have transactions by peer
             if ($transactionsByPeer != null && is_array($transactionsByPeer) && !empty($transactionsByPeer)) {
@@ -1179,6 +1182,65 @@ final class Gossip {
 		}
 		//Determine isBusy
 		$this->isBusy = false;
+	}
+
+	/**
+	 * Connect to bootstrap peers
+	 */
+	public function ConnectToBootstrapPeers($peersNode) : void {
+		if (is_array($peersNode) && !empty($peersNode)) {
+			foreach ($peersNode as $peer) {
+				if (trim($this->ip).":".trim($this->port) != trim($peer['ip']).":".trim($peer['port'])) {
+					if (count($this->peers) <= PEERS_MAX) {
+						$this->_addPeer(trim($peer['ip']),trim($peer['port']));
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * Connect to all my peers
+	 */
+	public function ConnectToMyPeers($peers) : void {
+		foreach ($peers as $peer) {
+			$infoToSend = array(
+				'action' => 'STATUSNODE'
+			);
+			$response = Socket::sendMessageWithReturn($peer['ip'],$peer['port'],$infoToSend,5);
+			if ($response != null && isset($response['status'])) {
+				$this->_connectToPeer($peer['ip'], $peer['port'], true);
+			}
+			else {
+				Display::_warning("%LP%Network%W% Can't connect to peer		%G%peerId%W%=".Tools::GetIdFromIpAndPort($peer['ip'],$peer['port']));
+
+				//Remove this peer
+				$this->chaindata->removePeer($peer['ip'],$peer['port']);
+			}
+		}
+	}
+
+	/**
+	 * Get more peers from my current peers
+	 */
+	public function GetMorePeersFromMyPeers() : void {
+		//Data to send
+		$infoToSend = array(
+            'action' => 'GETPEERS'
+        );
+		foreach($this->peers as $ipAndPort => $v) {
+			$peer = explode(":", $ipAndPort);
+			$infoPOST = Socket::sendMessageWithReturn($peer[0],$peer[1],$infoToSend,5);
+			if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1) {
+				if (is_array($infoPOST['result']) && !empty($infoPOST['result'])) {
+					foreach ($infoPOST['result'] as $newPeerInfo) {
+						if (count($this->peers) < PEERS_MAX) {
+							$this->_addPeer($newPeerInfo['ip'],$newPeerInfo['port']);
+						}
+					}
+				}
+			}
+		}
 	}
 
     /**

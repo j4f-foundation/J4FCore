@@ -35,7 +35,7 @@ class BootstrapNode {
             $ip = NODE_BOOTSTRAP;
             $port = NODE_BOOSTRAP_PORT;
         }
-        //Nos comunicamos con el BOOTSTRAP_NODE
+
         $infoToSend = array(
             'action' => 'GETPEERS'
         );
@@ -64,7 +64,7 @@ class BootstrapNode {
             $ip = NODE_BOOTSTRAP;
             $port = NODE_BOOSTRAP_PORT;
         }
-        //Nos comunicamos con el BOOTSTRAP_NODE
+
         $infoToSend = array(
             'action' => 'GETPENDINGTRANSACTIONS'
         );
@@ -93,7 +93,7 @@ class BootstrapNode {
             $ip = NODE_BOOTSTRAP;
             $port = NODE_BOOSTRAP_PORT;
         }
-        //Nos comunicamos con el BOOTSTRAP_NODE
+
         $infoToSend = array(
             'action' => 'LASTBLOCKNUM'
         );
@@ -122,7 +122,7 @@ class BootstrapNode {
             $ip = NODE_BOOTSTRAP;
             $port = NODE_BOOSTRAP_PORT;
         }
-        //Nos comunicamos con el BOOTSTRAP_NODE
+
         $infoToSend = array(
             'action' => 'GETGENESIS'
         );
@@ -152,7 +152,6 @@ class BootstrapNode {
             $port = NODE_BOOSTRAP_PORT;
         }
 
-        //Nos comunicamos con el BOOTSTRAP_NODE
         $infoToSend = array(
             'action' => 'SYNCBLOCKS',
             'from' => $lastBlockOnLocalBlockChain

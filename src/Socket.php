@@ -70,8 +70,6 @@ class Socket {
 		$dataFromPeer = '';
 		$return = [];
 
-		//Display::_debug('SEND MESSAGE: ' . $dataParsed);
-
 		//Delayed Stop Function
 		$currentTime = 0;
 		$breakSocket = false;
@@ -89,7 +87,6 @@ class Socket {
 			});
 			$connection->on('close', function () use ($connection, &$dataFromPeer, &$return,&$breakSocket) {
 				$return = @json_decode($dataFromPeer,true);
-				//$connection->end();
 				$breakSocket = true;
 			});
 
@@ -106,8 +103,8 @@ class Socket {
 	 * @param string $port
 	 * @return bool
 	 */
-	public static function isAlive(string $ip='127.0.0.1',string $port='6969') : bool {
-		$fp = @fsockopen($ip, $port, $errno, $errstr, 2);
+	public static function isAlive(string $ip='127.0.0.1',string $port='6969', int $timeout = 1) : bool {
+		$fp = @fsockopen($ip, $port, $errno, $errstr, $timeout);
 	    if ($fp != null && @is_resource($fp)) {
 			@fclose($fp);
 			return true;

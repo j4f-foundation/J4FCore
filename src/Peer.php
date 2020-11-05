@@ -349,7 +349,6 @@ class Peer {
         $ip = $tmp[0];
         $port = $tmp[1];
 
-        //Nos comunicamos con el BOOTSTRAP_NODE
         $infoToSend = array(
 			'action' => 'SYNCBLOCKS',
             'from' => $lastBlockOnLocal
@@ -366,5 +365,96 @@ class Peer {
 		}
         else
             return [];
+	}
+
+	/**
+     *
+     * We get the peer with more blocks
+     *
+     * @param Gossip $gossip
+     * @return string
+     */
+    public static function GetHighestBlockFromPeers(Gossip &$gossip) : string {
+
+		//Default select a bootstrap node
+		if ($gossip->isTestNet)
+			$selectedPeer = NODE_BOOTSTRAP_TESTNET.':'.NODE_BOOSTRAP_PORT_TESTNET;
+		else
+			$selectedPeer = NODE_BOOTSTRAP.':'.NODE_BOOSTRAP_PORT;
+
+		$numBlocksPeer = 0;
+
+		//Data to send
+        $infoToSend = array(
+			'action' => 'LASTBLOCKNUM'
+        );
+
+		//Check all peers and select highest block peer
+		foreach($gossip->peers as $ipAndPort => $v) {
+			$peer = explode(":", $ipAndPort);
+			$infoPOST = Socket::sendMessageWithReturn($peer[0],$peer[1],$infoToSend,10);
+			if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1) {
+				if (is_array($infoPOST['result']) && !empty($infoPOST['result'])) {
+					Display::print(print_r($infoPOST,true));
+					if (intval($infoPOST['result']) > $numBlocksPeer) {
+						$numBlocksPeer = intval($infoPOST['result']);
+						$selectedPeer = $peer[0] . ":" . $peer[1];
+					}
+				}
+			}
+		}
+
+		return $selectedPeer;
+	}
+
+	/**
+     *
+     * We get pending transactions from Peer
+     *
+     * @param string $ipAndPort
+     * @return int|mixed
+     */
+    public static function GetPendingTransactions(string $ipAndPort) {
+
+		//Get IP and Port
+        $tmp = explode(':',$ipAndPort);
+        $ip = $tmp[0];
+        $port = $tmp[1];
+
+        $infoToSend = array(
+            'action' => 'GETPENDINGTRANSACTIONS'
+        );
+
+		$infoPOST = Socket::sendMessageWithReturn($ip,$port,$infoToSend);
+		if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1)
+			return $infoPOST['result'];
+		else
+			return null;
+    }
+
+	/**
+	 * Get more peers from peer
+	 * @param string $ip
+	 * @param string $port
+	 * @return void
+	 */
+	public function GetMorePeers(string $ip, string $port) : void {
+		//Data to send
+		$infoToSend = array(
+            'action' => 'GETPEERS'
+        );
+		foreach($this->peers as $ipAndPort => $v) {
+			$peer = explode(":", $ipAndPort);
+			$infoPOST = Socket::sendMessageWithReturn($peer[0],$peer[1],$infoToSend,5);
+			if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1) {
+				if (is_array($infoPOST['result']) && !empty($infoPOST['result'])) {
+					foreach ($infoPOST['result'] as $newPeerInfo) {
+						if (count($this->peers) < PEERS_MAX) {
+							$this->_addPeer($newPeerInfo['ip'],$newPeerInfo['port']);
+						}
+					}
+				}
+			}
+		}
 	}
 }
