@@ -188,7 +188,7 @@ class DBBlocks extends DBContracts {
 				VALUES (".$blockNum.",'".$block_previous."','".$blockInfo->hash."','".$blockInfo->merkle."','".$blockInfo->nonce."','".$blockInfo->timestamp."','".$blockInfo->timestamp_end."','".$blockInfo->difficulty."','".$this->GetConfig('node_version')."','".$this->db->real_escape_string(@serialize($blockInfo->info))."');";
 				if (!$this->db->query($sql_insert_block))
 					//throw new Exception('Error adding new block #'.$blockNum . ' - SQL: ' . $sql_insert_block);
-					throw new Exception('Error adding new block #'.$blockNum);
+					throw new Exception("Can't add new block #{$blockNum}");
 
 				foreach ($blockInfo->transactions as $transaction) {
 
@@ -272,7 +272,7 @@ class DBBlocks extends DBContracts {
 		//If have error, rollback action
 		catch (Exception $e) {
 			$this->db->rollback();
-			Display::print($e->getMessage());
+			Display::_error($e->getMessage());
 			$this->db->autocommit(true);
             return false;
 		}

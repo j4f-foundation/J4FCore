@@ -169,7 +169,7 @@ class Peer {
 			Display::ShowMessageNewBlock('imported',$lastBlock['height'],$blockSynced);
 			return true;
         } else if ($blocksSynced > 0) {
-            Display::print("%Y%Imported%W% new blocks              %G%count%W%=".$blocksSynced."             %G%current%W%=".$currentBlocks."   %G%total%W%=".$totalBlocks);
+            Display::print("%Y%Imported%W% new blocks         	%G%count%W%=".$blocksSynced."            %G%current%W%=".$currentBlocks."   %G%total%W%=".$totalBlocks);
 			return true;
         }
 

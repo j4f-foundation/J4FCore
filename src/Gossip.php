@@ -1028,7 +1028,7 @@ final class Gossip {
             $this->chaindata->SetConfig('hashrate',$hashRateMiner);
 
 			if (SHOW_INFO_SUBPROCESS)
-            	Display::print("Miners Threads Status                    %G%count%W%=".$multiplyNonce."            %G%hashRate%W%=" . $hashRateMiner);
+            	Display::print("Miners Threads Status             %G%count%W%=".$multiplyNonce."            %G%hashRate%W%=" . $hashRateMiner);
         }
     }
 
