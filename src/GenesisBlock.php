@@ -88,7 +88,7 @@ class GenesisBlock {
 		//Mine block
 		$genesisBlock->mine(0,$isTestNet,false);
 
-		if (!$genesisBlock->isValid(0,$isTestNet)) {
+		if (!$genesisBlock->isValid()) {
 			Display::_error("%LR%GENESIS%W% no valid");
 			Display::_error("%LR%HASH%W% " . $genesisBlock->hash);
 			Display::_error("%LR%PREVIOUS%W% " . $genesisBlock->previous);
@@ -133,7 +133,7 @@ class GenesisBlock {
 
 		//Wait for block to be generated
 		while(true) {
-			
+
 			//Update MainThread time for subprocess
 			Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MAIN_THREAD_CLOCK,time());
 
@@ -141,7 +141,7 @@ class GenesisBlock {
 			if (@file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_NEW_BLOCK)) {
 				$genesisBlock = Tools::objectToObject(@unserialize(Tools::hex2str(file_get_contents(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_NEW_BLOCK))),'Block');
 
-				if (!$genesisBlock->isValid(0,$isTestNet)) {
+				if (!$genesisBlock->isValid()) {
 					Display::_error("%LR%GENESIS%W% no valid");
 					Display::_error("%LR%HASH%W% " . $genesisBlock->hash);
 					Display::_error("%LR%PREVIOUS%W% " . $genesisBlock->previous);
@@ -229,7 +229,7 @@ class GenesisBlock {
         $isTestnet = ($chaindata->GetNetwork() == "testnet") ? true:false;
 
         //We check if the received block is valid
-        if ($genesis_block->isValid(0,$isTestnet)) {
+        if ($genesis_block->isValid()) {
             //We add the GENESIS block to the local blockchain
             $chaindata->addBlock(0,$genesis_block);
             return true;

@@ -289,12 +289,9 @@ class Block {
      * Check if all transactions in the block are valid
      * Check if the nonce corresponds to the content of all transactions + hash of the previous block
      *
-     * @param $height
-     * @param $isTestnet
-     *
      * @return bool
      */
-    public function isValid(int $height,bool $isTestnet) : bool {
+    public function isValid() : bool {
 
         //Define data to check
         $data = "";

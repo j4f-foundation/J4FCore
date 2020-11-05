@@ -107,7 +107,7 @@ class Blockchain {
         $isTestnet = ($chaindata->GetNetwork() == "testnet") ? true:false;
 
         //If the block is valid
-        if (!$blockMinedByPeer->isValid($heightNewBlock,$isTestnet)) {
+        if (!$blockMinedByPeer->isValid()) {
             return "0x00000001";
         }
 
@@ -191,7 +191,7 @@ class Blockchain {
         $isTestnet = ($chaindata->GetNetwork() == "testnet") ? true:false;
 
         //Check if new block is valid
-        if (!$blockMinedByPeer->isValid($lastBlock['height'],$isTestnet))
+        if (!$blockMinedByPeer->isValid())
             return "0x00000001";
 
         //Default, no accept new block
@@ -328,7 +328,7 @@ class Blockchain {
 					}
 
 					//AddBlock to blockchain
-					if (!$blockToCheck->isValid($currentBlock['height'],$isTestNet)) {
+					if (!$blockToCheck->isValid()) {
 						self::SanityFromBlockHeight($chaindata,(($heightToStart-$i)-1));
 						return false;
 					}

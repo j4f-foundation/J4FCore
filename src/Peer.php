@@ -63,7 +63,7 @@ class Peer {
 						}
 
 						//If block is valid
-						if ($blockToImport->isValid($nextHeight,$isTestNet)) {
+						if ($blockToImport->isValid()) {
 							//Check if rewarded transaction is valid, prevent hack money
 							if ($blockToImport->isValidReward($nextHeight,$gossip->isTestNet)) {
 								//We add block to blockchain

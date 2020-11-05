@@ -1133,7 +1133,7 @@ final class Gossip {
 
 			if (is_object($blockMined) && isset($blockMined->hash)) {
 				//Check if block mined is valid
-				if ($blockMined->isValid($nextHeight,$this->isTestNet)) {
+				if ($blockMined->isValid()) {
 					if ($blockMined->isValidReward($nextHeight,$this->isTestNet)) {
 						//Display new block mined
 						Display::ShowMessageNewBlock('mined',$nextHeight,$blockMined);
