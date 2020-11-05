@@ -288,9 +288,34 @@ final class Gossip {
 
 		});
 
-		//Check peer status every 60s
-		$loop->addPeriodicTimer(60, function() use (&$gossip) {
+		//Check peer status every 120s
+		$loop->addPeriodicTimer(120, function() use (&$gossip) {
 			$gossip->CheckConnectionWithPeers($gossip);
+
+			//If isnt bootstrap
+			if (!$gossip->bootstrap_node) {
+				$ipAndPort = Peer::GetHighestBlockFromPeers($gossip);
+				$lastBlock_PeerNode = Peer::GetLastBlockNum($ipAndPort);
+				$lastBlock_LocalNode = $gossip->chaindata->GetCurrentBlockNum();
+
+				//We check if we need to synchronize or not
+				if ($lastBlock_LocalNode < $lastBlock_PeerNode) {
+					//If have miner enabled, stop it and start sync
+					if ($gossip->enable_mine && @file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MINERS_STARTED)) {
+						//Stop minning subprocess
+						Tools::clearTmpFolder();
+						Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
+						Display::print("%Y%Miner work cancelled%W%     Imported new headers");
+					}
+
+					Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer", $ipAndPort);
+
+					//We declare that we are synchronizing
+					$gossip->syncing = true;
+
+					$gossip->chaindata->SetConfig('syncing','on');
+				}
+			}
 		});
 
 		//Loop every 5s
@@ -383,31 +408,6 @@ final class Gossip {
 						//We clean the table of blocks mined by the peers
 						$gossip->chaindata->truncate("txnpool");
 					}
-				}
-			}
-
-			//If isnt bootstrap
-			if (!$gossip->bootstrap_node) {
-				$ipAndPort = Peer::GetHighestBlockFromPeers($gossip);
-				$lastBlock_PeerNode = Peer::GetLastBlockNum($ipAndPort);
-				$lastBlock_LocalNode = $gossip->chaindata->GetCurrentBlockNum();
-
-				//We check if we need to synchronize or not
-				if ($lastBlock_LocalNode < $lastBlock_PeerNode) {
-					//If have miner enabled, stop it and start sync
-					if ($gossip->enable_mine && @file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MINERS_STARTED)) {
-						//Stop minning subprocess
-						Tools::clearTmpFolder();
-						Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
-						Display::print("%Y%Miner work cancelled%W%     Imported new headers");
-					}
-
-					Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer", $ipAndPort);
-
-					//We declare that we are synchronizing
-					$gossip->syncing = true;
-
-					$gossip->chaindata->SetConfig('syncing','on');
 				}
 			}
 
@@ -752,7 +752,7 @@ final class Gossip {
 									$gossip->chaindata->addPeer($msgFromPeer['client_ip'],$msgFromPeer['client_port']);
 
 									//Get more peers from this new peer
-									Peer::GetMorePeers($gossip, $msgFromPeer['client_ip'],$msgFromPeer['client_port']);
+									//Peer::GetMorePeers($gossip, $msgFromPeer['client_ip'],$msgFromPeer['client_port']);
 
 									Display::print('%LP%Network%W% Connected to peer		%G%peerId%W%='.Tools::GetIdFromIpAndPort($msgFromPeer['client_ip'],$msgFromPeer['client_port']));
 								} else {
@@ -801,15 +801,19 @@ final class Gossip {
 
 						$connection->write(@json_encode($return));
 						$connection->end();
-						//$connection->close();
 					}
 				}
 		    });
 
+			//Close connection from this peer
+			$connection->on('end', function () use (&$connection): void {
+          		$connection->close();
+      		});
+
 			//Remove peer when disconnect
 			$connection->on('close', function () use ($connection): void {
-          //unset($this->peers[$connection->getRemoteAddress()]);
-      	});
+          		//unset($this->peers[$connection->getRemoteAddress()]);
+      		});
 
 		});
 
@@ -847,13 +851,9 @@ final class Gossip {
 
 			if ($gossip->isTestNet)
 				Display::print("%LP%Network%W% Connected to peer			%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
-			else
-				Display::print("%LP%Network%W% Connected to peer			%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
 		}
 		else {
 			if ($gossip->isTestNet)
-				Display::_error("%LP%Network%W% Can't connect to BootstrapNode		%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
-			else
 				Display::_error("%LP%Network%W% Can't connect to BootstrapNode		%G%peerId%W%=".Tools::GetIdFromIpAndPort($ip,$port));
 		}
     }

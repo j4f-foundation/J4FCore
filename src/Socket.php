@@ -103,7 +103,7 @@ class Socket {
 	 * @param string $port
 	 * @return bool
 	 */
-	public static function isAlive(string $ip='127.0.0.1',string $port='6969', int $timeout = 1) : bool {
+	public static function isAlive(string $ip='127.0.0.1',string $port='6969', int $timeout = 2) : bool {
 		$fp = @fsockopen($ip, $port, $errno, $errstr, $timeout);
 	    if ($fp != null && @is_resource($fp)) {
 			@fclose($fp);
