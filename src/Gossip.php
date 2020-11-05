@@ -568,6 +568,7 @@ final class Gossip {
 										break;
 									}
 
+									/*
 									// We check if the time difference is equal orgreater than 2s
 									$diffTimeBlocks = date_diff(
 							            date_create(date('Y-m-d H:i:s', $lastBlock['timestamp_end_miner'])),
@@ -582,6 +583,7 @@ final class Gossip {
 										//Display::_error('Peer need sanity - DiffSeconds: ' . $diffTimeSeconds);
 										break;
 									}
+									*/
 
 									//Valid new block in same hiehgt to add in Blockchain
 									$returnCode = Blockchain::isValidBlockMinedByPeerInSameHeight($gossip->chaindata,$lastBlock,$blockMinedByPeer);
