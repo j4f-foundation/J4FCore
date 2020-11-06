@@ -87,29 +87,6 @@ if ($blockMined != null && is_object($blockMined)) {
 		'node_port' => $myNodePort,
     );
 
-	$returnFromPeer = Socket::sendMessageWithReturn($peerIP,$peerPORT,$infoToSend);
-	if ($returnFromPeer != null && isset($returnFromPeer['status']) && $returnFromPeer['status'] == true) {
-
-		Tools::writeLog('SUBPROCESS::[PROPAGATION] '.$peerIP.':'.$peerPORT." --> OK");
-		Tools::writeLog('SUBPROCESS::[PROPAGATION] '.$peerIP.':'.$peerPORT." --> " . $returnFromPeer['result']);
-
-		//Peer suggest sanity on my blockchain
-		if ($returnFromPeer['result'] == 'sanity') {
-			Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$peerIP.":".$peerPORT);
-		}
-	}
-	else {
-
-		Tools::writeLog('SUBPROCESS::[PROPAGATION] '.$peerIP.':'.$peerPORT." --> ERROR");
-
-		if (isset($returnFromPeer['status']) && $returnFromPeer['status'] == false) {
-			Tools::writeLog('SUBPROCESS::[PROPAGATION] '.$peerIP.':'.$peerPORT." --> sanity");
-			Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$peerIP.":".$peerPORT);
-		}
-		else {
-			Tools::writeLog('SUBPROCESS::[PROPAGATION] '.$peerIP.':'.$peerPORT." --> UKNOWN ERROR");
-			//Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$peerIP.":".$peerPORT);
-		}
-	}
+	$returnFromPeer = Socket::sendMessage($peerIP,$peerPORT,$infoToSend);
 }
 die();

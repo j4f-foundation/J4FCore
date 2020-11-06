@@ -157,6 +157,10 @@ class Peer {
 						$gossip->chaindata->RemoveLastBlocksFrom($heightBlockFromRemove);
 						Display::_warning("Finished Micro-Sanity, re-sync with peer");
 
+						$ipAndPortToSync = Peer::SelectPeerToSync($gossip);
+
+						Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$ipAndPortToSync);
+
 						$gossip->syncing = true;
 						$gossip->isBusy = false;
 						return false;
@@ -331,7 +335,7 @@ class Peer {
         if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1)
             return $infoPOST['result'];
         else
-            return 0;
+            return -1;
     }
 
     /**
