@@ -13,7 +13,7 @@ define('PEERS_MAX',                     10);
 //MINER INFO
 define('MINER_MAX_SUBPROCESS',          5);
 define('MINER_TIMEOUT_CLOSE',           30);
-define('SHOW_INFO_SUBPROCESS',          true);
+define('SHOW_INFO_SUBPROCESS',          false);
 define('MIN_GAS_PRICE_TO_MINE',			0);
 
 //PHP RUN

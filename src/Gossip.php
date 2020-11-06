@@ -453,6 +453,7 @@ final class Gossip {
 					else {
 
 						$gossip->syncing = true;
+						$gossip->chaindata->SetConfig('syncing','on');
 
 						@unlink(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer");
 						$ipAndPortToSync = Peer::GetHighestBlockFromPeers($gossip);
@@ -1119,7 +1120,8 @@ final class Gossip {
 					break;
 
 				if (@!file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MINERS_THREAD_CLOCK."_".$i)) {
-					Display::print("The miner thread #".$i." do not seem to respond. Restarting Thread");
+					if (SHOW_INFO_SUBPROCESS)
+						Display::print("The miner thread #".$i." do not seem to respond. Restarting Thread");
 
 					//Get info to pass miner
 					$lastBlock = $this->chaindata->GetLastBlock();
@@ -1143,7 +1145,8 @@ final class Gossip {
 						Display::_debug("MinerTimer  : " . intval($timeMiner),4);
 						Display::_debug("CurrentTimer: " . time(),4);
 
-						Display::print("The miner thread #".$i." do not seem to respond (Timeout ".$seconds."s). Restarting Thread");
+						if (SHOW_INFO_SUBPROCESS)
+							Display::print("The miner thread #".$i." do not seem to respond (Timeout ".$seconds."s). Restarting Thread");
 
 						//Get info to pass miner
 						$lastBlock = $this->chaindata->GetLastBlock();
