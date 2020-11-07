@@ -208,10 +208,6 @@ class CLI {
 		Display::printCLI("Write %Y%:b%W% to return to MainMenu");
 		Display::_br();
 
-		//Instance the pointer to the chaindata
-        $chaindata = new DB();
-		$nextBlock = $chaindata->GetNextBlockNum();
-
 		$walletFrom = null;
 		$walletFromPassword = null;
 		$walletTo = null;

@@ -355,9 +355,6 @@ if ($id != null) {
 						$gasPrice = (isset($params['gasPrice'])) ? $params['gasPrice']:"0.0000000001";
 
 						//Instance the pointer to the chaindata
-
-				        $chaindata = new DB();
-						$nextBlock = $chaindata->GetNextBlockNum();
 						$txnHash = Wallet::API_SendTransaction($params['from'],$password,$params['to'],$params['amount'],$data,$gasLimit,$gasPrice,$isTestnet);
 
                         //Check if transaction have error

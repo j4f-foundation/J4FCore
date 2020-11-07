@@ -82,7 +82,7 @@ if ($blockMined != null && is_object($blockMined)) {
         'action' => 'MINEDBLOCK',
         'hash_previous' => $blockMined->previous,
 		'block' => @serialize($blockMined),
-		'height' => $chaindata->GetNextBlockNum()-1,
+		'height' => $chaindata->GetCurrentBlockNum(),
 		'node_ip' => $myNodeIp,
 		'node_port' => $myNodePort,
     );

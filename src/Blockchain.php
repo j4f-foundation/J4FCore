@@ -305,7 +305,7 @@ class Blockchain {
 		$isTestNet = ($chaindata->GetNetwork() == "testnet") ? true:false;
 
 		if ($heightToStart == null)
-			$heightToStart = $chaindata->GetNextBlockNum()-1;
+			$heightToStart = $chaindata->GetCurrentBlockNum();
 
 		for ($i = $heightToStart ; $i > ($heightToStart-$blocksToCheck); $i--) {
 			$currentBlock = $chaindata->GetBlockByHeight($i);

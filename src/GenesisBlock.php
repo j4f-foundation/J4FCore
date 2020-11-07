@@ -73,8 +73,6 @@ class GenesisBlock {
 		$genesisBlock = $chaindata->GetGenesisBlock();
 		$lastBlock = $chaindata->GetLastBlock();
 
-		$nextHeight = $chaindata->GetNextBlockNum();
-
 		$transactions = Transaction::withGas("",$coinbase,$amount,$privKey,"","If you want different results, do not do the same things", 21000, "0");
 		$transactions = [$transactions];
 
