@@ -26,32 +26,6 @@ class Display {
     }
 
     /**
-     * Replace the colors of a string for the CMD
-     *
-     * @param $string
-     * @return string
-     */
-    public static function _replaceColors($string) : string {
-        $string = str_replace("%B%",ColorsCLI::$FG_BLACK,$string);
-        $string = str_replace("%DG%",ColorsCLI::$FG_DARK_GRAY,$string);
-        $string = str_replace("%R%",ColorsCLI::$FG_RED,$string);
-        $string = str_replace("%LR%",ColorsCLI::$FG_LIGHT_RED,$string);
-        $string = str_replace("%G%",ColorsCLI::$FG_GREEN,$string);
-        $string = str_replace("%LG%",ColorsCLI::$FG_LIGHT_GREEN,$string);
-        $string = str_replace("%BR%",ColorsCLI::$FG_BROWN,$string);
-        $string = str_replace("%Y%",ColorsCLI::$FG_YELLOW,$string);
-        $string = str_replace("%B%",ColorsCLI::$FG_BLUE,$string);
-        $string = str_replace("%LB%",ColorsCLI::$FG_LIGHT_BLUE,$string);
-        $string = str_replace("%P%",ColorsCLI::$FG_PURPLE,$string);
-        $string = str_replace("%LP%",ColorsCLI::$FG_LIGHT_PURPLE,$string);
-        $string = str_replace("%C%",ColorsCLI::$FG_CYAN,$string);
-        $string = str_replace("%LC%",ColorsCLI::$FG_LIGHT_CYAN,$string);
-        $string = str_replace("%LG%",ColorsCLI::$FG_LIGHT_GRAY,$string);
-        $string = str_replace("%W%",ColorsCLI::$FG_WHITE,$string);
-        return $string;
-    }
-
-    /**
      * Write a line in the CMD
      * @param $string
      */
@@ -168,6 +142,32 @@ class Display {
 		else if (strtolower($type) == 'malformed') {
 	        Display::print("%LR%Ignored%W% new block     	%G%error%W%=Block malformed");
 		}
+    }
+
+	/**
+     * Replace the colors of a string for the CMD
+     *
+     * @param $string
+     * @return string
+     */
+    public static function _replaceColors($string) : string {
+        $string = str_replace("%B%",ColorsCLI::$FG_BLACK,$string);
+        $string = str_replace("%DG%",ColorsCLI::$FG_DARK_GRAY,$string);
+        $string = str_replace("%R%",ColorsCLI::$FG_RED,$string);
+        $string = str_replace("%LR%",ColorsCLI::$FG_LIGHT_RED,$string);
+        $string = str_replace("%G%",ColorsCLI::$FG_GREEN,$string);
+        $string = str_replace("%LG%",ColorsCLI::$FG_LIGHT_GREEN,$string);
+        $string = str_replace("%BR%",ColorsCLI::$FG_BROWN,$string);
+        $string = str_replace("%Y%",ColorsCLI::$FG_YELLOW,$string);
+        $string = str_replace("%B%",ColorsCLI::$FG_BLUE,$string);
+        $string = str_replace("%LB%",ColorsCLI::$FG_LIGHT_BLUE,$string);
+        $string = str_replace("%P%",ColorsCLI::$FG_PURPLE,$string);
+        $string = str_replace("%LP%",ColorsCLI::$FG_LIGHT_PURPLE,$string);
+        $string = str_replace("%C%",ColorsCLI::$FG_CYAN,$string);
+        $string = str_replace("%LC%",ColorsCLI::$FG_LIGHT_CYAN,$string);
+        $string = str_replace("%LG%",ColorsCLI::$FG_LIGHT_GRAY,$string);
+        $string = str_replace("%W%",ColorsCLI::$FG_WHITE,$string);
+        return $string;
     }
 }
 ?>

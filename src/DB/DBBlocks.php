@@ -187,8 +187,7 @@ class DBBlocks extends DBContracts {
 				$sql_insert_block = "INSERT INTO blocks (height,block_previous,block_hash,root_merkle,nonce,timestamp_start_miner,timestamp_end_miner,difficulty,version,info)
 				VALUES (".$blockNum.",'".$block_previous."','".$blockInfo->hash."','".$blockInfo->merkle."','".$blockInfo->nonce."','".$blockInfo->timestamp."','".$blockInfo->timestamp_end."','".$blockInfo->difficulty."','".$this->GetConfig('node_version')."','".$this->db->real_escape_string(@serialize($blockInfo->info))."');";
 				if (!$this->db->query($sql_insert_block))
-					//throw new Exception('Error adding new block #'.$blockNum . ' - SQL: ' . $sql_insert_block);
-					throw new Exception("Can't add new block #{$blockNum}");
+					throw new Exception("Can't add new block #{$blockNum} - Error: " . $this->db->error . " - SQL: " . $sql_insert_block);
 
 				foreach ($blockInfo->transactions as $transaction) {
 
@@ -202,7 +201,7 @@ class DBBlocks extends DBContracts {
                     $sql_insert_transaction = "INSERT INTO transactions (block_hash, txn_hash, wallet_from_key, wallet_from, wallet_to, amount, signature, data, gasLimit, gasPrice, timestamp, version)
                     VALUES ('".$blockInfo->hash."','".$transaction->message()."','".$wallet_from_pubkey."','".$wallet_from."','".$transaction->to."','".$transaction->amount."','".$transaction->signature."','".$transaction->data."',".$transaction->gasLimit.",".$transaction->gasPrice.",'".$transaction->timestamp."','".$transaction->version."');";
 					if (!$this->db->query($sql_insert_transaction))
-						throw new Exception('Error adding txn of block #' . $blockNum . ' - SQL: ' . $sql_insert_transaction);
+						throw new Exception("Error adding txn of block #" . $blockNum . " - Error: " . $this->db->error . " - SQL: " . $sql_insert_transaction);
 
 					$outOfGas = false;
 					$totalGasTxn = Gas::calculateGasTxn($this,$transaction->to,$transaction->data);
@@ -231,7 +230,7 @@ class DBBlocks extends DBContracts {
 							";
 						}
 						if (!$this->db->query($sql_updateAccountFrom))
-							throw new Exception('Error updating account FROM - SQL: ' . $sql_updateAccountFrom);
+							throw new Exception("Error updating account FROM - Error: " . $this->db->error . " - SQL: " . $sql_updateAccountFrom);
 					}
 					//Update Account TO
 					if (strlen($transaction->to) > 0) {
@@ -261,7 +260,7 @@ class DBBlocks extends DBContracts {
 							}
 						}
 						if (!$this->db->query($sql_updateAccountTo))
-							throw new Exception('Error updating account TO - SQL: ' . $sql_updateAccountTo);
+							throw new Exception('Error updating account TO - Error: " . $this->db->error . " - SQL: ' . $sql_updateAccountTo);
 					}
 
                     //Remove transaction from pool
@@ -272,7 +271,8 @@ class DBBlocks extends DBContracts {
 		//If have error, rollback action
 		catch (Exception $e) {
 			$this->db->rollback();
-			Display::_error($e->getMessage());
+			if (strpos($e->getMessage(),"Duplicate entry") === false)
+				Display::_error($e->getMessage());
 			$this->db->autocommit(true);
             return false;
 		}
