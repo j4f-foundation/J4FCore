@@ -70,9 +70,9 @@ $numRetrys = $argv[4];
 $blockMined = Tools::objectToObject(@unserialize(Tools::hex2str(@file_get_contents(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR.Subprocess::$FILE_PROPAGATE_BLOCK))),"Block");
 if ($blockMined != null && is_object($blockMined)) {
 
-    Tools::writeLog('SUBPROCESS::Start new propagation to '.$peerIP.':'.$peerPORT);
+    $chaindata = new DB();
 
-	$chaindata = new DB();
+	Tools::writeLog('SUBPROCESS::Start new propagation to '.$peerIP.':'.$peerPORT.' | BLOCK #' . $chaindata->GetCurrentBlockNum());
 
 	// Get My Node info
 	$myNodeIp = $chaindata->GetConfig('node_ip');
@@ -87,6 +87,34 @@ if ($blockMined != null && is_object($blockMined)) {
 		'node_port' => $myNodePort,
     );
 
-	$returnFromPeer = Socket::sendMessage($peerIP,$peerPORT,$infoToSend);
+	//$returnFromPeer = Socket::sendMessage($peerIP,$peerPORT,$infoToSend);
+	if (Socket::isAlive($peerIP,$peerPORT)) {
+		$returnFromPeer = Socket::sendMessageWithReturn($peerIP,$peerPORT,$infoToSend,2);
+		if ($returnFromPeer != null && isset($returnFromPeer['status']) && $returnFromPeer['status'] == true) {
+
+			Tools::writeLog('SUBPROCESS::[PROPAGATION][BLOCK #'.$chaindata->GetCurrentBlockNum().'] '.$peerIP.':'.$peerPORT." --> OK | " . $returnFromPeer['result'] . " | Message: " . $returnFromPeer['message']);
+
+			//Peer suggest sanity on my blockchain
+			if ($returnFromPeer['result'] == 'sanity') {
+				Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$peerIP.":".$peerPORT);
+				Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sanity","");
+			}
+		}
+		else {
+
+			if (isset($returnFromPeer['status']) && $returnFromPeer['status'] == false) {
+
+				Tools::writeLog('SUBPROCESS::[PROPAGATION] '.$peerIP.':'.$peerPORT." --> ERROR FALSE");
+				//Tools::writeLog('SUBPROCESS::[PROPAGATION] '.$peerIP.':'.$peerPORT." --> sanity else");
+				//Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$peerIP.":".$peerPORT);
+				//Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sanity","");
+			}
+			else {
+				Tools::writeLog('SUBPROCESS::[PROPAGATION] '.$peerIP.':'.$peerPORT." --> UKNOWN ERROR");
+				//Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$peerIP.":".$peerPORT);
+				//Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sanity","");
+			}
+		}
+	}
 }
 die();

@@ -113,6 +113,7 @@ final class Gossip {
 		Tools::clearTmpFolder();
 		@unlink(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.'node_log');
 		@unlink(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer");
+		@unlink(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sanity");
 
 		//Default miners stopped
 		Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
@@ -382,6 +383,20 @@ final class Gossip {
 				$gossip->syncing = true;
 			}
 
+			//Check if need to sanity (From subprocess propagation)
+			if (@file_exists(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sanity")) {
+				$gossip->busy = true;
+
+				$lastBlock_LocalNode = $gossip->chaindata->GetCurrentBlockNum();
+
+				//Micro-Sanity and resync
+				Display::_warning("Started Micro-Sanity       %G%height%W%=".$lastBlock_LocalNode."	%G%newHeight%W%=".($lastBlock_LocalNode-1));
+				$gossip->chaindata->RemoveLastBlocksFrom(($lastBlock_LocalNode-1));
+				Display::_warning("Finished Micro-Sanity, re-sync with peer");
+				@unlink(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sanity");
+				$gossip->busy = false;
+			}
+
 			//If we are not synchronizing
 			if (!$gossip->syncing) {
 
@@ -568,7 +583,7 @@ final class Gossip {
 
 								//Check if this peer is in blacklist
 								if (Peer::CheckIfBlacklisted($gossip,$msgFromPeer["node_ip"],$msgFromPeer["node_port"])) {
-									$return['status'] = false;
+									$return['status'] = true;
 									$return['error'] = "7x00000001";
 									$return['message'] = "Blacklisted";
 									//Display::_error("This peer is blacklisted -> " . $msgFromPeer["node_ip"].":".$msgFromPeer["node_port"]);
@@ -583,6 +598,7 @@ final class Gossip {
 									$return['status'] = true;
 									$return['error'] = "5x00000000";
 									$return['message'] = "Block received malformed";
+									$return['result'] = 'sanity';
 									//Display::_error('Block received malformed');
 									break;
 								}
@@ -593,6 +609,7 @@ final class Gossip {
 									$return['status'] = true;
 									$return['error'] = "6x00000002";
 									$return['message'] = "Block date is from the future";
+									$return['result'] = 'sanity';
 									//Display::_error('Block date is from the future');
 									break;
 								}
@@ -613,10 +630,12 @@ final class Gossip {
 										$return['status'] = true;
 										$return['error'] = "4x00000000";
 										$return['message'] = "Block difficulty hacked?";
-										//Display::_error('SameHeight | Block difficulty hacked?');
+										$return['result'] = 'sanity';
+										Display::_error('SameHeight | Block difficulty hacked?');
 										break;
 									}
 
+									/*
 									// We check if the time difference is equal orgreater than 2s
 									$diffTimeBlocks = date_diff(
 							            date_create(date('Y-m-d H:i:s', $lastBlock['timestamp_end_miner'])),
@@ -628,9 +647,10 @@ final class Gossip {
 										$return['status'] = true;
 										$return['error'] = "5x00000000";
 										$return['result'] = 'sanity';
-										//Display::_error("SameHeight | Peer {$address} need sanity - DiffSeconds: {$diffTimeSeconds}");
+										$return['message'] = "SameHeight | Peer {$address} need sanity - DiffSeconds: {$diffTimeSeconds}";
 										break;
 									}
+									*/
 
 									//Valid new block in same hiehgt to add in Blockchain
 									$returnCode = Blockchain::isValidBlockMinedByPeerInSameHeight($gossip->chaindata,$lastBlock,$blockMinedByPeer);
@@ -654,6 +674,8 @@ final class Gossip {
 
 										$return['status'] = true;
 										$return['error'] = $returnCode;
+										$return['result'] = "";
+										$return['message'] = "Block sane";
 
 									}
 									//Block no accepted, suggest microsanity
@@ -674,9 +696,10 @@ final class Gossip {
 											Display::ShowMessageNewBlock('noaccepted',$lastBlock['height'],$blockMinedByPeer);
 										}
 
-										$return['status'] = true;
-										$return['error'] = $returnCode;
-										$return['result'] = 'sanity';
+										//$return['status'] = true;
+										//$return['error'] = $returnCode;
+										//$return['result'] = 'sanity';
+										//$return['message'] = 'Sameheight | else';
 									}
 
 									//Check integrity of my blockchain
@@ -694,6 +717,7 @@ final class Gossip {
 										$return['status'] = true;
 										$return['error'] = "6x00000000";
 										$return['message'] = "Block date is from the past";
+										$return['result'] = 'sanity';
 										//Display::_error("NewBlock | Block date is from the past");
 										break;
 									}
@@ -712,6 +736,7 @@ final class Gossip {
 										$return['status'] = true;
 										$return['error'] = "4x00000000";
 										$return['message'] = "Block difficulty hacked?";
+										$return['result'] = 'sanity';
 										//Display::_error("NewBlock | Block difficulty hacked?");
 										break;
 									}
@@ -759,12 +784,17 @@ final class Gossip {
 										$return['status'] = true;
 										$return['error'] = $returnCode;
 										$return['result'] = 'sanity';
+										$return['message'] = 'New block | else';
 									}
 
 									break;
 								}
 
 								else {
+
+									$return['status'] = true;
+									$return['error'] = "7x00000000";
+									$return['result'] = "";
 
 									// if height of block submitted is lower than our current height, send sanity to peer
 									if (($msgFromPeer['height'] - $lastBlock['height']) > 10) {
