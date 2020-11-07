@@ -86,7 +86,7 @@ class DBTransactions {
      */
     public function GetTxnFromPool(int $limit=511) : array {
         $txs = array();
-        $txs_chaindata = $this->db->query("SELECT * FROM txnpool WHERE wallet_from <> wallet_to AND gasPrice > MIN_GAS_PRICE_TO_MINE ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC LIMIT " . $limit);
+        $txs_chaindata = $this->db->query("SELECT * FROM txnpool WHERE wallet_from <> wallet_to AND gasPrice >= ".MIN_GAS_PRICE_TO_MINE." ORDER BY gasPrice DESC, gasLimit DESC, timestamp DESC LIMIT " . $limit);
         if (!empty($txs_chaindata)) {
             while ($tx_chaindata = $txs_chaindata->fetch_array(MYSQLI_ASSOC)) {
                 if ($tx_chaindata['txn_hash'] != null && strlen($tx_chaindata['txn_hash']) > 0)
