@@ -49,6 +49,23 @@ class Peer {
 
 				if (@is_array($lastBlock) && !@empty($lastBlock)) {
 
+					//Check if block received its OK
+					if (!is_object($blockToImport) || ( is_object($blockToImport) && !isset($blockToImport->hash) )) {
+						$return['status'] = true;
+						$return['error'] = "5x00000000";
+						$return['message'] = "Block received malformed";
+						break;
+					}
+
+					$currentLocalTime = Tools::GetGlobalTime() + 5;
+					//We check that the date of the block sent is not superior to mine
+					if ($blockToImport->timestamp_end > $currentLocalTime) {
+						$return['status'] = true;
+						$return['error'] = "6x00000002";
+						$return['message'] = "Block date is from the future";
+						break;
+					}
+
 					//Check if my last block is the previous block of the block to import
 					if ($lastBlock['block_hash'] == $blockToImport->previous) {
 
@@ -98,6 +115,8 @@ class Peer {
 						$currentDifficulty = Blockchain::checkDifficulty($gossip->chaindata,($lastBlock['height']-1),$isTestNet);
 						if ($currentDifficulty[0] != $blockToImport->difficulty) {
 							Display::ShowMessageNewBlock('novalid',$lastBlock['height'],$blockToImport);
+							Display::_warning("Peer ".$ipAndPort." added to blacklist       %G%reason%W%=Difficulty hacked?");
+							$gossip->chaindata->addPeerToBlackList($ipAndPort);
 							break;
 						}
 
@@ -108,8 +127,10 @@ class Peer {
 						);
 						$diffTimeSeconds = ($diffTimeBlocks->format('%i') * 60) + $diffTimeBlocks->format('%s');
 						$diffTimeSeconds = ($diffTimeSeconds < 0) ? ($diffTimeSeconds * -1):$diffTimeSeconds;
-						if ($diffTimeSeconds >= 2) {
+						if ($diffTimeSeconds > 2) {
 							Display::ShowMessageNewBlock('novalid',$lastBlock['height'],$blockToImport);
+							Display::_warning("Peer ".$ipAndPort." added to blacklist       %G%reason%W%=Block in past");
+							$gossip->chaindata->addPeerToBlackList($ipAndPort);
 							break;
 						}
 
@@ -124,15 +145,23 @@ class Peer {
 						else {
 							if ($returnCode == "0x00000001") {
 								Display::ShowMessageNewBlock('novalid',$lastBlock['height'],$blockToImport);
+								Display::_warning("Peer ".$ipAndPort." added to blacklist       %G%reason%W%=Has a block that I can not validateHas a block that I can not validate");
+								$gossip->chaindata->addPeerToBlackList($ipAndPort);
 							}
 							else if ($returnCode == "0x00000002") {
 								Display::ShowMessageNewBlock('rewardko',$lastBlock['height'],$blockToImport);
+								Display::_warning("Peer ".$ipAndPort." added to blacklist       %G%reason%W%=Reward transaction not valid");
+								$gossip->chaindata->addPeerToBlackList($ipAndPort);
 							}
 							else if ($returnCode == "0x00000003") {
 								Display::ShowMessageNewBlock('previousko',$lastBlock['height'],$blockToImport);
+								Display::_warning("Peer ".$ipAndPort." added to blacklist       %G%reason%W%=Previous block fail");
+								$gossip->chaindata->addPeerToBlackList($ipAndPort);
 							}
 							else if ($returnCode == "0x00000004") {
 								Display::ShowMessageNewBlock('malformed',$lastBlock['height'],$blockToImport);
+								Display::_warning("Peer ".$ipAndPort." added to blacklist       %G%reason%W%=Block malformed");
+								$gossip->chaindata->addPeerToBlackList($ipAndPort);
 							}
 							else if ($returnCode == "0x00000005") {
 								Display::ShowMessageNewBlock('noaccepted',$lastBlock['height'],$blockToImport);
@@ -142,7 +171,7 @@ class Peer {
 					}
 
 					//Check if same block
-					else if ($lastBlock['block_previous'] == $object['block_previous'] && $lastBlock['block_hash'] == $object['block_hash']) {
+					else if ($lastBlock['block_previous'] == $blockToImport->previous && $lastBlock['block_hash'] == $blockToImport->hash) {
 						continue;
 					}
 					else {
@@ -157,8 +186,7 @@ class Peer {
 						$gossip->chaindata->RemoveLastBlocksFrom($heightBlockFromRemove);
 						Display::_warning("Finished Micro-Sanity, re-sync with peer");
 
-						$ipAndPortToSync = Peer::SelectPeerToSync($gossip);
-
+						$ipAndPortToSync = Peer::GetHighestBlockFromPeers($gossip);
 						Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$ipAndPortToSync);
 
 						$gossip->syncing = true;
@@ -393,16 +421,18 @@ class Peer {
 			'action' => 'LASTBLOCKNUM'
         );
 
+		$myPeers = $gossip->chaindata->GetAllPeers();
+
 		//Check all peers and select highest block peer
-		foreach($gossip->peers as $ipAndPort => $v) {
-			$peer = explode(":", $ipAndPort);
-			$infoPOST = Socket::sendMessageWithReturn($peer[0],$peer[1],$infoToSend,10);
-			if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1) {
-				if (is_array($infoPOST['result']) && !empty($infoPOST['result'])) {
-					Display::print(print_r($infoPOST,true));
-					if (intval($infoPOST['result']) > $numBlocksPeer) {
-						$numBlocksPeer = intval($infoPOST['result']);
-						$selectedPeer = $peer[0] . ":" . $peer[1];
+		if (!empty($myPeers)) {
+			foreach($myPeers as $peerInfo) {
+				$infoPOST = Socket::sendMessageWithReturn($peerInfo["ip"],$peerInfo["port"],$infoToSend,10);
+				if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1) {
+					if (is_array($infoPOST['result']) && !empty($infoPOST['result'])) {
+						if (intval($infoPOST['result']) > $numBlocksPeer) {
+							$numBlocksPeer = intval($infoPOST['result']);
+							$selectedPeer = $peerInfo["ip"] . ":" . $peerInfo["port"];
+						}
 					}
 				}
 			}
@@ -438,6 +468,7 @@ class Peer {
 
 	/**
 	 * Get more peers from peer
+	 * @param Gossip $gossip
 	 * @param string $ip
 	 * @param string $port
 	 * @return void
@@ -460,5 +491,16 @@ class Peer {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Check if peer is blacklisted
+	 * @param Gossip $gossip
+	 * @param string $ip
+	 * @param string $port
+	 * @return bool
+	 */
+	public static function CheckIfBlacklisted(Gossip &$gossip, string $ip, string $port) : bool {
+		return $gossip->chaindata->CheckIfPeerIsBlacklisted($ip,$port);
 	}
 }

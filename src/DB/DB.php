@@ -97,7 +97,6 @@ class DB extends DBBase {
      * @param $ipAndPort
      */
     public function addPeerToBlackList(string $ipAndPort) : void {
-		/*
         //Get IP and Port
         $tmp = explode(':',$ipAndPort);
         $ip = $tmp[0];
@@ -107,7 +106,7 @@ class DB extends DBBase {
             $currentInfoPeer = $this->db->query("SELECT id FROM peers WHERE ip = '".$ip."' AND port = '".$port."';")->fetch_assoc();
 
             //Ban peer 10min
-            $blackListTime = time() + 5 * 60;
+            $blackListTime = time() + (5 * 60);
             if (empty($currentInfoPeer)) {
                 $this->db->query("INSERT INTO peers (ip,port,blacklist) VALUES ('".$ip."', '".$port."', '".$blackListTime."');");
             }
@@ -115,7 +114,6 @@ class DB extends DBBase {
                 $this->db->query("UPDATE peers SET blacklist='".$blackListTime."' WHERE ip = '".$ip."' AND port = '".$port."';");
             }
         }
-		*/
     }
 
     /**
@@ -158,6 +156,22 @@ class DB extends DBBase {
             }
         }
         return $peers;
+    }
+
+	/**
+     * Returns true if this peer has blacklisted
+	 *
+	 * @param string $ip
+	 * @param string $port
+     * @return bool
+     */
+	public function CheckIfPeerIsBlacklisted(string $ip, string $port) : bool {
+        $peers = [];
+        $peersBlackListed = $this->db->query("SELECT * FROM peers WHERE ip = '".$ip."' AND port = '".$port."' AND blacklist IS NOT NULL AND blacklist >= ".time()." LIMIT 1")->fetch_array(MYSQLI_ASSOC);
+        if (empty($peersBlackListed)) {
+			return false;
+        }
+        return true;
     }
 
 	/**

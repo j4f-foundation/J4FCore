@@ -378,8 +378,9 @@ final class Gossip {
 				$gossip->ShowLogSubprocess();
 
 			//Check if need to sync with any peer
-			if (@file_exists(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sync_with_peer"))
+			if (@file_exists(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sync_with_peer")) {
 				$gossip->syncing = true;
+			}
 
 			//If we are not synchronizing
 			if (!$gossip->syncing) {
@@ -397,7 +398,7 @@ final class Gossip {
 				if (@file_exists(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sync_with_peer"))
 					$ipAndPort = @file_get_contents(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."sync_with_peer");
 				else
-					$ipAndPort = Peer::SelectPeerToSync($gossip);
+					$ipAndPort = Peer::GetHighestBlockFromPeers($gossip);
 
 				//We prevent it from synchronizing itself
 				if ($ipAndPort == $gossip->ip . ":" . $gossip->port) {
@@ -562,6 +563,15 @@ final class Gossip {
 									$return['error'] = "0x10000002";
 									$return['message'] = "Need hashPrevious & blockInfo";
 									//Display::_error("Need hashPrevious & blockInfo");
+									break;
+								}
+
+								//Check if this peer is in blacklist
+								if (Peer::CheckIfBlacklisted($gossip,$msgFromPeer["node_ip"],$msgFromPeer["node_port"])) {
+									$return['status'] = false;
+									$return['error'] = "7x00000001";
+									$return['message'] = "Blacklisted";
+									//Display::_error("This peer is blacklisted -> " . $msgFromPeer["node_ip"].":".$msgFromPeer["node_port"]);
 									break;
 								}
 
@@ -765,10 +775,13 @@ final class Gossip {
 										Tools::clearTmpFolder();
 										Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
 
+										$gossip->syncing = true;
+										/*
 										// Start microsanity with this peer
 										if (strlen($msgFromPeer['node_ip']) > 0 && strlen($msgFromPeer['node_port']) > 0)
 											Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$msgFromPeer['node_ip'].":".$msgFromPeer['node_port']);
 										Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_STOP_MINING);
+										*/
 									}
 									break;
 								}

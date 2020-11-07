@@ -120,7 +120,7 @@ if ($argv[1] == -1) {
     }
 
     if ($response == null) {
-        $chaindata->addPeerToBlackList($peerIP.':'.$peerPORT);
+        //$chaindata->addPeerToBlackList($peerIP.':'.$peerPORT);
     }
 }
 die();
