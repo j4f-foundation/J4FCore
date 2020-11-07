@@ -426,9 +426,9 @@ class Peer {
 		//Check all peers and select highest block peer
 		if (!empty($myPeers)) {
 			foreach($myPeers as $peerInfo) {
-				$infoPOST = Socket::sendMessageWithReturn($peerInfo["ip"],$peerInfo["port"],$infoToSend,10);
-				if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1) {
-					if (is_array($infoPOST['result']) && !empty($infoPOST['result'])) {
+				if (Socket::isAlive($peerInfo["ip"],$peerInfo["port"])) {
+					$infoPOST = Socket::sendMessageWithReturn($peerInfo["ip"],$peerInfo["port"],$infoToSend,10);
+					if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1) {
 						if (intval($infoPOST['result']) > $numBlocksPeer) {
 							$numBlocksPeer = intval($infoPOST['result']);
 							$selectedPeer = $peerInfo["ip"] . ":" . $peerInfo["port"];
