@@ -146,7 +146,7 @@ class Wallet {
 
         //Check if are synched
         $lastBlockNum = BootstrapNode::GetLastBlockNum($chaindata,$isTestNet);
-        $lastBlockNum_Local = $chaindata->GetNextBlockNum();
+        $lastBlockNum_Local = $chaindata->GetCurrentBlockNum();
 
 		//Have same num blocks
         if ($lastBlockNum != $lastBlockNum_Local)
@@ -187,7 +187,7 @@ class Wallet {
 
         //Comprobamos si estamos sincronizados o no
         $lastBlockNum = BootstrapNode::GetLastBlockNum($chaindata,$isTestNet);
-        $lastBlockNum_Local = $chaindata->GetNextBlockNum();
+        $lastBlockNum_Local = $chaindata->GetCurrentBlockNum();
 
         if ($lastBlockNum != $lastBlockNum_Local)
             return "Error, Blockchain it is not synchronized";
@@ -220,7 +220,7 @@ class Wallet {
 
         //Comprobamos si estamos sincronizados o no
         $lastBlockNum = BootstrapNode::GetLastBlockNum($chaindata,$isTestNet);
-        $lastBlockNum_Local = $chaindata->GetNextBlockNum();
+        $lastBlockNum_Local = $chaindata->GetCurrentBlockNum();
 
         if ($lastBlockNum != $lastBlockNum_Local)
             return "ERROR: Blockchain it is not synchronized";
@@ -290,7 +290,7 @@ class Wallet {
 
         //Check if node is synchronized
         $lastBlockNum = BootstrapNode::GetLastBlockNum($chaindata,$isTestNet);
-        $lastBlockNum_Local = $chaindata->GetNextBlockNum();
+        $lastBlockNum_Local = $chaindata->GetCurrentBlockNum();
         if ($lastBlockNum != $lastBlockNum_Local)
             return "Error, Blockchain it is not synchronized";
 
@@ -323,7 +323,7 @@ class Wallet {
 
         //Check if node is synchronized
         $lastBlockNum = BootstrapNode::GetLastBlockNum($chaindata,$isTestNet);
-        $lastBlockNum_Local = $chaindata->GetNextBlockNum();
+        $lastBlockNum_Local = $chaindata->GetCurrentBlockNum();
         if ($lastBlockNum != $lastBlockNum_Local)
             return "Error, Blockchain it is not synchronized";
 
@@ -409,7 +409,7 @@ class Wallet {
 
         //Comprobamos si estamos sincronizados o no
         $lastBlockNum = BootstrapNode::GetLastBlockNum($chaindata,$isTestNet);
-		$lastBlockNum_Local = $chaindata->GetNextBlockNum();
+		$lastBlockNum_Local = $chaindata->GetCurrentBlockNum();
 
         if ($lastBlockNum != $lastBlockNum_Local)
             return ColorsCLI::$FG_RED."Error".ColorsCLI::$FG_WHITE." Blockchain it is not synchronized".PHP_EOL;
@@ -537,7 +537,7 @@ class Wallet {
 
         //Comprobamos si estamos sincronizados o no
         $lastBlockNum = BootstrapNode::GetLastBlockNum($chaindata,$isTestNet);
-        $lastBlockNum_Local = $chaindata->GetNextBlockNum();
+        $lastBlockNum_Local = $chaindata->GetCurrentBlockNum();
 
         if ($lastBlockNum != $lastBlockNum_Local)
             return "Error, Blockchain it is not synchronized";
