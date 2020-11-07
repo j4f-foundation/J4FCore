@@ -888,7 +888,7 @@ final class Gossip {
             'client_port' => $gossip->port
         );
 
-        $response = Socket::sendMessageWithReturn($ip, $port, $infoToSend, 15);
+        $response = Socket::sendMessageWithReturn($ip, $port, $infoToSend, 5);
 		if ($response != null && isset($response['status'])) {
 			$gossip->chaindata->addPeer($ip, $port);
 
@@ -921,7 +921,7 @@ final class Gossip {
                 'client_ip' => $this->ip,
                 'client_port' => $this->port
             );
-            $response = Socket::sendMessageWithReturn($ip, $port, $infoToSend, 15);
+            $response = Socket::sendMessageWithReturn($ip, $port, $infoToSend, 5);
             if ($response != null && isset($response['status'])) {
                 if ($response['status'] == true) {
                     $this->chaindata->addPeer($ip, $port);
@@ -954,7 +954,7 @@ final class Gossip {
                 'client_ip' => $this->ip,
                 'client_port' => $this->port
             );
-            $response = Socket::sendMessageWithReturn($ip, $port, $infoToSend, 15);
+            $response = Socket::sendMessageWithReturn($ip, $port, $infoToSend, 5);
             if ($response != null && isset($response['status'])) {
                 if ($response['status'] == true) {
                     $this->peers[$ip.':'.$port] = true;
