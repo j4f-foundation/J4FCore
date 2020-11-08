@@ -47,8 +47,11 @@ if (!isset($argv[3]))
     die("PORT not defined");
 
 $id = $argv[1];
-$peerIP = $argv[2];
-$peerPORT = $argv[3];
+$serverIP = $argv[2];
+$serverPORT = $argv[3];
+
+//Update socket thread clock
+Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_SOCKET_THREAD_CLOCK,time());
 
 ob_start();
 
@@ -62,7 +65,7 @@ $factory = new React\Dns\Resolver\Factory();
 $dns = $factory->create($server, $loop);
 
 //Start Socket
-$socket = new React\Socket\Server('0.0.0.0:6969', $loop, array(
+$socket = new React\Socket\Server('0.0.0.0:'.$serverPORT, $loop, array(
 	'tcp' => array(
 		'backlog' => 200,
 		'so_reuseport' => true,
@@ -80,7 +83,10 @@ $gossipINFO = array(
 	"syncing" => false
 );
 
-$loop->addPeriodicTimer(0, function() use (&$gossipINFO) {
+$loop->addPeriodicTimer(0.1, function() use (&$gossipINFO) {
+
+	//Update socket thread clock
+	Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_SOCKET_THREAD_CLOCK,time());
 
 	//Check if node is busy
 	if (@file_exists(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."busy"))
@@ -103,13 +109,15 @@ $loop->addPeriodicTimer(0, function() use (&$gossipINFO) {
 	//Check if MainThread is alive
 	if (@file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MAIN_THREAD_CLOCK)) {
 		$mainThreadTime = @file_get_contents(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MAIN_THREAD_CLOCK);
-		$minedTime = date_diff(
-			date_create(date('Y-m-d H:i:s', $mainThreadTime)),
-			date_create(date('Y-m-d H:i:s', time()))
-		);
-		$diffTime = $minedTime->format('%s');
-		if ($diffTime > 10)
-			die('MAINTHREAD NOT FOUND');
+		if (strlen($mainThreadTime) > 0) {
+			$minedTime = date_diff(
+				date_create(date('Y-m-d H:i:s', intval($mainThreadTime))),
+				date_create(date('Y-m-d H:i:s', time()))
+			);
+			$diffTime = $minedTime->format('%s');
+			if ($diffTime > 30)
+				die('MAINTHREAD NOT FOUND');
+		}
 	}
 });
 
@@ -450,7 +458,7 @@ $socket->on('connection', function(ConnectionInterface $connection) use (&$chain
 
 							if (Socket::isAlive($msgFromPeer['client_ip'],$msgFromPeer['client_port'])) {
 								$chaindata->addPeer($msgFromPeer['client_ip'],$msgFromPeer['client_port']);
-								Display::print('%LP%Network%W% Connected to peer		%G%peerId%W%='.Tools::GetIdFromIpAndPort($msgFromPeer['client_ip'],$msgFromPeer['client_port']));
+								Tools::writeFile(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."new_peer",'%LP%Network%W% Connected to peer		%G%peerId%W%='.Tools::GetIdFromIpAndPort($msgFromPeer['client_ip'],$msgFromPeer['client_port']));
 								$return['result'] = "p2p_on";
 							}
 							else
@@ -465,8 +473,7 @@ $socket->on('connection', function(ConnectionInterface $connection) use (&$chain
 
 							//Get more peers from this new peer
 							//Peer::GetMorePeers($gossip, $msgFromPeer['client_ip'],$msgFromPeer['client_port']);
-
-							Display::print('%LP%Network%W% Connected to peer		%G%peerId%W%='.Tools::GetIdFromIpAndPort($msgFromPeer['client_ip'],$msgFromPeer['client_port']));
+							Tools::writeFile(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."new_peer",'%LP%Network%W% Connected to peer		%G%peerId%W%='.Tools::GetIdFromIpAndPort($msgFromPeer['client_ip'],$msgFromPeer['client_port']));
 						} else {
 							$return['message'] = "No ClientIP or ClientPort defined";
 						}

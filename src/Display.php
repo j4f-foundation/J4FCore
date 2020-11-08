@@ -86,8 +86,8 @@ class Display {
         ob_flush();
     }
 
-	public static function displayFromSubprocess() : void {
-		$content = @file_get_contents(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."display");
+	public static function displayFromSubprocess(string $file) : void {
+		$content = @file_get_contents(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR.$file);
         $date = new DateTime();
         echo self::_replaceColors("%G%INFO%W% [".$date->format("m-d|H:i:s")."] ".$content."%W%").self::_br();
         ob_flush();

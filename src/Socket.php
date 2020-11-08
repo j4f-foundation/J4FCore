@@ -70,7 +70,6 @@ class Socket {
 		$dataFromPeer = '';
 		$return = [];
 
-		/*
 		//Delayed Stop Function
 		$currentTime = 0;
 		$breakSocket = false;
@@ -79,7 +78,6 @@ class Socket {
 			if ($currentTime >= $timeout || $breakSocket)
 				$loop->stop();
 		});
-		*/
 
 		$promise = $connector->connect($ip.':'.$port)->then(function (React\Socket\ConnectionInterface $connection) use (&$dataParsed, &$return, &$dataFromPeer,&$breakSocket) {
 			$connection->write($dataParsed);

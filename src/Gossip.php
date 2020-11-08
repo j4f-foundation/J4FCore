@@ -162,16 +162,9 @@ final class Gossip {
 
 		//Start Subprocess socketServer
 		@unlink(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR.Subprocess::$FILE_SOCKET_THREAD);
-		$params = [$this->ip, $this->port];
-		Subprocess::newProcess(Tools::GetBaseDir()."subprocess".DIRECTORY_SEPARATOR,'socketServer',$params);
+		$this->_startSocketServer();
 
 		$loop = React\EventLoop\Factory::create();
-
-		$config = React\Dns\Config\Config::loadSystemConfigBlocking();
-		$server = $config->nameservers ? reset($config->nameservers) : '8.8.8.8';
-
-		$factory = new React\Dns\Resolver\Factory();
-		$dns = $factory->create($server, $loop);
 
 		//Delayed Init Function
 		$loop->addTimer(0, function () use ($gossip) {
@@ -395,15 +388,35 @@ final class Gossip {
 				$gossip->busy = true;
 			}
 
+			if (@file_exists(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."new_peer")) {
+				Display::displayFromSubprocess("new_peer");
+				@unlink(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."new_peer");
+			}
+
 			if (@file_exists(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."display")) {
-				Display::displayFromSubprocess();
+				Display::displayFromSubprocess("display");
 				@unlink(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."display");
+			}
+
+			//Check if MainThread is alive
+			if (@file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_SOCKET_THREAD_CLOCK)) {
+				$socketThreadTime = @file_get_contents(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_SOCKET_THREAD_CLOCK);
+				if (strlen($socketThreadTime) > 0) {
+					$minedTime = date_diff(
+						date_create(date('Y-m-d H:i:s', intval($socketThreadTime))),
+						date_create(date('Y-m-d H:i:s', time()))
+					);
+					$diffTime = $minedTime->format('%s');
+					if ($diffTime > 10) {
+						$this->_startSocketServer();
+					}
+				}
 			}
 
 			//We establish the title of the process
 			$gossip->SetTitleProcess();
 
-			//Update MainThread time for subprocess
+			//Update MainThread time for subprocess still alive
 			Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MAIN_THREAD_CLOCK,time());
 
 			if (DISPLAY_DEBUG && DISPLAY_DEBUG_LEVEL >= 3)
@@ -517,6 +530,12 @@ final class Gossip {
 
 		//Start node
 		$loop->run();
+	}
+
+	public function _startSocketServer() {
+		$params = [$this->ip, $this->port];
+		Subprocess::newProcess(Tools::GetBaseDir()."subprocess".DIRECTORY_SEPARATOR,'socketServer',$params);
+		Display::print("%LP%Network%W% Listening on		%G%tcp://0.0.0.0:{$this->port}%W%");
 	}
 
     /**
@@ -750,8 +769,6 @@ final class Gossip {
 	 * Mine process
 	 */
 	public function mineProcess() : void {
-
-		Display::print("mineProcess");
 
 		//Enable Miners if not enabled
 		if (@!file_exists(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.Subprocess::$FILE_MINERS_STARTED)) {
