@@ -415,7 +415,7 @@ $socket->on('connection', function(ConnectionInterface $connection) use (&$chain
 								$return['status'] = true;
 								$return['error'] = $returnCode;
 								$return['result'] = 'sanity';
-								$return['message'] = 'New block | else';
+								$return['message'] = 'New block | else | ' . $returnCode;
 							}
 
 							break;

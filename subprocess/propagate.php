@@ -89,10 +89,10 @@ if ($blockMined != null && is_object($blockMined)) {
 
 	//$returnFromPeer = Socket::sendMessage($peerIP,$peerPORT,$infoToSend);
 	if (Socket::isAlive($peerIP,$peerPORT)) {
-		$returnFromPeer = Socket::sendMessageWithReturn($peerIP,$peerPORT,$infoToSend,2);
+		$returnFromPeer = Socket::sendMessageWithReturn($peerIP,$peerPORT,$infoToSend,10);
 		if ($returnFromPeer != null && isset($returnFromPeer['status']) && $returnFromPeer['status'] == true) {
 
-			Tools::writeLog('SUBPROCESS::[PROPAGATION][BLOCK #'.$chaindata->GetCurrentBlockNum().'] '.$peerIP.':'.$peerPORT." --> OK | " . $returnFromPeer['result'] . " | Message: " . $returnFromPeer['message']);
+			Tools::writeLog('SUBPROCESS::[PROPAGATION][BLOCK #'.$blockMined->height.'] '.$peerIP.':'.$peerPORT." --> OK | " . $returnFromPeer['result'] . " | Message: " . $returnFromPeer['message']);
 
 			//Peer suggest sanity on my blockchain
 			if ($returnFromPeer['result'] == 'sanity') {
@@ -104,17 +104,20 @@ if ($blockMined != null && is_object($blockMined)) {
 
 			if (isset($returnFromPeer['status']) && $returnFromPeer['status'] == false) {
 
-				Tools::writeLog('SUBPROCESS::[PROPAGATION] '.$peerIP.':'.$peerPORT." --> ERROR FALSE");
+				Tools::writeLog('SUBPROCESS::[PROPAGATION][BLOCK #'.$blockMined->height.'] '.$peerIP.':'.$peerPORT." --> ERROR FALSE");
 				//Tools::writeLog('SUBPROCESS::[PROPAGATION] '.$peerIP.':'.$peerPORT." --> sanity else");
 				//Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$peerIP.":".$peerPORT);
 				//Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sanity","");
 			}
 			else {
-				Tools::writeLog('SUBPROCESS::[PROPAGATION] '.$peerIP.':'.$peerPORT." --> UKNOWN ERROR");
+				Tools::writeLog('SUBPROCESS::[PROPAGATION][BLOCK #'.$blockMined->height.'] '.$peerIP.':'.$peerPORT." --> UKNOWN ERROR");
 				//Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$peerIP.":".$peerPORT);
 				//Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sanity","");
 			}
 		}
+	}
+	else {
+		Tools::writeLog('SUBPROCESS::[PROPAGATION][BLOCK #'.$blockMined->height.'] '.$peerIP.':'.$peerPORT." --> OFFLINE?");
 	}
 }
 die();

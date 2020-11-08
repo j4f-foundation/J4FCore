@@ -273,6 +273,7 @@ class DBBlocks extends DBContracts {
 			$this->db->rollback();
 			if (strpos($e->getMessage(),"Duplicate entry") === false)
 				Display::_error($e->getMessage());
+			Tools::writeLog($e->getMessage());
 			$this->db->autocommit(true);
             return false;
 		}

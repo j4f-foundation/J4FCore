@@ -53,7 +53,7 @@ include(__DIR__.'/Gas.php');
 include(__DIR__.'/../funity/js.php');
 
 //J4F Version
-define('VERSION','0.2.1');
+define('VERSION','0.2.2');
 
 //Start capturing flush
 ob_start();

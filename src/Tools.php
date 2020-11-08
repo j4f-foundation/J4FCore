@@ -148,12 +148,15 @@ class Tools {
 
         $file = self::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR.'node_log';
 
-        if ($checkIfExistAndDelete && file_exists($file))
-            unlink($file);
+        if ($checkIfExistAndDelete && @file_exists($file))
+            @unlink($file);
 
-        $fp = fopen($file, 'a');
-        fwrite($fp, $content.PHP_EOL);
-        fclose($fp);
+		$date = new DateTime();
+		$content = "[".$date->format("m-d|H:i:s")."] " . $content;
+
+        $fp = @fopen($file, 'a');
+        @fwrite($fp, $content.PHP_EOL);
+        @fclose($fp);
         @chmod($file, 0777);
     }
 
