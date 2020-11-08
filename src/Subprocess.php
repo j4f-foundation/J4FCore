@@ -25,6 +25,8 @@ class Subprocess {
     public static $FILE_NEW_BLOCK           = "NEW_BLOCK";
     public static $FILE_MAIN_THREAD_CLOCK   = "main_thread_time";
     public static $FILE_MINERS_THREAD_CLOCK = "miners_thread_time";
+	public static $FILE_SOCKET_THREAD 		= "socket_thread_stop";
+	public static $FILE_SOCKET_THREAD_CLOCK = "socket_thread_time";
 
 
     /**
@@ -44,6 +46,7 @@ class Subprocess {
 
 		if (IS_WIN)
             @pclose(@popen('start /B cmd /C "'.PHP_RUN_COMMAND.' '.$directory.$fileProcess.'.php '.$params.' >NUL 2>NUL"', 'r'));
+			//@pclose(@popen('start cmd /C "'.PHP_RUN_COMMAND.' '.$directory.$fileProcess.'.php '.$params.' >NUL 2>NUL"', 'r'));
         else
             system(PHP_RUN_COMMAND." ".$directory.$fileProcess.".php ".$params." > /dev/null 2>&1 &");
 

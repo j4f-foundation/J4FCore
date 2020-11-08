@@ -86,6 +86,13 @@ class Display {
         ob_flush();
     }
 
+	public static function displayFromSubprocess() : void {
+		$content = @file_get_contents(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."display");
+        $date = new DateTime();
+        echo self::_replaceColors("%G%INFO%W% [".$date->format("m-d|H:i:s")."] ".$content."%W%").self::_br();
+        ob_flush();
+    }
+
     /**
      * Line break
      */
@@ -117,30 +124,39 @@ class Display {
 
 		if (strtolower($type) == 'imported') {
 	        self::print("%Y%Imported%W% new block	    	%G%nonce%W%=" . $blockMined->nonce . " %G%elapsed%W%=" . $blockMinedInSeconds . " %G%previous%W%=" . $mini_hash_previous . " %G%hash%W%=" . $mini_hash . " %G%number%W%=" . ($height+1)." %G%size%W%=".Tools::GetBlockSize($blockMined));
+			Tools::writeFile(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."display","%Y%Imported%W% new block	    	%G%nonce%W%=" . $blockMined->nonce . " %G%elapsed%W%=" . $blockMinedInSeconds . " %G%previous%W%=" . $mini_hash_previous . " %G%hash%W%=" . $mini_hash . " %G%number%W%=" . ($height+1)." %G%size%W%=".Tools::GetBlockSize($blockMined));
 		}
 		else if (strtolower($type) == 'sanity') {
 	        self::print("%Y%Sanity%W% new block	     		%G%nonce%W%=" . $blockMined->nonce . " %G%elapsed%W%=" . $blockMinedInSeconds . " %G%previous%W%=" . $mini_hash_previous . " %G%hash%W%=" . $mini_hash . " %G%number%W%=" . ($height)." %G%size%W%=".Tools::GetBlockSize($blockMined));
+			Tools::writeFile(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."display","%Y%Sanity%W% new block	     		%G%nonce%W%=" . $blockMined->nonce . " %G%elapsed%W%=" . $blockMinedInSeconds . " %G%previous%W%=" . $mini_hash_previous . " %G%hash%W%=" . $mini_hash . " %G%number%W%=" . ($height)." %G%size%W%=".Tools::GetBlockSize($blockMined));
 		}
 		else if (strtolower($type) == 'mined') {
 	        self::print("%Y%Mined%W% new block	     		%G%nonce%W%=" . $blockMined->nonce . " %G%elapsed%W%=" . $blockMinedInSeconds . " %G%previous%W%=" . $mini_hash_previous . " %G%hash%W%=" . $mini_hash . " %G%number%W%=" . ($height)." %G%size%W%=".Tools::GetBlockSize($blockMined));
+			//Tools::writeFile(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."display","%Y%Mined%W% new block	     		%G%nonce%W%=" . $blockMined->nonce . " %G%elapsed%W%=" . $blockMinedInSeconds . " %G%previous%W%=" . $mini_hash_previous . " %G%hash%W%=" . $mini_hash . " %G%number%W%=" . ($height)." %G%size%W%=".Tools::GetBlockSize($blockMined));
 		}
 		else if (strtolower($type) == 'rewardko') {
 	        Display::print("%LR%Ignored%W% new block     	%G%error%W%=Reward Block not valid  			%G%previous%W%=" . $mini_hash_previous . "  %G%hash%W%=" . $mini_hash);
+			Tools::writeFile(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."display","%LR%Ignored%W% new block     	%G%error%W%=Reward Block not valid  			%G%previous%W%=" . $mini_hash_previous . "  %G%hash%W%=" . $mini_hash);
 		}
 		else if (strtolower($type) == 'novalid') {
 	        Display::print("%LR%Ignored%W% new block     	%G%error%W%=Block not valid  					%G%previous%W%=" . $mini_hash_previous . "  %G%hash%W%=" . $mini_hash);
+			Tools::writeFile(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."display","%LR%Ignored%W% new block     	%G%error%W%=Block not valid  					%G%previous%W%=" . $mini_hash_previous . "  %G%hash%W%=" . $mini_hash);
 		}
 		else if (strtolower($type) == 'previousko') {
 	        Display::print("%LR%Ignored%W% new block     	%G%error%W%=Previous block does not match  		%G%previous%W%=" . $mini_hash_previous . "  %G%hash%W%=" . $mini_hash);
+			Tools::writeFile(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."display","%LR%Ignored%W% new block     	%G%error%W%=Previous block does not match  		%G%previous%W%=" . $mini_hash_previous . "  %G%hash%W%=" . $mini_hash);
 		}
 		else if (strtolower($type) == 'noacepted') {
 	        Display::print("%LR%Ignored%W% new block     	%G%error%W%=Block in same height not accepted  	%G%previous%W%=" . $mini_hash_previous . "  %G%hash%W%=" . $mini_hash);
+			Tools::writeFile(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."display","%LR%Ignored%W% new block     	%G%error%W%=Previous block does not match  		%G%previous%W%=" . $mini_hash_previous . "  %G%hash%W%=" . $mini_hash);
 		}
 		else if (strtolower($type) == 'diffko') {
 	        Display::print("%LR%Ignored%W% new block     	%G%error%W%=Difficulty hacked?  	%G%previous%W%=" . $mini_hash_previous . "  %G%hash%W%=" . $mini_hash);
+			Tools::writeFile(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."display","%LR%Ignored%W% new block     	%G%error%W%=Difficulty hacked?  	%G%previous%W%=" . $mini_hash_previous . "  %G%hash%W%=" . $mini_hash);
 		}
 		else if (strtolower($type) == 'malformed') {
 	        Display::print("%LR%Ignored%W% new block     	%G%error%W%=Block malformed");
+			Tools::writeFile(Tools::GetBaseDir()."tmp".DIRECTORY_SEPARATOR."display","%LR%Ignored%W% new block     	%G%error%W%=Block malformed");
 		}
     }
 

@@ -189,6 +189,8 @@ class Peer {
 						$ipAndPortToSync = Peer::GetHighestBlockFromPeers($gossip);
 						Tools::writeFile(Tools::GetBaseDir().'tmp'.DIRECTORY_SEPARATOR."sync_with_peer",$ipAndPortToSync);
 
+						Display::_warning("Selected peer: " . $ipAndPortToSync);
+
 						$gossip->syncing = true;
 						$gossip->isBusy = false;
 						return false;
@@ -468,39 +470,69 @@ class Peer {
 
 	/**
 	 * Get more peers from peer
-	 * @param Gossip $gossip
+	 * @param DB $chaindata
 	 * @param string $ip
 	 * @param string $port
 	 * @return void
 	 */
-	public static function GetMorePeers(Gossip &$gossip, string $ip, string $port) : void {
+	public static function GetMorePeers(DB &$chaindata, string $ip, string $port) : void {
+		/*
 		//Data to send
 		$infoToSend = array(
             'action' => 'GETPEERS'
         );
-		foreach($gossip->peers as $ipAndPort => $v) {
-			$peer = explode(":", $ipAndPort);
-			$infoPOST = Socket::sendMessageWithReturn($peer[0],$peer[1],$infoToSend,5);
-			if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1) {
-				if (is_array($infoPOST['result']) && !empty($infoPOST['result'])) {
-					foreach ($infoPOST['result'] as $newPeerInfo) {
-						if (count($gossip->peers) < PEERS_MAX) {
-							$gossip->_addPeer($newPeerInfo['ip'],$newPeerInfo['port']);
+
+		$myPeers = $chaindata->GetAllPeers();
+
+		//Check all peers and select highest block peer
+		if (!empty($myPeers)) {
+			foreach($myPeers as $peerInfo) {
+				if (Socket::isAlive($peerInfo["ip"],$peerInfo["port"])) {
+					$infoPOST = Socket::sendMessageWithReturn($peerInfo["ip"],$peerInfo["port"],$infoToSend,5);
+					if ($infoPOST != null && isset($infoPOST['status']) && $infoPOST['status'] == 1) {
+						if (is_array($infoPOST['result']) && !empty($infoPOST['result'])) {
+							foreach ($infoPOST['result'] as $newPeerInfo) {
+								if (count($gossip->peers) < PEERS_MAX) {
+
+									if (!$chaindata>haveThisPeer($ip,$port) && ($this->ip != $ip || ($this->ip == $ip && $this->port != $port))) {
+
+							            $infoToSend = array(
+							                'action' => 'HELLO',
+							                'client_ip' => $this->ip,
+							                'client_port' => $this->port
+							            );
+							            $response = Socket::sendMessageWithReturn($ip, $port, $infoToSend, 5);
+							            if ($response != null && isset($response['status'])) {
+							                if ($response['status'] == true) {
+							                    $this->chaindata->addPeer($ip, $port);
+							                    $this->peers[$ip.':'.$port] = true;
+							                    if ($displayMessage)
+													Display::print('%LP%Network%W% Connected to peer		%G%peerId%W%='.Tools::GetIdFromIpAndPort($ip,$port));
+
+												return true;
+							                }
+							            }
+							        }
+
+									$gossip->_addPeer($newPeerInfo['ip'],$newPeerInfo['port']);
+								}
+							}
 						}
 					}
 				}
 			}
 		}
+		*/
 	}
 
 	/**
 	 * Check if peer is blacklisted
-	 * @param Gossip $gossip
+	 * @param DB $chaindata
 	 * @param string $ip
 	 * @param string $port
 	 * @return bool
 	 */
-	public static function CheckIfBlacklisted(Gossip &$gossip, string $ip, string $port) : bool {
-		return $gossip->chaindata->CheckIfPeerIsBlacklisted($ip,$port);
+	public static function CheckIfBlacklisted(DB &$chaindata, string $ip, string $port) : bool {
+		return $chaindata->CheckIfPeerIsBlacklisted($ip,$port);
 	}
 }
