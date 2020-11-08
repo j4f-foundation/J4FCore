@@ -397,6 +397,15 @@ class Tools {
         return time();
     }
 
+	/**
+     * Get local UNIX militime
+     *
+     * @return false|int
+     */
+	public static function GetGlobalMilitime() {
+		return round(microtime(true) * 1000);
+	}
+
     /**
      * Get global UNIX time using NTP Protocol
      *
