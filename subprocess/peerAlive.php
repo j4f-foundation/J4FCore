@@ -98,6 +98,10 @@ if ($argv[1] == -1) {
         'action' => 'STATUSNODE'
     );
 
+	//Check if socket of peer is alive
+	if (!Socket::isAlive($peerIP,$peerPORT))
+		exit();
+
     $response = Socket::sendMessageWithReturn($peerIP,$peerPORT,$infoToSend,2);
 
     //Check if response as ok
