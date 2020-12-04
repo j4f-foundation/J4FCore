@@ -506,6 +506,28 @@ if ($dbversion == 16) {
     $dbversion++;
 }
 
+if ($dbversion == 17) {
+
+	if (FORCE_USE_ROCKSDB) {
+		$db->db->query("
+		set rocksdb_bulk_load=1;
+		ALTER TABLE `txnpool` MODIFY COLUMN `timestamp` varchar(20) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `data`;
+		ALTER TABLE `transactions` MODIFY COLUMN `timestamp` varchar(20) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `data`;
+		");
+	}
+	else {
+		$db->db->query("
+		ALTER TABLE `txnpool` MODIFY COLUMN `timestamp` varchar(20) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `data`;
+		ALTER TABLE `transactions` MODIFY COLUMN `timestamp` varchar(20) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL AFTER `data`;
+		");
+	}
+
+    Display::print("Updating DB Schema #".$dbversion);
+
+    //Increment version to next stage
+    $dbversion++;
+}
+
 
 // update dbversion
 if ($dbversion != $_CONFIG['dbversion']) {

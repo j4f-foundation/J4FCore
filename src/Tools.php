@@ -388,6 +388,15 @@ class Tools {
         }
     }
 
+	/**
+     * Get local UNIX militime
+     *
+     * @return false|int
+     */
+	public static function GetGlobalMilitime() {
+		return round(microtime(true) * 1000);
+	}
+
     /**
      * Get local UNIX time
      *
