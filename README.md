@@ -34,12 +34,6 @@ Blocks every: Mainnet ?? (average) | Testnet: 5 sec (average)
 
 [JSON-RPC/HTTP API](https://github.com/j4f-foundation/J4FCore/wiki/API-JSON-RPC-HTTP)
 
-# Discord
-
-If you want to talk about the development of blockchain or need support to run a node, connect to Discord Server!
-
-[Discord](https://discord.gg/kcSGSaa)
-
 # How run
 - Clone repository
 - Install react with composer
@@ -93,6 +87,3 @@ Currency is still in early development phase, it may not be stable 100%
 ```
 The mainnet has not yet been released.
 ```
-
-# Development Fund
-`ETH` 0x33c6cea9136d30071c1b015cc9a2b4d1ad17848d
